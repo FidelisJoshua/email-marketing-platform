@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Contacts</title>
+
+    <style>
+
+        body{
+            font-family:Arial;
+            background:#f4f4f4;
+            margin:40px;
+        }
+
+        table{
+            width:100%;
+            border-collapse:collapse;
+            background:white;
+        }
+
+        th, td{
+            padding:12px;
+            border:1px solid #ddd;
+            text-align:left;
+        }
+
+        th{
+            background:#333;
+            color:white;
+        }
+
+        h1{
+            color:#333;
+        }
+
+        a{
+            text-decoration:none;
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+<h1>My Contacts</h1>
+
+<p>
+    <a href="/dashboard">← Dashboard</a>
+</p>
+
+<table>
+
+<tr>
+    <th>Name</th>
+    <th>Email</th>
+</tr>
+
+{% for contact in contacts %}
+
+<tr>
+
+    <td>{{ contact.name }}</td>
+
+    <td>{{ contact.email }}</td>
+
+</tr>
+
+{% endfor %}
+
+</table>
+
+</body>
+
+</html>

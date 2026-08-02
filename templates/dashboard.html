@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Kit Clone Dashboard</title>
+
+    <style>
+
+        body{
+            margin:0;
+            font-family:Arial, Helvetica, sans-serif;
+            background:#f5f5f5;
+        }
+
+        .navbar{
+            background:#222;
+            color:white;
+            padding:20px;
+            display:flex;
+            justify-content:space-between;
+        }
+
+        .container{
+            width:90%;
+            margin:auto;
+            margin-top:40px;
+        }
+
+        .cards{
+            display:flex;
+            gap:20px;
+            flex-wrap:wrap;
+        }
+
+        .card{
+            background:white;
+            width:220px;
+            padding:20px;
+            border-radius:10px;
+            box-shadow:0px 2px 8px rgba(0,0,0,.15);
+        }
+
+        .card h2{
+            margin:0;
+            color:#444;
+        }
+
+        .card p{
+            font-size:32px;
+            font-weight:bold;
+        }
+
+        a{
+            color:white;
+            text-decoration:none;
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+<div class="navbar">
+
+    <h2>📧 Kit Clone</h2>
+
+    <div>
+
+        Welcome {{ name }}
+
+        |
+
+        <a href="/logout">Logout</a>
+
+    </div>
+
+</div>
+
+<div class="container">
+
+    <h1>Dashboard</h1>
+
+    <div class="cards">
+
+        <div class="card">
+
+            <h2>Subscribers</h2>
+
+            <p>0</p>
+
+        </div>
+
+        <div class="card">
+
+            <h2>Campaigns</h2>
+
+            <p>0</p>
+
+        </div>
+
+        <div class="card">
+
+            <h2>Contacts</h2>
+
+            <p>0</p>
+
+        </div>
+
+        <div class="card">
+
+            <h2>Emails Sent</h2>
+
+            <p>0</p>
+
+        </div>
+
+    </div>
+
+</div>
+
+</body>
+
+</html>
