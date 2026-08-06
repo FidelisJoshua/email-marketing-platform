@@ -2,73 +2,121 @@
 <html>
 
 <head>
+
     <title>Contacts</title>
-
-    <style>
-
-        body{
-            font-family:Arial;
-            background:#f4f4f4;
-            margin:40px;
-        }
-
-        table{
-            width:100%;
-            border-collapse:collapse;
-            background:white;
-        }
-
-        th, td{
-            padding:12px;
-            border:1px solid #ddd;
-            text-align:left;
-        }
-
-        th{
-            background:#333;
-            color:white;
-        }
-
-        h1{
-            color:#333;
-        }
-
-        a{
-            text-decoration:none;
-        }
-
-    </style>
 
 </head>
 
 <body>
 
-<h1>My Contacts</h1>
+    <h1>My Contacts</h1>
 
-<p>
-    <a href="/dashboard">← Dashboard</a>
-</p>
+    <hr>
 
-<table>
+    <h2>Add Contact</h2>
 
-<tr>
-    <th>Name</th>
-    <th>Email</th>
-</tr>
+    <form method="POST">
 
-{% for contact in contacts %}
+        <label>Name</label>
+        <br>
 
-<tr>
+        <input
+            type="text"
+            name="name"
+            required>
 
-    <td>{{ contact.name }}</td>
+        <br><br>
 
-    <td>{{ contact.email }}</td>
+        <label>Email</label>
+        <br>
 
-</tr>
+        <input
+            type="email"
+            name="email"
+            required>
 
-{% endfor %}
+        <br><br>
 
-</table>
+        <button type="submit">Add Contact</button>
+
+    </form>
+
+    <hr>
+
+<h2>Import Contacts from CSV</h2>
+
+<form
+    action="{{ url_for('import_csv') }}"
+    method="POST"
+    enctype="multipart/form-data">
+
+    <input
+        type="file"
+        name="csv_file"
+        accept=".csv"
+        required>
+
+    <br><br>
+
+    <button type="submit">
+        Import CSV
+    </button>
+
+</form>
+
+    <hr>
+
+    <h2>Saved Contacts</h2>
+
+    <table border="1" cellpadding="10">
+
+        <tr>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Action</th>
+        </tr>
+
+        {% for contact in contacts %}
+
+        <tr>
+
+            <td>{{ contact.name }}</td>
+
+            <td>{{ contact.email }}</td>
+
+            <td>
+
+    <a href="{{ url_for('edit_contact', contact_id=contact.id) }}">
+        Edit
+    </a>
+
+    |
+
+    <a href="{{ url_for('delete_contact', contact_id=contact.id) }}">
+        Delete
+    </a>
+
+</td>
+
+        </tr>
+
+        {% else %}
+
+        <tr>
+
+            <td colspan="3">
+                No contacts found.
+            </td>
+
+        </tr>
+
+        {% endfor %}
+
+    </table>
+
+    <br>
+
+    <a href="{{ url_for('dashboard') }}">Dashboard</a>
 
 </body>
 

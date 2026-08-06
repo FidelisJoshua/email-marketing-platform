@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="card shadow">
+
+    <div class="card-body">
+
+        <h2>{{ campaign.subject }}</h2>
+
+        <hr>
+
+        <div style="white-space: pre-wrap;">
+            {{ campaign.message }}
+        </div>
+
+        <hr>
+
+    <div class="d-flex gap-2">
+
+    <a
+        href="{{ url_for('send_test_email', campaign_id=campaign.id) }}"
+        class="btn btn-success">
+
+        📧 Send Test Email
+
+    </a>
+
+    <a
+        href="{{ url_for('send_campaign', campaign_id=campaign.id) }}"
+        class="btn btn-danger">
+
+        🚀 Send To All Contacts
+
+    </a>
+
+    <a
+        href="{{ url_for('campaigns') }}"
+        class="btn btn-secondary">
+
+        ← Back to Campaigns
+
+    </a>
+
+</div>
+
+    </div>
+
+</div>
+
+{% endblock %}

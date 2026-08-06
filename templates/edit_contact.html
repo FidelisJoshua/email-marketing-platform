@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+    <title>Edit Contact</title>
+
+</head>
+
+<body>
+
+    <h1>Edit Contact</h1>
+
+    <hr>
+
+    <form method="POST">
+
+        <label>Name</label>
+        <br>
+
+        <input
+            type="text"
+            name="name"
+            value="{{ contact.name }}"
+            required>
+
+        <br><br>
+
+        <label>Email</label>
+        <br>
+
+        <input
+            type="email"
+            name="email"
+            value="{{ contact.email }}"
+            required>
+
+        <br><br>
+
+        <button type="submit">
+            Update Contact
+        </button>
+
+    </form>
+
+    <br>
+
+    <a href="{{ url_for('contacts') }}">
+        ← Back to Contacts
+    </a>
+
+</body>
+
+</html>
