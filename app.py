@@ -1,10 +1,12 @@
+import time
+from datetime import datetime
 from flask import Flask, render_template, request, session, redirect, url_for, flash
 import os
 import pandas as pd
 from flask_bcrypt import Bcrypt
 from sqlalchemy.exc import IntegrityError
 from extension import db
-from models import User, Contact, Campaign
+from models import User, Contact, Campaign, CampaignRecipient
 from email_service import send_email
 
 app = Flask(__name__)
@@ -237,6 +239,48 @@ def delete_contact(contact_id):
 
     return redirect(url_for("contacts"))
 
+@app.route("/bulk_delete_contacts", methods=["POST"])
+def bulk_delete_contacts():
+
+    if "user_id" not in session:
+        return redirect(url_for("login"))
+
+    # Get the selected contact IDs
+    contact_ids = request.form.getlist("contact_ids")
+
+    if not contact_ids:
+        flash("No contacts selected.", "warning")
+        return redirect(url_for("contacts"))
+
+    # Find only contacts belonging to the logged-in user
+    contacts = Contact.query.filter(
+        Contact.id.in_(contact_ids),
+        Contact.created_by == session["user_id"]
+    ).all()
+
+    deleted = 0
+
+    for contact in contacts:
+
+        # Delete campaign recipient records first
+        CampaignRecipient.query.filter_by(
+            contact_id=contact.id
+        ).delete()
+
+        # Delete the contact
+        db.session.delete(contact)
+
+        deleted += 1
+
+    db.session.commit()
+
+    flash(
+        f"{deleted} contact(s) deleted successfully.",
+        "success"
+    )
+
+    return redirect(url_for("contacts"))
+
 @app.route("/edit_contact/<int:contact_id>", methods=["GET", "POST"])
 def edit_contact(contact_id):
 
@@ -284,6 +328,7 @@ def campaigns():
         subject = request.form["subject"]
         message = request.form["message"]
 
+        # Create the campaign
         new_campaign = Campaign(
             subject=subject,
             message=message,
@@ -291,6 +336,25 @@ def campaigns():
         )
 
         db.session.add(new_campaign)
+
+        # Commit so the campaign gets an ID
+        db.session.commit()
+
+        # Get all contacts belonging to this user
+        contacts = Contact.query.filter_by(
+            created_by=session["user_id"]
+        ).all()
+
+        # Create a recipient record for every contact
+        for contact in contacts:
+            recipient = CampaignRecipient(
+                campaign_id=new_campaign.id,
+                contact_id=contact.id
+            )
+
+            db.session.add(recipient)
+
+        # Save all campaign recipients
         db.session.commit()
 
         return redirect(url_for("campaigns"))
@@ -343,49 +407,236 @@ def send_test_email(campaign_id):
     <a href="/campaigns">Back to Campaigns</a>
     """
 
-@app.route("/campaign/<int:campaign_id>/send")
+@app.route("/campaign/<int:campaign_id>/send", methods=["POST"])
 def send_campaign(campaign_id):
 
+    # User must be logged in
     if "user_id" not in session:
         return redirect(url_for("login"))
 
-    # Get the campaign
+    # Get campaign belonging to this user
     campaign = Campaign.query.filter_by(
         id=campaign_id,
         created_by=session["user_id"]
     ).first_or_404()
 
-    # Get all contacts for this user
-    contacts = Contact.query.filter_by(
-        created_by=session["user_id"]
+    # ---------------------------------------------------------
+    # PREVENT THE SAME CAMPAIGN FROM RUNNING TWICE
+    # ---------------------------------------------------------
+
+    # Atomically change the campaign to Sending.
+    #
+    # Only the first request will successfully update the row.
+    # Any second request will get updated == 0.
+    updated = Campaign.query.filter(
+        Campaign.id == campaign.id,
+        Campaign.created_by == session["user_id"],
+        Campaign.status != "Sending"
+    ).update(
+        {
+            "status": "Sending"
+        },
+        synchronize_session=False
+    )
+
+    db.session.commit()
+
+    # Another request is already sending this campaign
+    if updated == 0:
+
+        flash(
+            "This campaign is already being sent.",
+            "warning"
+        )
+
+        return redirect(url_for("campaigns"))
+
+    # ---------------------------------------------------------
+    # GET PENDING RECIPIENTS
+    # ---------------------------------------------------------
+
+    recipients = CampaignRecipient.query.filter_by(
+        campaign_id=campaign.id,
+        status="Pending"
     ).all()
 
     sent = 0
     failed = 0
 
-    for contact in contacts:
+    print("")
+    print("=" * 60)
+    print(f"🚀 STARTING CAMPAIGN: {campaign.id}")
+    print(f"📧 Recipients: {len(recipients)}")
+    print("=" * 60)
+    print("")
 
-        try:
+    # ---------------------------------------------------------
+    # SEND EMAILS
+    # ---------------------------------------------------------
 
-            send_email(
-                subject=campaign.subject,
-                body=campaign.message,
-                recipient=contact.email
-            )
+    for recipient in recipients:
 
-            sent += 1
+        # Get the actual contact
+        contact = db.session.get(
+            Contact,
+            recipient.contact_id
+        )
 
-        except Exception as e:
+        # -----------------------------------------------------
+        # CONTACT DOES NOT EXIST
+        # -----------------------------------------------------
 
-            print(f"Failed to send to {contact.email}")
-            print(e)
+        if not contact:
+
+            recipient.status = "Failed"
+
+            db.session.commit()
 
             failed += 1
 
-    flash(
-        f"Campaign completed! Sent: {sent} | Failed: {failed}",
-        "success"
-    )
+            print(
+                f"❌ Contact not found: "
+                f"{recipient.contact_id}"
+            )
+
+            continue
+
+        attempts = 0
+        success = False
+
+        # -----------------------------------------------------
+        # TRY EMAIL UP TO 3 TIMES
+        # -----------------------------------------------------
+
+        while attempts < 3:
+
+            attempts += 1
+
+            try:
+
+                print("")
+                print(
+                    f"📧 Attempt {attempts}/3 "
+                    f"for {contact.email}"
+                )
+
+                # Send email
+                send_email(
+                    subject=campaign.subject,
+                    body=campaign.message,
+                    recipient=contact.email
+                )
+
+                # -------------------------------------------------
+                # SUCCESS
+                # -------------------------------------------------
+
+                recipient.status = "Sent"
+                recipient.sent_at = datetime.now(datetime.UTC)
+
+                db.session.commit()
+
+                sent += 1
+                success = True
+
+                print(
+                    f"✅ Sent to: {contact.email}"
+                )
+
+                # Small delay between successful emails
+                time.sleep(2)
+
+                break
+
+            except Exception as e:
+
+                print(
+                    f"❌ Attempt {attempts}/3 "
+                    f"failed for {contact.email}"
+                )
+
+                print(f"Error: {e}")
+
+                # Retry if attempts remain
+                if attempts < 3:
+
+                    print(
+                        "⏳ Retrying in 5 seconds..."
+                    )
+
+                    time.sleep(5)
+
+        # ALL 3 ATTEMPTS FAILED
+
+        if not success:
+
+            # Leave it Pending so the campaign can be
+            # resumed/retried later.
+            recipient.status = "Pending"
+
+            db.session.commit()
+
+            failed += 1
+
+            print("")
+            print(
+                f"⚠️ Could not send to "
+                f"{contact.email} after 3 attempts."
+            )
+
+    # UPDATE CAMPAIGN TOTALS
+
+
+    campaign.sent_count += sent
+    campaign.failed_count += failed
+
+    # CHECK FOR REMAINING PENDING RECIPIENTS
+
+    remaining = CampaignRecipient.query.filter_by(
+        campaign_id=campaign.id,
+        status="Pending"
+    ).count()
+
+    # If nothing remains, campaign is completely finished
+    if remaining == 0:
+
+        campaign.status = "Sent"
+
+    else:
+
+        # Some recipients still need to be sent
+        campaign.status = "Draft"
+
+    db.session.commit()
+
+    print("")
+    print("=" * 60)
+    print("🏁 CAMPAIGN RUN FINISHED")
+    print(f"✅ Sent this run: {sent}")
+    print(f"❌ Failed this run: {failed}")
+    print(f"⏳ Remaining: {remaining}")
+    print("=" * 60)
+    print("")
+
+    # USER MESSAGE
+
+    if remaining == 0:
+
+        flash(
+            f"Campaign completed! "
+            f"Sent: {sent} | Failed: {failed}",
+            "success"
+        )
+
+    else:
+
+        flash(
+            f"Campaign run completed! "
+            f"Sent: {sent} | "
+            f"Failed: {failed} | "
+            f"Remaining: {remaining}",
+            "warning"
+        )
 
     return redirect(url_for("campaigns"))
 @app.route("/logout")

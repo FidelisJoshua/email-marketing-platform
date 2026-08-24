@@ -2,47 +2,55 @@
 
 {% block content %}
 
-<div class="card shadow">
+<div class="container mt-5">
 
-    <div class="card-body">
+    <h1>Campaign Preview</h1>
 
-        <h2>{{ campaign.subject }}</h2>
+    <div class="card mt-4">
 
-        <hr>
-
-        <div style="white-space: pre-wrap;">
-            {{ campaign.message }}
+        <div class="card-header">
+            <strong>Subject</strong>
         </div>
 
-        <hr>
+        <div class="card-body">
 
-    <div class="d-flex gap-2">
+            <h3>{{ campaign.subject }}</h3>
 
-    <a
-        href="{{ url_for('send_test_email', campaign_id=campaign.id) }}"
-        class="btn btn-success">
+            <hr>
 
-        📧 Send Test Email
+            <p style="white-space: pre-wrap;">
+                {{ campaign.message }}
+            </p>
 
-    </a>
+        </div>
 
-    <a
-        href="{{ url_for('send_campaign', campaign_id=campaign.id) }}"
-        class="btn btn-danger">
+    </div>
 
-        🚀 Send To All Contacts
+    <div class="mt-4">
 
-    </a>
+        <a
+            href="{{ url_for('send_test_email', campaign_id=campaign.id) }}"
+            class="btn btn-warning">
 
-    <a
-        href="{{ url_for('campaigns') }}"
-        class="btn btn-secondary">
+            Send Test Email
 
-        ← Back to Campaigns
+        </a>
 
-    </a>
+        <a
+            href="{{ url_for('send_campaign', campaign_id=campaign.id) }}"
+            class="btn btn-success">
 
-</div>
+            Send Campaign
+
+        </a>
+
+        <a
+            href="{{ url_for('campaigns') }}"
+            class="btn btn-secondary">
+
+            ← Back to Campaigns
+
+        </a>
 
     </div>
 
