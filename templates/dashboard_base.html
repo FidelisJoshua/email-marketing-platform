@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>
+        {% block title %}
+        EmailFlow
+        {% endblock %}
+    </title>
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='css/style.css') }}">
+
+</head>
+
+<body>
+
+<div class="app-shell">
+
+    <!-- ================= SIDEBAR ================= -->
+
+    <aside class="sidebar">
+
+        <!-- ================= BRAND ================= -->
+
+        <div class="sidebar-brand">
+
+            <div class="brand-icon">
+                ✉
+            </div>
+
+            <div>
+
+                <div class="brand-name">
+                    EmailFlow
+                </div>
+
+                <div class="brand-subtitle">
+                    Marketing Platform
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- ================= MAIN NAVIGATION ================= -->
+
+        <div class="nav-section">
+
+            <div class="nav-title">
+                MAIN
+            </div>
+
+
+            <!-- DASHBOARD -->
+
+            <a
+                href="{{ url_for('dashboard') }}"
+                class="nav-item {% if request.endpoint == 'dashboard' %}active{% endif %}"
+            >
+
+                <span class="nav-icon">
+                    ▦
+                </span>
+
+                Dashboard
+
+            </a>
+
+
+            <!-- CONTACTS -->
+
+            <a
+                href="{{ url_for('contacts') }}"
+                class="nav-item {% if request.endpoint == 'contacts' %}active{% endif %}"
+            >
+
+                <span class="nav-icon">
+                    ♟
+                </span>
+
+                Contacts
+
+            </a>
+
+
+            <!-- CAMPAIGNS -->
+
+            <a
+                href="{{ url_for('campaigns') }}"
+                class="nav-item {% if request.endpoint == 'campaigns' %}active{% endif %}"
+            >
+
+                <span class="nav-icon">
+                    ➤
+                </span>
+
+                Campaigns
+
+            </a>
+
+
+            <!-- FORMS & LANDING PAGES -->
+
+            <a
+                href="{{ url_for('forms') }}"
+                class="nav-item {% if request.endpoint == 'forms' %}active{% endif %}"
+            >
+
+                <span class="nav-icon">
+                    ▣
+                </span>
+
+                Forms & Landing Pages
+
+            </a>
+
+        </div>
+
+
+        <!-- ================= TOOLS ================= -->
+
+        <div class="nav-section">
+
+            <div class="nav-title">
+                TOOLS
+            </div>
+
+
+            <!-- TEMPLATES -->
+
+            <div class="nav-item disabled">
+
+                <span class="nav-icon">
+                    ▤
+                </span>
+
+                Templates
+
+                <span class="soon">
+                    Soon
+                </span>
+
+            </div>
+
+
+            <!-- ANALYTICS -->
+
+            <div class="nav-item disabled">
+
+                <span class="nav-icon">
+                    ▥
+                </span>
+
+                Analytics
+
+                <span class="soon">
+                    Soon
+                </span>
+
+            </div>
+
+
+            <!-- SETTINGS -->
+
+            <div class="nav-item disabled">
+
+                <span class="nav-icon">
+                    ⚙
+                </span>
+
+                Settings
+
+                <span class="soon">
+                    Soon
+                </span>
+
+            </div>
+
+        </div>
+
+
+        <!-- ================= ACCOUNT ================= -->
+
+        <div class="sidebar-bottom">
+
+            <div class="account-box">
+
+                <div class="account-avatar">
+                    👤
+                </div>
+
+                <div>
+
+                    <strong>
+                        Account
+                    </strong>
+
+                    <div class="account-status">
+
+                        <span></span>
+
+                        Active
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- LOGOUT -->
+
+            <a
+                href="{{ url_for('logout') }}"
+                class="logout-link"
+            >
+
+                ⇥ Logout
+
+            </a>
+
+        </div>
+
+    </aside>
+
+
+    <!-- ================= MAIN AREA ================= -->
+
+    <main class="main-area">
+
+
+        <!-- ================= TOP BAR ================= -->
+
+        <header class="topbar">
+
+            <div class="topbar-title">
+
+                Email Marketing Platform
+
+            </div>
+
+
+            <div class="topbar-account">
+
+                <div class="topbar-avatar">
+                    👤
+                </div>
+
+                <div>
+
+                    <strong>
+                        Account
+                    </strong>
+
+                    <div class="online">
+                        Online
+                    </div>
+
+                </div>
+
+            </div>
+
+        </header>
+
+
+        <!-- ================= PAGE CONTENT ================= -->
+
+        <section class="page-content">
+
+
+            <!-- FLASH MESSAGES -->
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+
+                {% if messages %}
+
+                    {% for category, message in messages %}
+
+                        <div class="alert alert-{{ category }}">
+
+                            {{ message }}
+
+                        </div>
+
+                    {% endfor %}
+
+                {% endif %}
+
+            {% endwith %}
+
+
+            <!-- PAGE-SPECIFIC CONTENT -->
+
+            {% block content %}
+
+            {% endblock %}
+
+
+        </section>
+
+    </main>
+
+</div>
+
+</body>
+
+</html>

@@ -1,56 +1,85 @@
-{% extends "base.html" %}
+{% extends "dashboard_base.html" %}
+
+{% block title %}
+Campaign Preview - EmailFlow
+{% endblock %}
 
 {% block content %}
 
-<div class="container mt-5">
+<div class="page-header">
 
-    <h1>Campaign Preview</h1>
+    <div>
 
-    <div class="card mt-4">
-
-        <div class="card-header">
-            <strong>Subject</strong>
+        <div class="page-eyebrow">
+            CAMPAIGN
         </div>
 
-        <div class="card-body">
+        <h1 class="page-title">
+            Campaign Preview
+        </h1>
 
-            <h3>{{ campaign.subject }}</h3>
+        <p class="page-subtitle">
+            Review your campaign before sending it.
+        </p>
 
-            <hr>
+    </div>
 
-            <p style="white-space: pre-wrap;">
-                {{ campaign.message }}
-            </p>
+    <a
+        href="{{ url_for('campaigns') }}"
+        class="btn-secondary-custom">
+
+        ← Back to Campaigns
+
+    </a>
+
+</div>
+
+
+<div class="form-card">
+
+    <div class="mb-4">
+
+        <div class="form-label-custom">
+            Subject
+        </div>
+
+        <h3>
+            {{ campaign.subject }}
+        </h3>
+
+    </div>
+
+
+    <div>
+
+        <div class="form-label-custom">
+            Message
+        </div>
+
+        <div
+            style="
+                background:#f9fafb;
+                border:1px solid #e6e8ef;
+                border-radius:10px;
+                padding:20px;
+                line-height:1.7;
+                white-space:pre-wrap;
+            ">
+
+            {{ campaign.message }}
 
         </div>
 
     </div>
 
+
     <div class="mt-4">
 
-        <a
-            href="{{ url_for('send_test_email', campaign_id=campaign.id) }}"
-            class="btn btn-warning">
+        <strong>
+            Status:
+        </strong>
 
-            Send Test Email
-
-        </a>
-
-        <a
-            href="{{ url_for('send_campaign', campaign_id=campaign.id) }}"
-            class="btn btn-success">
-
-            Send Campaign
-
-        </a>
-
-        <a
-            href="{{ url_for('campaigns') }}"
-            class="btn btn-secondary">
-
-            ← Back to Campaigns
-
-        </a>
+        {{ campaign.status }}
 
     </div>
 

@@ -5,67 +5,124 @@
 
     <meta charset="UTF-8">
 
-    <meta name="viewport"
-          content="width=device-width, initial-scale=1">
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0">
 
-    <title>Email Marketing Platform</title>
+    <title>
+        {% block title %}
+        EmailFlow
+        {% endblock %}
+    </title>
+
 
     <link
-        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css"
-        rel="stylesheet">
+        rel="stylesheet"
+        href="{{ url_for('static', filename='css/style.css') }}">
 
 </head>
 
-<body class="bg-light">
 
-<nav class="navbar navbar-dark bg-dark">
+<body class="public-page">
 
-    <div class="container">
 
-        <a class="navbar-brand" href="{{ url_for('dashboard') }}">
-            📧 Email Marketing Platform
-        </a>
+    <!-- ================= NAVBAR ================= -->
 
-        {% if session.get("user_id") %}
+    <nav class="public-navbar">
+
+        <div class="public-container">
+
 
             <a
-                class="btn btn-outline-light"
-                href="{{ url_for('logout') }}">
-                Logout
+                href="{{ url_for('home') }}"
+                class="public-brand"
+            >
+
+                <div class="brand-icon">
+                    ✉
+                </div>
+
+                <div>
+
+                    <div class="brand-name">
+                        EmailFlow
+                    </div>
+
+                    <div class="brand-subtitle">
+                        Marketing Platform
+                    </div>
+
+                </div>
+
             </a>
 
-        {% endif %}
 
-    </div>
+            <div class="public-nav-links">
 
-</nav>
+                <a href="{{ url_for('home') }}">
+                    Home
+                </a>
 
-<div class="container mt-4">
+                <a href="#features">
+                    Features
+                </a>
 
-{% with messages = get_flashed_messages(with_categories=true) %}
+                <a href="#about">
+                    About
+                </a>
 
-    {% if messages %}
+                <a
+                    href="{{ url_for('login') }}"
+                    class="nav-login"
+                >
+                    Login
+                </a>
 
-        {% for category, message in messages %}
-
-            <div class="alert alert-{{ category }} mt-3">
-
-                {{ message }}
+                <a
+                    href="{{ url_for('register') }}"
+                    class="nav-signup"
+                >
+                    Get Started
+                </a>
 
             </div>
 
-        {% endfor %}
+        </div>
 
-    {% endif %}
+    </nav>
 
-{% endwith %}
+
+    <!-- ================= FLASH MESSAGES ================= -->
+
+    <div class="public-container">
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+
+            {% if messages %}
+
+                {% for category, message in messages %}
+
+                    <div class="alert alert-{{ category }}">
+
+                        {{ message }}
+
+                    </div>
+
+                {% endfor %}
+
+            {% endif %}
+
+        {% endwith %}
+
+    </div>
+
+
+    <!-- ================= PAGE CONTENT ================= -->
 
     {% block content %}
+
     {% endblock %}
 
-</div>
-
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"></script>
 
 </body>
 

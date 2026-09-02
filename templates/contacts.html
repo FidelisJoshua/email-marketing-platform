@@ -1,165 +1,667 @@
-<!DOCTYPE html>
-<html>
+{% extends "dashboard_base.html" %}
 
-<head>
+{% block title %}
+Contacts - EmailFlow
+{% endblock %}
 
-    <title>Contacts</title>
+{% block content %}
 
-</head>
+<!-- =====================================================
+     CONTACTS PAGE HEADER
+     ===================================================== -->
 
-<body>
+<div class="page-header">
 
-    <h1>My Contacts</h1>
+    <div>
 
-    <hr>
+        <div class="page-eyebrow">
+            AUDIENCE
+        </div>
 
-    <h2>Add Contact</h2>
+        <h1 class="page-title">
+            Contacts
+        </h1>
 
-    <form method="POST">
+        <p class="page-subtitle">
+            Manage and organize the people who receive your campaigns.
+        </p>
 
-        <label>Name</label>
-        <br>
+    </div>
+
+
+    <!-- PAGE ACTIONS -->
+
+    <div class="page-actions">
+
+        <!-- ADD CONTACT -->
+
+        <a
+            href="{{ url_for('add_contact') }}"
+            class="primary-button"
+        >
+            + Add Contact
+        </a>
+
+
+        <!-- IMPORT CSV -->
+
+        <form
+            action="{{ url_for('import_csv') }}"
+            method="POST"
+            enctype="multipart/form-data"
+            class="csv-import-form"
+        >
+
+            <label
+                for="csv_file"
+                class="secondary-button csv-label"
+            >
+                ↑ Import CSV
+            </label>
+
+            <input
+                type="file"
+                id="csv_file"
+                name="csv_file"
+                accept=".csv"
+                class="csv-input"
+                onchange="this.form.submit()"
+            >
+
+        </form>
+
+    </div>
+
+</div>
+
+
+<!-- =====================================================
+     CONTACT STATISTICS
+     ===================================================== -->
+
+<div class="stats-grid">
+
+    <div class="stat-card">
+
+        <div class="stat-top">
+
+            <div class="stat-label">
+                Total Contacts
+            </div>
+
+            <div class="stat-icon">
+                👥
+            </div>
+
+        </div>
+
+        <div class="stat-number">
+            {{ contacts|length }}
+        </div>
+
+        <div class="stat-footer">
+            People in your audience
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- =====================================================
+     CONTACTS CARD
+     ===================================================== -->
+
+<div class="content-card">
+
+    <!-- TOOLBAR -->
+
+    <div class="card-toolbar">
+
+        <div>
+
+            <div class="dashboard-card-title">
+                All Contacts
+            </div>
+
+            <div class="dashboard-card-subtitle">
+                View and manage your audience
+            </div>
+
+        </div>
+
+
+        <!-- SEARCH -->
 
         <input
             type="text"
-            name="name"
-            required>
+            id="contactSearch"
+            class="search-input"
+            placeholder="Search contacts..."
+            onkeyup="searchContacts()"
+        >
 
-        <br><br>
+    </div>
 
-        <label>Email</label>
-        <br>
 
-        <input
-            type="email"
-            name="email"
-            required>
+    <!-- =================================================
+         BULK DELETE FORM
+         ================================================= -->
 
-        <br><br>
+    <form
+        method="POST"
+        action="{{ url_for('bulk_delete_contacts') }}"
+        onsubmit="return confirmBulkDelete();"
+    >
 
-        <button type="submit">Add Contact</button>
+        <div class="table-wrapper">
+
+            <table
+                class="custom-table"
+                id="contactsTable"
+            >
+
+                <!-- TABLE HEADER -->
+
+                <thead>
+
+                    <tr>
+
+                        <th style="width: 45px;">
+
+                            <input
+                                type="checkbox"
+                                id="selectAll"
+                                onclick="toggleAllContacts()"
+                            >
+
+                        </th>
+
+
+                        <th>
+                            Name
+                        </th>
+
+
+                        <th>
+                            Email
+                        </th>
+
+
+                        <th>
+                            Date Added
+                        </th>
+
+
+                        <th>
+                            Actions
+                        </th>
+
+                    </tr>
+
+                </thead>
+
+
+                <!-- TABLE BODY -->
+
+                <tbody>
+
+                {% if contacts %}
+
+                    {% for contact in contacts %}
+
+                        <tr>
+
+                            <!-- SELECT CONTACT -->
+
+                            <td>
+
+                                <input
+                                    type="checkbox"
+                                    name="contact_ids"
+                                    value="{{ contact.id }}"
+                                    class="contact-checkbox"
+                                >
+
+                            </td>
+
+
+                            <!-- NAME -->
+
+                            <td>
+
+                                <div class="contact-name">
+
+                                    {{ contact.name }}
+
+                                </div>
+
+                            </td>
+
+
+                            <!-- EMAIL -->
+
+                            <td>
+
+                                <div class="contact-email">
+
+                                    {{ contact.email }}
+
+                                </div>
+
+                            </td>
+
+
+                            <!-- DATE -->
+
+                            <td>
+
+                                {% if contact.created_at %}
+
+                                    {{ contact.created_at }}
+
+                                {% else %}
+
+                                    -
+
+                                {% endif %}
+
+                            </td>
+
+
+                            <!-- ACTIONS -->
+
+                            <td>
+
+                                <div class="contact-actions">
+
+                                    <a
+                                        href="{{ url_for(
+                                            'edit_contact',
+                                            contact_id=contact.id
+                                        ) }}"
+                                        class="btn-secondary-custom"
+                                    >
+                                        Edit
+                                    </a>
+
+
+                                    <a
+                                        href="{{ url_for(
+                                            'delete_contact',
+                                            contact_id=contact.id
+                                        ) }}"
+                                        class="btn-secondary-custom delete-button"
+                                        onclick="return confirm(
+                                            'Are you sure you want to delete this contact?'
+                                        );"
+                                    >
+                                        Delete
+                                    </a>
+
+                                </div>
+
+                            </td>
+
+                        </tr>
+
+                    {% endfor %}
+
+
+                {% else %}
+
+                    <!-- =================================================
+                         EMPTY STATE
+                         ================================================= -->
+
+                    <tr>
+
+                        <td colspan="5">
+
+                            <div class="empty-state">
+
+                                <div class="empty-icon">
+                                    👥
+                                </div>
+
+                                <div class="empty-title">
+                                    No contacts yet
+                                </div>
+
+                                <div class="empty-text">
+                                    Add your first contact or import a CSV
+                                    file to start building your audience.
+                                </div>
+
+
+                                <div class="empty-actions">
+
+                                    <!-- ADD CONTACT -->
+
+                                    <a
+                                        href="{{ url_for('add_contact') }}"
+                                        class="primary-button"
+                                    >
+                                        + Add Contact
+                                    </a>
+
+
+                                    <!-- IMPORT CSV -->
+
+                                    <form
+                                        action="{{ url_for('import_csv') }}"
+                                        method="POST"
+                                        enctype="multipart/form-data"
+                                        class="csv-import-form"
+                                    >
+
+                                        <label
+                                            for="empty_csv_file"
+                                            class="secondary-button csv-label"
+                                        >
+                                            ↑ Import CSV
+                                        </label>
+
+                                        <input
+                                            type="file"
+                                            id="empty_csv_file"
+                                            name="csv_file"
+                                            accept=".csv"
+                                            class="csv-input"
+                                            onchange="this.form.submit()"
+                                        >
+
+                                    </form>
+
+                                </div>
+
+                            </div>
+
+                        </td>
+
+                    </tr>
+
+                {% endif %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+
+        <!-- =================================================
+             BULK DELETE BUTTON
+             ================================================= -->
+
+        {% if contacts %}
+
+            <div class="bulk-actions">
+
+                <button
+                    type="submit"
+                    class="secondary-button delete-selected-button"
+                >
+                    Delete Selected
+                </button>
+
+            </div>
+
+        {% endif %}
 
     </form>
 
-    <hr>
+</div>
 
-<h2>Import Contacts from CSV</h2>
 
-<form
-    action="{{ url_for('import_csv') }}"
-    method="POST"
-    enctype="multipart/form-data">
-
-    <input
-        type="file"
-        name="csv_file"
-        accept=".csv"
-        required>
-
-    <br><br>
-
-    <button type="submit">
-        Import CSV
-    </button>
-
-</form>
-
-    <hr>
-<h2>Saved Contacts</h2>
-
-<form
-    action="{{ url_for('bulk_delete_contacts') }}"
-    method="POST"
-    onsubmit="return confirm('Are you sure you want to delete the selected contacts?');">
-
-    <button type="button" onclick="selectAllContacts()">
-        Select All
-    </button>
-
-    <button type="submit">
-        Delete Selected
-    </button>
-
-    <br><br>
-
-    <table border="1" cellpadding="10">
-
-        <tr>
-
-            <th>Select</th>
-            <th>Name</th>
-            <th>Email</th>
-            <th>Action</th>
-
-        </tr>
-
-        {% for contact in contacts %}
-
-        <tr>
-
-            <td>
-                <input
-                    type="checkbox"
-                    name="contact_ids"
-                    value="{{ contact.id }}">
-            </td>
-
-            <td>{{ contact.name }}</td>
-
-            <td>{{ contact.email }}</td>
-
-            <td>
-
-                <a href="{{ url_for('edit_contact', contact_id=contact.id) }}">
-                    Edit
-                </a>
-
-                |
-
-                <a href="{{ url_for('delete_contact', contact_id=contact.id) }}">
-                    Delete
-                </a>
-
-            </td>
-
-        </tr>
-
-        {% else %}
-
-        <tr>
-
-            <td colspan="4">
-                No contacts found.
-            </td>
-
-        </tr>
-
-        {% endfor %}
-
-    </table>
-
-</form>
+<!-- =====================================================
+     JAVASCRIPT
+     ===================================================== -->
 
 <script>
 
-function selectAllContacts() {
+    /*
+     * SELECT / UNSELECT ALL CONTACTS
+     */
 
-    const checkboxes = document.querySelectorAll(
-        'input[name="contact_ids"]'
-    );
+    function toggleAllContacts() {
 
-    checkboxes.forEach(function(checkbox) {
-        checkbox.checked = true;
-    });
+        const selectAll =
+            document.getElementById("selectAll");
 
-}
+        const checkboxes =
+            document.querySelectorAll(".contact-checkbox");
+
+        checkboxes.forEach(function(checkbox) {
+
+            checkbox.checked = selectAll.checked;
+
+        });
+
+    }
+
+
+    /*
+     * CONFIRM BULK DELETE
+     */
+
+    function confirmBulkDelete() {
+
+        const selected =
+            document.querySelectorAll(
+                ".contact-checkbox:checked"
+            );
+
+        if (selected.length === 0) {
+
+            alert("Please select at least one contact.");
+
+            return false;
+
+        }
+
+        return confirm(
+            "Are you sure you want to delete " +
+            selected.length +
+            " contact(s)?"
+        );
+
+    }
+
+
+    /*
+     * SEARCH CONTACTS
+     */
+
+    function searchContacts() {
+
+        const input =
+            document.getElementById("contactSearch");
+
+        const filter =
+            input.value.toLowerCase();
+
+        const table =
+            document.getElementById("contactsTable");
+
+        const rows =
+            table.getElementsByTagName("tr");
+
+
+        /*
+         * Start at 1 because row 0
+         * is the table header.
+         */
+
+        for (let i = 1; i < rows.length; i++) {
+
+            const row = rows[i];
+
+            const text =
+                row.textContent.toLowerCase();
+
+            if (text.includes(filter)) {
+
+                row.style.display = "";
+
+            } else {
+
+                row.style.display = "none";
+
+            }
+
+        }
+
+    }
 
 </script>
 
-    <br>
 
-    <a href="{{ url_for('dashboard') }}">Dashboard</a>
+<!-- =====================================================
+     CONTACT PAGE EXTRA STYLING
+     ===================================================== -->
 
-</body>
+<style>
 
-</html>
+    /*
+     * Header layout
+     */
+
+    .page-header {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 30px;
+        margin-bottom: 30px;
+    }
+
+
+    /*
+     * Buttons beside page title
+     */
+
+    .page-actions {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+
+    /*
+     * CSV import form
+     */
+
+    .csv-import-form {
+        display: inline-flex;
+        margin: 0;
+    }
+
+
+    /*
+     * Hide the actual file input
+     */
+
+    .csv-input {
+        display: none;
+    }
+
+
+    /*
+     * Make the label behave like a button
+     */
+
+    .csv-label {
+        cursor: pointer;
+    }
+
+
+    /*
+     * Contact action buttons
+     */
+
+    .contact-actions {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+
+    /*
+     * Delete button
+     */
+
+    .delete-button {
+        color: #dc2626;
+    }
+
+
+    /*
+     * Bulk action area
+     */
+
+    .bulk-actions {
+        display: flex;
+        justify-content: flex-end;
+        margin-top: 20px;
+    }
+
+
+    /*
+     * Delete selected
+     */
+
+    .delete-selected-button {
+        color: #dc2626;
+    }
+
+
+    /*
+     * Empty state buttons
+     */
+
+    .empty-actions {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 10px;
+        margin-top: 25px;
+        flex-wrap: wrap;
+    }
+
+
+    /*
+     * Mobile layout
+     */
+
+    @media (max-width: 700px) {
+
+        .page-header {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .page-actions {
+            width: 100%;
+        }
+
+        .page-actions .primary-button,
+        .page-actions .secondary-button {
+            width: 100%;
+            text-align: center;
+        }
+
+        .csv-import-form {
+            width: 100%;
+        }
+
+        .csv-label {
+            width: 100%;
+            text-align: center;
+        }
+
+    }
+
+</style>
+
+{% endblock %}

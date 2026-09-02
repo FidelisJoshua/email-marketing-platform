@@ -1,37 +1,390 @@
-<!DOCTYPE html>
-<html>
+{% extends "base.html" %}
 
-<head>
+{% block title %}
+EmailFlow | Email Marketing Made Simple
+{% endblock %}
 
-    <title>Kit Clone</title>
 
-</head>
+{% block content %}
 
-<body>
 
-    <h1>🚀 Kit Clone</h1>
+<!-- ================= HERO ================= -->
 
-    <hr>
+<section class="hero-section">
 
-    <h2>Welcome!</h2>
+    <div class="public-container hero-grid">
 
-    <p>
-        Build email campaigns, manage subscribers,
-        automate workflows and grow your business.
-    </p>
 
-    <hr>
+        <div class="hero-content">
 
-    <a href="/">Home</a>
+            <div class="hero-badge">
+                ✨ Simple email marketing
+            </div>
 
-    |
 
-    <a href="/login">Login</a>
+            <h1>
+                Grow your audience.
+                <span>
+                    Send better emails.
+                </span>
+            </h1>
 
-    |
 
-    <a href="/register">Register</a>
+            <p>
+                EmailFlow gives you the tools you need
+                to manage contacts, create campaigns,
+                and connect with your audience.
+            </p>
 
-</body>
 
-</html>
+            <div class="hero-buttons">
+
+                <a
+                    href="{{ url_for('register') }}"
+                    class="primary-button"
+                >
+                    Get Started Free
+                </a>
+
+
+                <a
+                    href="{{ url_for('login') }}"
+                    class="secondary-button"
+                >
+                    Login
+                </a>
+
+            </div>
+
+
+            <div class="hero-note">
+
+                ✓ Easy contact management
+
+                <span>✓</span>
+
+                ✓ Campaign management
+
+                <span>✓</span>
+
+                ✓ Simple analytics
+
+            </div>
+
+        </div>
+
+
+        <!-- HERO VISUAL -->
+
+        <div class="hero-dashboard-card">
+
+            <div class="mini-header">
+
+                <strong>
+                    EmailFlow
+                </strong>
+
+                <span>
+                    ● Live
+                </span>
+
+            </div>
+
+
+            <div class="mini-card">
+
+                <div>
+                    <small>
+                        Total Contacts
+                    </small>
+
+                    <strong>
+                        1,248
+                    </strong>
+                </div>
+
+                <div class="mini-icon">
+                    👥
+                </div>
+
+            </div>
+
+
+            <div class="mini-card">
+
+                <div>
+
+                    <small>
+                        Emails Sent
+                    </small>
+
+                    <strong>
+                        8,492
+                    </strong>
+
+                </div>
+
+                <div class="mini-icon green">
+                    ✉
+                </div>
+
+            </div>
+
+
+            <div class="mini-card">
+
+                <div>
+
+                    <small>
+                        Delivery Rate
+                    </small>
+
+                    <strong>
+                        98.4%
+                    </strong>
+
+                </div>
+
+                <div class="mini-icon purple">
+                    ↗
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- ================= FEATURES ================= -->
+
+<section
+    class="features-section"
+    id="features"
+>
+
+    <div class="public-container">
+
+        <div class="section-heading">
+
+            <span>
+                FEATURES
+            </span>
+
+            <h2>
+                Everything you need to manage email campaigns
+            </h2>
+
+            <p>
+                A simple platform designed to help you
+                manage your audience and communicate
+                effectively.
+            </p>
+
+        </div>
+
+
+        <div class="features-grid">
+
+
+            <div class="feature-card">
+
+                <div class="feature-icon">
+                    👥
+                </div>
+
+                <h3>
+                    Contact Management
+                </h3>
+
+                <p>
+                    Organize your contacts and keep
+                    your audience in one place.
+                </p>
+
+            </div>
+
+
+            <div class="feature-card">
+
+                <div class="feature-icon purple-bg">
+                    ✈
+                </div>
+
+                <h3>
+                    Email Campaigns
+                </h3>
+
+                <p>
+                    Create and manage email campaigns
+                    from a simple dashboard.
+                </p>
+
+            </div>
+
+
+            <div class="feature-card">
+
+                <div class="feature-icon green-bg">
+                    📊
+                </div>
+
+                <h3>
+                    Campaign Tracking
+                </h3>
+
+                <p>
+                    Keep track of campaign activity
+                    and delivery results.
+                </p>
+
+            </div>
+
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- ================= ABOUT ================= -->
+
+<section
+    class="about-section"
+    id="about"
+>
+
+    <div class="public-container about-grid">
+
+
+        <div>
+
+            <span class="section-label">
+                BUILT FOR GROWTH
+            </span>
+
+            <h2>
+                Turn your audience into relationships.
+            </h2>
+
+            <p>
+                EmailFlow is being built to make email
+                marketing easier for businesses,
+                creators and growing teams.
+            </p>
+
+        </div>
+
+
+        <div class="about-card">
+
+            <div class="about-stat">
+                <strong>
+                    Simple
+                </strong>
+
+                <span>
+                    Easy to use
+                </span>
+            </div>
+
+
+            <div class="about-stat">
+                <strong>
+                    Fast
+                </strong>
+
+                <span>
+                    Manage campaigns quickly
+                </span>
+            </div>
+
+
+            <div class="about-stat">
+                <strong>
+                    Flexible
+                </strong>
+
+                <span>
+                    Built to grow with you
+                </span>
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- ================= CTA ================= -->
+
+<section class="cta-section">
+
+    <div class="public-container">
+
+        <h2>
+            Ready to start building your audience?
+        </h2>
+
+        <p>
+            Create your EmailFlow account and
+            start managing your email campaigns.
+        </p>
+
+        <a
+            href="{{ url_for('register') }}"
+            class="primary-button"
+        >
+            Create Your Account
+        </a>
+
+    </div>
+
+</section>
+
+
+<!-- ================= FOOTER ================= -->
+
+<footer class="public-footer">
+
+    <div class="public-container footer-content">
+
+        <div>
+
+            <strong>
+                ✉ EmailFlow
+            </strong>
+
+            <p>
+                Email Marketing Platform
+            </p>
+
+        </div>
+
+
+        <div>
+
+            <a href="{{ url_for('home') }}">
+                Home
+            </a>
+
+            <a href="{{ url_for('login') }}">
+                Login
+            </a>
+
+            <a href="{{ url_for('register') }}">
+                Register
+            </a>
+
+        </div>
+
+    </div>
+
+</footer>
+
+
+{% endblock %}

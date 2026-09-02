@@ -1,0 +1,103 @@
+{% extends "dashboard_base.html" %}
+
+{% block title %}
+Add Contact - EmailFlow
+{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+
+    <div>
+
+        <div class="page-eyebrow">
+            AUDIENCE
+        </div>
+
+        <h1 class="page-title">
+            Add Contact
+        </h1>
+
+        <p class="page-subtitle">
+            Add a new person to your EmailFlow audience.
+        </p>
+
+    </div>
+
+</div>
+
+
+<div class="form-card">
+
+    <div class="form-card-header">
+
+        <h2>
+            Contact information
+        </h2>
+
+        <p>
+            Enter the contact's details below.
+        </p>
+
+    </div>
+
+
+    <form method="POST">
+
+        <div class="form-group">
+
+            <label for="name">
+                Name
+            </label>
+
+            <input
+                type="text"
+                id="name"
+                name="name"
+                placeholder="John Doe"
+                required>
+
+        </div>
+
+
+        <div class="form-group">
+
+            <label for="email">
+                Email address
+            </label>
+
+            <input
+                type="email"
+                id="email"
+                name="email"
+                placeholder="john@example.com"
+                required>
+
+        </div>
+
+
+        <div class="form-actions">
+
+            <a
+                href="{{ url_for('contacts') }}"
+                class="secondary-button">
+
+                Cancel
+
+            </a>
+
+            <button
+                type="submit"
+                class="primary-button">
+
+                Add Contact
+
+            </button>
+
+        </div>
+
+    </form>
+
+</div>
+
+{% endblock %}

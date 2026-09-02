@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0">
+
+    <title>
+        {{ landing_page.headline }} - EmailFlow
+    </title>
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, Helvetica, sans-serif;
+            background: #f5f7ff;
+            color: #111827;
+        }
+
+        .preview-bar {
+            height: 60px;
+            background: #111827;
+            color: white;
+
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+
+            padding: 0 25px;
+
+            font-size: 14px;
+        }
+
+        .preview-label {
+            font-weight: 600;
+        }
+
+        .back-button {
+            text-decoration: none;
+            color: white;
+
+            background: rgba(255,255,255,0.12);
+
+            padding: 9px 15px;
+
+            border-radius: 8px;
+
+            font-weight: 600;
+        }
+
+        .hero {
+
+            min-height: calc(100vh - 60px);
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: center;
+
+            padding: 70px 25px;
+
+            background:
+                radial-gradient(
+                    circle at top left,
+                    #e9e7ff,
+                    transparent 40%
+                ),
+                radial-gradient(
+                    circle at bottom right,
+                    #ddd9ff,
+                    transparent 40%
+                ),
+                #f8fafc;
+        }
+
+        .hero-content {
+
+            width: 100%;
+
+            max-width: 850px;
+
+            text-align: center;
+
+            background: rgba(255,255,255,0.86);
+
+            backdrop-filter: blur(10px);
+
+            padding: 70px 55px;
+
+            border-radius: 24px;
+
+            box-shadow:
+                0 25px 70px rgba(17, 24, 39, 0.10);
+
+            border: 1px solid rgba(255,255,255,0.8);
+        }
+
+        .brand {
+
+            display: inline-block;
+
+            color: #635bff;
+
+            background: #ede9fe;
+
+            padding: 8px 16px;
+
+            border-radius: 30px;
+
+            font-size: 13px;
+
+            font-weight: 700;
+
+            margin-bottom: 25px;
+        }
+
+        h1 {
+
+            font-size: clamp(38px, 6vw, 68px);
+
+            line-height: 1.05;
+
+            letter-spacing: -2px;
+
+            margin: 0 auto 22px;
+
+            max-width: 750px;
+
+            color: #0f172a;
+        }
+
+        .subheadline {
+
+            font-size: 22px;
+
+            line-height: 1.5;
+
+            color: #475569;
+
+            max-width: 650px;
+
+            margin: 0 auto 20px;
+        }
+
+        .description {
+
+            max-width: 620px;
+
+            margin: 0 auto 35px;
+
+            font-size: 16px;
+
+            line-height: 1.8;
+
+            color: #64748b;
+
+            white-space: pre-line;
+        }
+
+        .cta {
+
+            display: inline-block;
+
+            background: #635bff;
+
+            color: white;
+
+            text-decoration: none;
+
+            padding: 15px 30px;
+
+            border-radius: 10px;
+
+            font-size: 16px;
+
+            font-weight: 700;
+
+            box-shadow:
+                0 10px 25px rgba(99,91,255,0.25);
+
+            transition: transform 0.2s ease,
+                        box-shadow 0.2s ease;
+        }
+
+        .cta:hover {
+
+            transform: translateY(-2px);
+
+            box-shadow:
+                0 14px 30px rgba(99,91,255,0.32);
+        }
+
+        .footer {
+
+            margin-top: 45px;
+
+            color: #94a3b8;
+
+            font-size: 13px;
+        }
+
+        @media (max-width: 650px) {
+
+            .hero-content {
+
+                padding: 50px 25px;
+
+            }
+
+            h1 {
+
+                letter-spacing: -1px;
+
+            }
+
+            .subheadline {
+
+                font-size: 18px;
+
+            }
+
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+<div class="preview-bar">
+
+    <div class="preview-label">
+        EmailFlow — Landing Page Preview
+    </div>
+
+    <a
+        href="{{ url_for('edit_landing_page', landing_page_id=landing_page.id) }}"
+        class="back-button">
+        ← Edit Page
+    </a>
+
+</div>
+
+
+<section class="hero">
+
+    <div class="hero-content">
+
+        <div class="brand">
+            EmailFlow
+        </div>
+
+
+        <h1>
+            {{ landing_page.headline }}
+        </h1>
+
+
+        {% if landing_page.subheadline %}
+
+            <div class="subheadline">
+                {{ landing_page.subheadline }}
+            </div>
+
+        {% endif %}
+
+
+        {% if landing_page.description %}
+
+            <div class="description">
+                {{ landing_page.description }}
+            </div>
+
+        {% endif %}
+
+
+        <a
+            href="{{ landing_page.button_url or '#' }}"
+            class="cta">
+
+            {{ landing_page.button_text }}
+
+        </a>
+
+
+        <div class="footer">
+
+            Built with EmailFlow
+
+        </div>
+
+    </div>
+
+</section>
+
+
+</body>
+
+</html>

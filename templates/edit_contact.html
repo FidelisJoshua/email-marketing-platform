@@ -1,54 +1,86 @@
-<!DOCTYPE html>
-<html>
+{% extends "base.html" %}
 
-<head>
+{% block title %}
+Edit Contact - EmailFlow
+{% endblock %}
 
-    <title>Edit Contact</title>
+{% block content %}
 
-</head>
+<div class="page-header">
 
-<body>
+    <div>
 
-    <h1>Edit Contact</h1>
+        <div class="page-eyebrow">
+            CONTACT
+        </div>
 
-    <hr>
+        <h1 class="page-title">
+            Edit Contact
+        </h1>
+
+        <p class="page-subtitle">
+            Update this contact's information.
+        </p>
+
+    </div>
+
+    <a
+        href="{{ url_for('contacts') }}"
+        class="btn-secondary-custom">
+
+        ← Back to Contacts
+
+    </a>
+
+</div>
+
+
+<div class="form-card">
 
     <form method="POST">
 
-        <label>Name</label>
-        <br>
+        <div class="mb-4">
 
-        <input
-            type="text"
-            name="name"
-            value="{{ contact.name }}"
-            required>
+            <label class="form-label-custom">
+                Name
+            </label>
 
-        <br><br>
+            <input
+                type="text"
+                name="name"
+                class="form-control-custom"
+                value="{{ contact.name }}"
+                required>
 
-        <label>Email</label>
-        <br>
+        </div>
 
-        <input
-            type="email"
-            name="email"
-            value="{{ contact.email }}"
-            required>
 
-        <br><br>
+        <div class="mb-4">
 
-        <button type="submit">
-            Update Contact
+            <label class="form-label-custom">
+                Email
+            </label>
+
+            <input
+                type="email"
+                name="email"
+                class="form-control-custom"
+                value="{{ contact.email }}"
+                required>
+
+        </div>
+
+
+        <button
+            type="submit"
+            class="btn-primary-custom">
+
+            Save Changes
+
         </button>
 
     </form>
 
-    <br>
+</div>
 
-    <a href="{{ url_for('contacts') }}">
-        ← Back to Contacts
-    </a>
-
-</body>
-
-</html>
+{% endblock %}

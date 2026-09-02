@@ -1,0 +1,216 @@
+{% extends "dashboard_base.html" %}
+
+{% block title %}
+Import Contacts - EmailFlow
+{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+
+    <div>
+
+        <div class="page-eyebrow">
+            AUDIENCE
+        </div>
+
+        <h1 class="page-title">
+            Import Contacts
+        </h1>
+
+        <p class="page-subtitle">
+            Add multiple contacts to your audience using a CSV file.
+        </p>
+
+    </div>
+
+</div>
+
+
+<div class="import-grid">
+
+    <!-- UPLOAD CARD -->
+
+    <div class="form-card">
+
+        <div class="form-card-header">
+
+            <div class="import-icon">
+                ↑
+            </div>
+
+            <h2>
+                Upload CSV
+            </h2>
+
+            <p>
+                Select a CSV file containing your contacts.
+            </p>
+
+        </div>
+
+
+        <form
+            method="POST"
+            action="{{ url_for('import_csv') }}"
+            enctype="multipart/form-data">
+
+            <div class="upload-area">
+
+                <div class="upload-icon">
+                    📄
+                </div>
+
+                <h3>
+                    Choose a CSV file
+                </h3>
+
+                <p>
+                    Upload your contact list to add multiple
+                    contacts at once.
+                </p>
+
+                <input
+                    type="file"
+                    name="csv_file"
+                    accept=".csv"
+                    required>
+
+            </div>
+
+
+            <div class="csv-format">
+
+                <strong>
+                    Expected columns
+                </strong>
+
+                <p>
+                    Your CSV should contain:
+                </p>
+
+                <div class="column-tags">
+
+                    <span>First name</span>
+
+                    <span>Last name</span>
+
+                    <span>Email</span>
+
+                </div>
+
+            </div>
+
+
+            <div class="form-actions">
+
+                <a
+                    href="{{ url_for('contacts') }}"
+                    class="secondary-button">
+
+                    Cancel
+
+                </a>
+
+                <button
+                    type="submit"
+                    class="primary-button">
+
+                    Import Contacts
+
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+
+    <!-- INFORMATION CARD -->
+
+    <div class="import-info-card">
+
+        <div class="section-label">
+            HOW IT WORKS
+        </div>
+
+        <h2>
+            Import your audience
+        </h2>
+
+        <p>
+            Upload your existing contact list and EmailFlow
+            will add the contacts to your audience.
+        </p>
+
+
+        <div class="import-step">
+
+            <div class="step-number">
+                1
+            </div>
+
+            <div>
+
+                <strong>
+                    Upload your CSV
+                </strong>
+
+                <p>
+                    Select the CSV file from your computer.
+                </p>
+
+            </div>
+
+        </div>
+
+
+        <div class="import-step">
+
+            <div class="step-number">
+                2
+            </div>
+
+            <div>
+
+                <strong>
+                    We check your contacts
+                </strong>
+
+                <p>
+                    Existing contacts are skipped to prevent
+                    duplicates.
+                </p>
+
+            </div>
+
+        </div>
+
+
+        <div class="import-step">
+
+            <div class="step-number">
+                3
+            </div>
+
+            <div>
+
+                <strong>
+                    Your audience grows
+                </strong>
+
+                <p>
+                    New contacts are added to your EmailFlow
+                    audience.
+                </p>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

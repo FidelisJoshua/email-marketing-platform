@@ -1,101 +1,343 @@
-{% extends "base.html" %}
+{% extends "dashboard_base.html" %}
+
+{% block title %}
+Dashboard - EmailFlow
+{% endblock %}
 
 {% block content %}
 
-<div class="row">
+<div class="dashboard-header">
 
-    <div class="col-md-12">
+    <div>
 
-        <div class="card shadow">
+        <div class="page-eyebrow">
+            OVERVIEW
+        </div>
 
-            <div class="card-body">
+        <h1 class="dashboard-title">
+            Welcome back 👋
+        </h1>
 
-                <h2>
-                    Welcome, {{ name }} 👋
-                </h2>
+        <p class="dashboard-subtitle">
+            Here's what's happening with your email marketing.
+        </p>
 
-                <p class="text-muted">
-                    This is your Email Marketing Dashboard.
-                </p>
+    </div>
 
+    <a
+        href="{{ url_for('campaigns') }}"
+        class="btn-primary-custom">
+
+        + Create Campaign
+
+    </a>
+
+</div>
+
+
+<div class="stats-grid">
+
+    <div class="stat-card">
+
+        <div class="stat-top">
+
+            <div class="stat-label">
+                Total Contacts
             </div>
 
+            <div class="stat-icon">
+                👥
+            </div>
+
+        </div>
+
+        <div class="stat-number">
+            {{ total_contacts }}
+        </div>
+
+        <div class="stat-footer">
+            <span class="text-success">
+                ↑ Growing
+            </span>
+            &nbsp; Your audience
+        </div>
+
+    </div>
+
+
+    <div class="stat-card">
+
+        <div class="stat-top">
+
+            <div class="stat-label">
+                Campaigns
+            </div>
+
+            <div class="stat-icon">
+                ➤
+            </div>
+
+        </div>
+
+        <div class="stat-number">
+            {{ total_campaigns }}
+        </div>
+
+        <div class="stat-footer">
+            <span class="text-success">
+                ✓ Active
+            </span>
+            &nbsp; Campaigns
+        </div>
+
+    </div>
+
+
+    <div class="stat-card">
+
+        <div class="stat-top">
+
+            <div class="stat-label">
+                Emails Sent
+            </div>
+
+            <div class="stat-icon">
+                ✉
+            </div>
+
+        </div>
+
+        <div class="stat-number">
+            {{ total_sent }}
+        </div>
+
+        <div class="stat-footer">
+            <span class="text-success">
+                ↗ Delivery
+            </span>
+            &nbsp; Total sent
+        </div>
+
+    </div>
+
+
+    <div class="stat-card">
+
+        <div class="stat-top">
+
+            <div class="stat-label">
+                Failed Emails
+            </div>
+
+            <div class="stat-icon">
+                ⚠
+            </div>
+
+        </div>
+
+        <div class="stat-number">
+            {{ total_failed }}
+        </div>
+
+        <div class="stat-footer">
+            <span class="text-warning">
+                ⓘ Monitor
+            </span>
+            &nbsp; Delivery issues
         </div>
 
     </div>
 
 </div>
 
-<br>
 
-<div class="row">
+<div class="dashboard-grid">
 
-    <div class="col-md-4">
+    <div class="dashboard-card">
 
-        <div class="card text-center shadow">
+        <div class="dashboard-card-header">
 
-            <div class="card-body">
+            <div>
 
-                <h3>👥 Contacts</h3>
+                <div class="dashboard-card-title">
+                    Recent Campaigns
+                </div>
 
-                <h1>{{ total_contacts }}</h1>
+                <div class="dashboard-card-subtitle">
+                    Your latest email campaigns
+                </div>
 
             </div>
 
+            <a
+                href="{{ url_for('campaigns') }}"
+                class="view-all">
+
+                View all →
+
+            </a>
+
         </div>
+
+
+        {% if campaigns %}
+
+            {% for campaign in campaigns %}
+
+                <div class="quick-action">
+
+                    <div class="quick-icon">
+                        ➤
+                    </div>
+
+                    <div>
+
+                        <div class="quick-title">
+                            {{ campaign.subject }}
+                        </div>
+
+                        <div class="quick-subtitle">
+                            {{ campaign.status }}
+                        </div>
+
+                    </div>
+
+                </div>
+
+            {% endfor %}
+
+        {% else %}
+
+            <div class="empty-state">
+
+                <div class="empty-icon">
+                    ➤
+                </div>
+
+                <div class="empty-title">
+                    No campaigns yet
+                </div>
+
+                <div class="empty-text">
+                    Create your first email campaign to get started.
+                </div>
+
+                <a
+                    href="{{ url_for('campaigns') }}"
+                    class="btn-primary-custom">
+
+                    Create Campaign
+
+                </a>
+
+            </div>
+
+        {% endif %}
 
     </div>
 
-    <div class="col-md-4">
 
-        <div class="card text-center shadow">
+    <div class="dashboard-card">
 
-            <div class="card-body">
+        <div class="dashboard-card-header">
 
-                <h3>📧 Campaigns</h3>
+            <div>
 
-                <h1>0</h1>
+                <div class="dashboard-card-title">
+                    Quick Actions
+                </div>
 
-            </div>
-
-        </div>
-
-    </div>
-
-    <div class="col-md-4">
-
-        <div class="card text-center shadow">
-
-            <div class="card-body">
-
-                <h3>📨 Emails Sent</h3>
-
-                <h1>0</h1>
+                <div class="dashboard-card-subtitle">
+                    Manage your platform
+                </div>
 
             </div>
 
         </div>
+
+
+        <a
+            href="{{ url_for('contacts') }}"
+            class="quick-action">
+
+            <div class="quick-icon">
+                👤
+            </div>
+
+            <div>
+
+                <div class="quick-title">
+                    Manage Contacts
+                </div>
+
+                <div class="quick-subtitle">
+                    Add and organize contacts
+                </div>
+
+            </div>
+
+            <div class="quick-arrow">
+                ›
+            </div>
+
+        </a>
+
+
+        <a
+            href="{{ url_for('campaigns') }}"
+            class="quick-action">
+
+            <div class="quick-icon">
+                ➤
+            </div>
+
+            <div>
+
+                <div class="quick-title">
+                    Campaigns
+                </div>
+
+                <div class="quick-subtitle">
+                    Create and send campaigns
+                </div>
+
+            </div>
+
+            <div class="quick-arrow">
+                ›
+            </div>
+
+        </a>
+
+
+        <a
+            href="{{ url_for('contacts') }}"
+            class="quick-action">
+
+            <div class="quick-icon">
+                ↑
+            </div>
+
+            <div>
+
+                <div class="quick-title">
+                    Import Contacts
+                </div>
+
+                <div class="quick-subtitle">
+                    Grow your audience
+                </div>
+
+            </div>
+
+            <div class="quick-arrow">
+                ›
+            </div>
+
+        </a>
 
     </div>
 
 </div>
-
-<br>
-
-<a
-    href="{{ url_for('contacts') }}"
-    class="btn btn-primary">
-
-    Manage Contacts
-
-</a>
-
-<a
-    href="{{ url_for('campaigns') }}"
-    class="btn btn-success">
-
-    Campaigns
-
-</a>
 
 {% endblock %}

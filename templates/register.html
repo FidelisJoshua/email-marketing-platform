@@ -1,39 +1,106 @@
-<!DOCTYPE html>
-<html>
+{% extends "base.html" %}
 
-<head>
-    <title>Create Account</title>
-</head>
+{% block title %}
+Create Account | EmailFlow
+{% endblock %}
 
-<body>
 
-    <h1>Create Your Account</h1>
+{% block content %}
 
-    <form method="POST">
+<div class="auth-page">
 
-        <label>Full Name</label>
-        <br>
-        <input type="text" name="name" placeholder="Enter your name">
-        <br><br>
+    <div class="auth-card">
 
-        <label>Email</label>
-        <br>
-        <input type="email" name="email" placeholder="Enter your email">
-        <br><br>
+        <div class="auth-icon">
+            ✉
+        </div>
 
-        <label>Password</label>
-        <br>
-        <input type="password" name="password" placeholder="Enter your password">
-        <br><br>
+        <h1>
+            Create your account
+        </h1>
 
-        <button type="submit">Create Account</button>
+        <p class="auth-subtitle">
+            Start building and sending email campaigns.
+        </p>
 
-    </form>
 
-    <br>
+        <form method="POST">
 
-    <a href="/">Back Home</a>
 
-</body>
+            <div class="form-group">
 
-</html>
+                <label for="name">
+                    Full name
+                </label>
+
+                <input
+                    type="text"
+                    id="name"
+                    name="name"
+                    placeholder="Your name"
+                    required
+                >
+
+            </div>
+
+
+            <div class="form-group">
+
+                <label for="email">
+                    Email address
+                </label>
+
+                <input
+                    type="email"
+                    id="email"
+                    name="email"
+                    placeholder="you@example.com"
+                    required
+                >
+
+            </div>
+
+
+            <div class="form-group">
+
+                <label for="password">
+                    Password
+                </label>
+
+                <input
+                    type="password"
+                    id="password"
+                    name="password"
+                    placeholder="Create a password"
+                    required
+                >
+
+            </div>
+
+
+            <button
+                type="submit"
+                class="primary-button full-width"
+            >
+                Create Account
+            </button>
+
+
+        </form>
+
+
+        <p class="auth-footer">
+
+            Already have an account?
+
+            <a href="{{ url_for('login') }}">
+                Login
+            </a>
+
+        </p>
+
+    </div>
+
+</div>
+
+{% endblock %}

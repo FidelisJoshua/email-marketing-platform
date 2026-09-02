@@ -1,0 +1,173 @@
+{% extends "dashboard_base.html" %}
+
+{% block title %}
+Landing Pages - EmailFlow
+{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+
+    <div>
+        <h1>Landing Pages</h1>
+
+        <p>
+            Create and manage your marketing landing pages.
+        </p>
+    </div>
+
+    <div>
+
+        <a
+            href="{{ url_for('create_landing_page') }}"
+            class="btn btn-primary"
+        >
+            + Create Landing Page
+        </a>
+
+    </div>
+
+</div>
+
+
+<!-- =====================================================
+     LANDING PAGE LIST
+===================================================== -->
+
+<div class="card">
+
+    <div class="card-header">
+
+        <h2>
+            Your Landing Pages
+        </h2>
+
+    </div>
+
+
+    {% if landing_pages %}
+
+        <div class="table-container">
+
+            <table>
+
+                <thead>
+
+                    <tr>
+
+                        <th>
+                            Name
+                        </th>
+
+                        <th>
+                            Headline
+                        </th>
+
+                        <th>
+                            Created
+                        </th>
+
+                        <th>
+                            Actions
+                        </th>
+
+                    </tr>
+
+                </thead>
+
+
+                <tbody>
+
+                    {% for page in landing_pages %}
+
+                    <tr>
+
+                        <td>
+
+                            <strong>
+                                {{ page.name }}
+                            </strong>
+
+                        </td>
+
+
+                        <td>
+
+                            {{ page.headline }}
+
+                        </td>
+
+
+                        <td>
+
+                            {{ page.created_at.strftime("%Y-%m-%d") }}
+
+                        </td>
+
+
+                        <td>
+
+                            <div style="display: flex; gap: 8px;">
+
+                                <!-- Preview -->
+
+                                <a
+                                    href="{{ url_for('preview_landing_page', landing_page_id=page.id) }}"
+                                    class="btn btn-secondary"
+                                >
+                                    Preview
+                                </a>
+
+
+                                <!-- Edit -->
+
+                                <a
+                                    href="{{ url_for('edit_landing_page', landing_page_id=page.id) }}"
+                                    class="btn btn-primary"
+                                >
+                                    Edit
+                                </a>
+
+                            </div>
+
+                        </td>
+
+                    </tr>
+
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    {% else %}
+
+        <div class="empty-state">
+
+            <h3>
+                No landing pages yet
+            </h3>
+
+            <p>
+                Create your first landing page to start
+                collecting subscribers.
+            </p>
+
+            <br>
+
+            <a
+                href="{{ url_for('create_landing_page') }}"
+                class="btn btn-primary"
+            >
+                Create Your First Landing Page
+            </a>
+
+        </div>
+
+    {% endif %}
+
+</div>
+
+{% endblock %}

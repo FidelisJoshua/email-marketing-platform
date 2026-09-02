@@ -1,0 +1,626 @@
+{% extends "dashboard_base.html" %}
+
+{% block title %}
+Forms & Landing Pages - EmailFlow
+{% endblock %}
+
+{% block content %}
+
+<style>
+
+    /* =========================
+       PAGE HEADER
+    ========================= */
+
+    .forms-page {
+        width: 100%;
+    }
+
+    .forms-page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 25px;
+        margin-bottom: 30px;
+    }
+
+    .forms-page-header h1 {
+        margin: 0;
+        font-size: 32px;
+        color: #111827;
+    }
+
+    .forms-page-header p {
+        margin: 8px 0 0;
+        color: #6b7280;
+        font-size: 15px;
+    }
+
+    .header-actions {
+        display: flex;
+        gap: 12px;
+        flex-shrink: 0;
+    }
+
+
+    /* =========================
+       BUTTONS
+    ========================= */
+
+    .forms-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 10px 17px;
+        border-radius: 8px;
+        text-decoration: none;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        border: none;
+        white-space: nowrap;
+        transition: 0.2s ease;
+    }
+
+    .forms-btn-primary {
+        background: #5b4bdb;
+        color: white !important;
+    }
+
+    .forms-btn-primary:hover {
+        background: #4939c7;
+        transform: translateY(-1px);
+    }
+
+    .forms-btn-secondary {
+        background: #eef0f6;
+        color: #374151 !important;
+    }
+
+    .forms-btn-secondary:hover {
+        background: #e1e4ec;
+    }
+
+
+    /* =========================
+       SECTION CARD
+    ========================= */
+
+    .forms-section {
+        background: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        margin-bottom: 25px;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+    }
+
+    .forms-section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 20px;
+        padding: 22px 24px;
+        border-bottom: 1px solid #e5e7eb;
+    }
+
+    .forms-section-title h2 {
+        margin: 0;
+        font-size: 20px;
+        color: #111827;
+    }
+
+    .forms-section-title p {
+        margin: 5px 0 0;
+        color: #6b7280;
+        font-size: 14px;
+    }
+
+
+    /* =========================
+       TABLE
+    ========================= */
+
+    .forms-table-wrapper {
+        width: 100%;
+        overflow-x: auto;
+    }
+
+    .forms-table {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+    }
+
+    .forms-table th {
+        background: #f8fafc;
+        color: #6b7280;
+        font-size: 12px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        text-align: left;
+        padding: 14px 24px;
+        border-bottom: 1px solid #e5e7eb;
+    }
+
+    .forms-table td {
+        padding: 17px 24px;
+        border-bottom: 1px solid #f0f1f3;
+        color: #374151;
+        font-size: 14px;
+        vertical-align: middle;
+        word-wrap: break-word;
+    }
+
+    .forms-table tr:last-child td {
+        border-bottom: none;
+    }
+
+    .forms-table tr:hover td {
+        background: #fafafa;
+    }
+
+    .forms-table th:nth-child(1),
+    .forms-table td:nth-child(1) {
+        width: 24%;
+    }
+
+    .forms-table th:nth-child(2),
+    .forms-table td:nth-child(2) {
+        width: 42%;
+    }
+
+    .forms-table th:nth-child(3),
+    .forms-table td:nth-child(3) {
+        width: 15%;
+    }
+
+    .forms-table th:nth-child(4),
+    .forms-table td:nth-child(4) {
+        width: 19%;
+    }
+
+    .form-name {
+        font-weight: 700;
+        color: #111827;
+    }
+
+    .form-headline {
+        color: #4b5563;
+        line-height: 1.5;
+    }
+
+    .button-preview {
+        display: inline-block;
+        background: #ede9fe;
+        color: #5b4bdb;
+        padding: 5px 10px;
+        border-radius: 6px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    .created-date {
+        color: #6b7280;
+        white-space: nowrap;
+    }
+
+
+    /* =========================
+       LANDING PAGE ACTIONS
+    ========================= */
+
+    .action-buttons {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .action-buttons .forms-btn {
+        padding: 8px 13px;
+        font-size: 13px;
+    }
+
+
+    /* =========================
+       EMPTY STATE
+    ========================= */
+
+    .forms-empty {
+        padding: 55px 25px;
+        text-align: center;
+    }
+
+    .empty-icon {
+        width: 55px;
+        height: 55px;
+        margin: 0 auto 18px;
+        border-radius: 50%;
+        background: #f0efff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+    }
+
+    .forms-empty h3 {
+        margin: 0 0 8px;
+        font-size: 18px;
+        color: #111827;
+    }
+
+    .forms-empty p {
+        margin: 0 0 20px;
+        color: #6b7280;
+        font-size: 14px;
+    }
+
+
+    /* =========================
+       RESPONSIVE
+    ========================= */
+
+    @media (max-width: 850px) {
+
+        .forms-page-header {
+            flex-direction: column;
+        }
+
+        .header-actions {
+            width: 100%;
+        }
+
+        .header-actions .forms-btn {
+            flex: 1;
+        }
+
+        .forms-section-header {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+    }
+
+    @media (max-width: 600px) {
+
+        .forms-page-header h1 {
+            font-size: 26px;
+        }
+
+        .header-actions {
+            flex-direction: column;
+        }
+
+        .header-actions .forms-btn {
+            width: 100%;
+        }
+
+    }
+
+</style>
+
+
+<div class="forms-page">
+
+    <!-- =========================
+         PAGE HEADER
+    ========================== -->
+
+    <div class="forms-page-header">
+
+        <div>
+            <h1>Forms &amp; Landing Pages</h1>
+
+            <p>
+                Create forms and landing pages to grow your audience
+                and collect new subscribers.
+            </p>
+        </div>
+
+        <div class="header-actions">
+
+            <a
+                href="{{ url_for('create_form') }}"
+                class="forms-btn forms-btn-primary"
+            >
+                + Create Form
+            </a>
+
+            <a
+                href="{{ url_for('create_landing_page') }}"
+                class="forms-btn forms-btn-primary"
+            >
+                + Create Landing Page
+            </a>
+
+        </div>
+
+    </div>
+
+
+    <!-- =========================
+         FORMS SECTION
+    ========================== -->
+
+    <div class="forms-section">
+
+        <div class="forms-section-header">
+
+            <div class="forms-section-title">
+
+                <h2>Your Forms</h2>
+
+                <p>
+                    Forms you have created for collecting subscribers.
+                </p>
+
+            </div>
+
+            <a
+                href="{{ url_for('create_form') }}"
+                class="forms-btn forms-btn-primary"
+            >
+                + Create Form
+            </a>
+
+        </div>
+
+
+        {% if forms %}
+
+            <div class="forms-table-wrapper">
+
+                <table class="forms-table">
+
+                    <thead>
+
+                        <tr>
+
+                            <th>Name</th>
+                            <th>Headline</th>
+                            <th>Button</th>
+                            <th>Created</th>
+                            <th>Actions</th>
+
+                        </tr>
+
+                    </thead>
+
+                    <tbody>
+
+                        {% for form in forms %}
+
+                        <tr>
+
+                            <td>
+                                <div class="form-name">
+                                    {{ form.name }}
+                                </div>
+                            </td>
+
+                            <td>
+                                <div class="form-headline">
+                                    {{ form.headline }}
+                                </div>
+                            </td>
+
+                            <td>
+                                <span class="button-preview">
+                                    {{ form.button_text }}
+                                </span>
+                            </td>
+
+                            <td>
+                                <span class="created-date">
+                                    {{ form.created_at.strftime("%b %d, %Y") }}
+                                </span>
+                            </td>
+
+                            <td>
+
+                                <div class="action-buttons">
+
+                                    <a
+                                        href="#"
+                                        class="forms-btn forms-btn-secondary"
+                                    >
+                                        Preview
+                                    </a>
+
+                                    <form
+                                        method="POST"
+                                        action="{{ url_for('delete_form', form_id=form.id) }}"
+                                        onsubmit="return confirm('Are you sure you want to delete this form?');"
+                                        style="display: inline;"
+                                    >
+
+                                        <button
+                                            type="submit"
+                                            class="forms-btn forms-btn-danger"
+                                        >
+                                            Delete
+                                        </button>
+
+                                    </form>
+
+                                </div>
+
+                            </td>
+
+                        </tr>
+
+                        {% endfor %}
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        {% else %}
+
+            <div class="forms-empty">
+
+                <div class="empty-icon">
+                    ✉
+                </div>
+
+                <h3>No forms yet</h3>
+
+                <p>
+                    Create your first form to start collecting subscribers.
+                </p>
+
+                <a
+                    href="{{ url_for('create_form') }}"
+                    class="forms-btn forms-btn-primary"
+                >
+                    Create Your First Form
+                </a>
+
+            </div>
+
+        {% endif %}
+
+    </div>
+
+
+    <!-- =========================
+         LANDING PAGES SECTION
+    ========================== -->
+
+    <div class="forms-section">
+
+        <div class="forms-section-header">
+
+            <div class="forms-section-title">
+
+                <h2>Your Landing Pages</h2>
+
+                <p>
+                    Create full marketing pages for your campaigns and offers.
+                </p>
+
+            </div>
+
+            <a
+                href="{{ url_for('create_landing_page') }}"
+                class="forms-btn forms-btn-primary"
+            >
+                + Create Landing Page
+            </a>
+
+        </div>
+
+
+        {% if landing_pages %}
+
+            <div class="forms-table-wrapper">
+
+                <table class="forms-table">
+
+                    <thead>
+
+                        <tr>
+                            <th>Name</th>
+                            <th>Headline</th>
+                            <th>Created</th>
+                            <th>Actions</th>
+                        </tr>
+
+                    </thead>
+
+                    <tbody>
+
+                        {% for page in landing_pages %}
+
+                        <tr>
+
+                            <td>
+                                <div class="form-name">
+                                    {{ page.name }}
+                                </div>
+                            </td>
+
+                            <td>
+                                <div class="form-headline">
+                                    {{ page.headline }}
+                                </div>
+                            </td>
+
+                            <td>
+                                <span class="created-date">
+                                    {{ page.created_at.strftime("%b %d, %Y") }}
+                                </span>
+                            </td>
+
+                            <td>
+
+                                <div class="action-buttons">
+
+                                    <a
+                                        href="{{ url_for(
+                                            'preview_landing_page',
+                                            landing_page_id=page.id
+                                        ) }}"
+                                        class="forms-btn forms-btn-secondary"
+                                    >
+                                        Preview
+                                    </a>
+
+                                    <a
+                                        href="{{ url_for(
+                                            'edit_landing_page',
+                                            landing_page_id=page.id
+                                        ) }}"
+                                        class="forms-btn forms-btn-primary"
+                                    >
+                                        Edit
+                                    </a>
+
+                                </div>
+
+                            </td>
+
+                        </tr>
+
+                        {% endfor %}
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        {% else %}
+
+            <div class="forms-empty">
+
+                <div class="empty-icon">
+                    ◇
+                </div>
+
+                <h3>No landing pages yet</h3>
+
+                <p>
+                    Create your first landing page to start
+                    building your audience.
+                </p>
+
+                <a
+                    href="{{ url_for('create_landing_page') }}"
+                    class="forms-btn forms-btn-primary"
+                >
+                    Create Your First Landing Page
+                </a>
+
+            </div>
+
+        {% endif %}
+
+    </div>
+
+</div>
+
+{% endblock %}

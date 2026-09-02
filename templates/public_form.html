@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        {{ form.headline }} - EmailFlow
+    </title>
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='css/style.css') }}"
+    >
+
+</head>
+
+<body>
+
+<div class="public-form-page">
+
+    <div class="public-form-container">
+
+        <!-- ========================================= -->
+        <!-- FORM HEADER -->
+        <!-- ========================================= -->
+
+        <div class="public-form-header">
+
+            <div class="public-form-icon">
+                ✉
+            </div>
+
+            <h1>
+                {{ form.headline }}
+            </h1>
+
+            {% if form.description %}
+
+                <p>
+                    {{ form.description }}
+                </p>
+
+            {% endif %}
+
+        </div>
+
+
+        <!-- ========================================= -->
+        <!-- FLASH MESSAGES -->
+        <!-- ========================================= -->
+
+        {% with messages = get_flashed_messages(
+            with_categories=true
+        ) %}
+
+            {% if messages %}
+
+                {% for category, message in messages %}
+
+                    <div class="alert alert-{{ category }}">
+
+                        {{ message }}
+
+                    </div>
+
+                {% endfor %}
+
+            {% endif %}
+
+        {% endwith %}
+
+
+        <!-- ========================================= -->
+        <!-- SIGNUP FORM -->
+        <!-- ========================================= -->
+
+        <form
+            method="POST"
+            action="{{ url_for(
+                'public_form',
+                form_id=form.id
+            ) }}"
+            class="public-signup-form"
+        >
+
+            <!-- NAME -->
+
+            <div class="form-group">
+
+                <label for="name">
+                    Name
+                </label>
+
+                <input
+                    type="text"
+                    id="name"
+                    name="name"
+                    placeholder="Your name"
+                    required
+                >
+
+            </div>
+
+
+            <!-- EMAIL -->
+
+            <div class="form-group">
+
+                <label for="email">
+                    Email Address
+                </label>
+
+                <input
+                    type="email"
+                    id="email"
+                    name="email"
+                    placeholder="you@example.com"
+                    required
+                >
+
+            </div>
+
+
+            <!-- SUBMIT -->
+
+            <button
+                type="submit"
+                class="public-submit-button"
+            >
+                {{ form.button_text }}
+            </button>
+
+        </form>
+
+
+        <!-- ========================================= -->
+        <!-- FOOTER -->
+        <!-- ========================================= -->
+
+        <div class="public-form-footer">
+
+            <p>
+                Powered by
+                <strong>EmailFlow</strong>
+            </p>
+
+        </div>
+
+    </div>
+
+</div>
+
+</body>
+
+</html>

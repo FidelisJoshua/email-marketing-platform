@@ -1,144 +1,216 @@
-{% extends "base.html" %}
+{% extends "dashboard_base.html" %}
+
+{% block title %}
+Campaigns - EmailFlow
+{% endblock %}
 
 {% block content %}
 
-<div class="container mt-4">
+<!-- =====================================================
+     PAGE HEADER
+     ===================================================== -->
 
-    <!-- =====================================================
-         CAMPAIGN HEADER
-    ====================================================== -->
+<div class="page-header campaign-page-header">
 
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
 
-        <div>
-            <h1>Campaign</h1>
-
-            <p class="text-muted mb-0">
-                Manage and send your email campaign.
-            </p>
+        <div class="page-eyebrow">
+            EMAIL MARKETING
         </div>
 
-        <a
-            href="{{ url_for('campaigns') }}"
-            class="btn btn-secondary"
+        <h1 class="page-title">
+            Campaigns
+        </h1>
+
+        <p class="page-subtitle">
+            Create, manage and send email campaigns to your audience.
+        </p>
+
+    </div>
+
+</div>
+
+
+<!-- =====================================================
+     CREATE CAMPAIGN
+     ===================================================== -->
+
+<div class="campaign-layout">
+
+
+    <!-- LEFT: CAMPAIGN FORM -->
+
+    <div class="content-card campaign-editor">
+
+        <div class="card-heading">
+
+            <div class="card-heading-icon">
+                ✉
+            </div>
+
+            <div>
+
+                <h2>
+                    Create a campaign
+                </h2>
+
+                <p>
+                    Write an email and send it to your contacts.
+                </p>
+
+            </div>
+
+        </div>
+
+
+        <form
+            method="POST"
+            action="{{ url_for('campaigns') }}"
+            class="campaign-form"
         >
-            ← Back to Campaigns
-        </a>
+
+
+            <!-- SUBJECT -->
+
+            <div class="form-group">
+
+                <label for="subject">
+                    Email Subject
+                </label>
+
+                <input
+                    type="text"
+                    id="subject"
+                    name="subject"
+                    placeholder="Enter your email subject..."
+                    required
+                >
+
+            </div>
+
+
+            <!-- MESSAGE -->
+
+            <div class="form-group">
+
+                <label for="message">
+                    Email Message
+                </label>
+
+                <textarea
+                    id="message"
+                    name="message"
+                    rows="14"
+                    placeholder="Write your email message here..."
+                    required
+                ></textarea>
+
+                <div class="field-hint">
+                    Keep your message clear, useful and easy to read.
+                </div>
+
+            </div>
+
+
+            <!-- ACTIONS -->
+
+            <div class="campaign-form-actions">
+
+                <button
+                    type="submit"
+                    class="btn-primary-custom"
+                >
+                    + Save Campaign
+                </button>
+
+                <button
+                    type="reset"
+                    class="btn-secondary-custom"
+                >
+                    Clear
+                </button>
+
+            </div>
+
+        </form>
 
     </div>
 
 
-    <!-- =====================================================
-         CAMPAIGN INFORMATION
-    ====================================================== -->
 
-    <div class="card mb-4">
+    <!-- RIGHT: CAMPAIGN TIPS -->
 
-        <div class="card-body">
-
-            <h3 class="card-title">
-                {{ campaign.subject }}
-            </h3>
-
-            <hr>
-
-            <p>
-                <strong>Status:</strong>
-
-                {% if campaign.status == "Draft" %}
-
-                    <span class="badge bg-secondary">
-                        Draft
-                    </span>
-
-                {% elif campaign.status == "Sending" %}
-
-                    <span class="badge bg-warning text-dark">
-                        Sending
-                    </span>
-
-                {% elif campaign.status == "Sent" %}
-
-                    <span class="badge bg-success">
-                        Sent
-                    </span>
-
-                {% else %}
-
-                    <span class="badge bg-secondary">
-                        {{ campaign.status }}
-                    </span>
-
-                {% endif %}
-
-            </p>
+    <div class="campaign-sidebar">
 
 
-            <!-- =================================================
-                 CAMPAIGN STATISTICS
-            ================================================== -->
+        <div class="content-card campaign-tips">
 
-            <div class="row mt-4">
+            <div class="dashboard-card-title">
+                Campaign tips
+            </div>
 
-                <div class="col-md-4">
+            <div class="dashboard-card-subtitle">
+                Before sending your campaign
+            </div>
 
-                    <div class="card text-center">
 
-                        <div class="card-body">
+            <div class="tip-item">
 
-                            <h5>
-                                Sent
-                            </h5>
+                <div class="tip-icon">
+                    ✓
+                </div>
 
-                            <h2 class="text-success">
-                                {{ campaign.sent_count }}
-                            </h2>
+                <div>
 
-                        </div>
+                    <strong>
+                        Write a clear subject
+                    </strong>
 
-                    </div>
+                    <p>
+                        Make it easy for your subscribers to understand the email.
+                    </p>
 
                 </div>
 
+            </div>
 
-                <div class="col-md-4">
 
-                    <div class="card text-center">
+            <div class="tip-item">
 
-                        <div class="card-body">
+                <div class="tip-icon">
+                    ✉
+                </div>
 
-                            <h5>
-                                Failed
-                            </h5>
+                <div>
 
-                            <h2 class="text-danger">
-                                {{ campaign.failed_count }}
-                            </h2>
+                    <strong>
+                        Check your message
+                    </strong>
 
-                        </div>
-
-                    </div>
+                    <p>
+                        Preview your campaign before sending it to your audience.
+                    </p>
 
                 </div>
 
+            </div>
 
-                <div class="col-md-4">
 
-                    <div class="card text-center">
+            <div class="tip-item">
 
-                        <div class="card-body">
+                <div class="tip-icon">
+                    👥
+                </div>
 
-                            <h5>
-                                Pending
-                            </h5>
+                <div>
 
-                            <h2 class="text-warning">
-                                {{ pending_count }}
-                            </h2>
+                    <strong>
+                        Know your audience
+                    </strong>
 
-                        </div>
-
-                    </div>
+                    <p>
+                        Campaigns are currently created for your contacts.
+                    </p>
 
                 </div>
 
@@ -146,109 +218,25 @@
 
         </div>
 
-    </div>
 
+        <div class="content-card campaign-info-card">
 
-    <!-- =====================================================
-         MESSAGE PREVIEW
-    ====================================================== -->
-
-    <div class="card mb-4">
-
-        <div class="card-header">
-
-            <h4 class="mb-0">
-                Message
-            </h4>
-
-        </div>
-
-        <div class="card-body">
-
-            <div
-                style="
-                    white-space: pre-wrap;
-                    background: #f8f9fa;
-                    padding: 20px;
-                    border-radius: 8px;
-                "
-            >
-                {{ campaign.message }}
+            <div class="info-icon">
+                ⚡
             </div>
 
-        </div>
+            <div>
 
-    </div>
+                <strong>
+                    Ready to send?
+                </strong>
 
+                <p>
+                    Save your campaign first. You can then preview it,
+                    send a test email, or send it to your audience.
+                </p>
 
-    <!-- =====================================================
-         SEND CAMPAIGN
-    ====================================================== -->
-
-    <div class="card">
-
-        <div class="card-body">
-
-            <h4>
-                Send Campaign
-            </h4>
-
-            <p class="text-muted">
-                The system will send the campaign only to
-                recipients that are still pending.
-            </p>
-
-
-            {% if campaign.status == "Sending" %}
-
-                <!-- Campaign currently running -->
-
-                <button
-                    type="button"
-                    class="btn btn-warning"
-                    disabled
-                >
-                    ⏳ Campaign is currently sending...
-                </button>
-
-
-            {% elif pending_count > 0 %}
-
-                <!-- Pending recipients exist -->
-
-                <form
-                    action="{{ url_for(
-                        'send_campaign',
-                        campaign_id=campaign.id
-                    ) }}"
-                    method="POST"
-                    id="sendCampaignForm"
-                >
-
-                    <button
-                        type="submit"
-                        class="btn btn-primary"
-                        id="sendCampaignButton"
-                    >
-                        📧 Send Campaign
-                    </button>
-
-                </form>
-
-
-            {% else %}
-
-                <!-- Nothing left to send -->
-
-                <button
-                    type="button"
-                    class="btn btn-success"
-                    disabled
-                >
-                    ✅ Campaign Completed
-                </button>
-
-            {% endif %}
+            </div>
 
         </div>
 
@@ -257,46 +245,228 @@
 </div>
 
 
-<!-- =========================================================
-     PREVENT DOUBLE CLICK
-========================================================= -->
 
-<script>
+<!-- =====================================================
+     CAMPAIGN LIST
+     ===================================================== -->
 
-document.addEventListener(
-    "DOMContentLoaded",
-    function () {
+<div class="campaign-list-section">
 
-        const form = document.getElementById(
-            "sendCampaignForm"
-        );
+    <div class="section-row">
 
-        const button = document.getElementById(
-            "sendCampaignButton"
-        );
+        <div>
 
-        if (form && button) {
+            <div class="page-eyebrow">
+                YOUR CAMPAIGNS
+            </div>
 
-            form.addEventListener(
-                "submit",
-                function () {
+            <h2 class="section-title">
+                Recent campaigns
+            </h2>
 
-                    // Disable the button immediately
-                    // to prevent accidental double-clicks.
+        </div>
 
-                    button.disabled = true;
+        <div class="campaign-count">
 
-                    button.innerHTML =
-                        "⏳ Starting campaign...";
+            {{ campaigns|length }}
 
-                }
-            );
+            {% if campaigns|length == 1 %}
+                campaign
+            {% else %}
+                campaigns
+            {% endif %}
 
-        }
+        </div>
 
-    }
-);
+    </div>
 
-</script>
+
+    {% if campaigns %}
+
+        <div class="campaign-table-card">
+
+            <div class="campaign-table-header">
+
+                <div>
+                    Campaign
+                </div>
+
+                <div>
+                    Status
+                </div>
+
+                <div>
+                    Sent
+                </div>
+
+                <div>
+                    Failed
+                </div>
+
+                <div>
+                    Actions
+                </div>
+
+            </div>
+
+
+            {% for campaign in campaigns %}
+
+                <div class="campaign-row">
+
+
+                    <!-- CAMPAIGN -->
+
+                    <div class="campaign-main">
+
+                        <div class="campaign-icon">
+                            ✉
+                        </div>
+
+                        <div>
+
+                            <div class="campaign-subject">
+
+                                {{ campaign.subject }}
+
+                            </div>
+
+                            <div class="campaign-message-preview">
+
+                                {{ campaign.message[:90] }}
+
+                                {% if campaign.message|length > 90 %}
+                                    ...
+                                {% endif %}
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- STATUS -->
+
+                    <div>
+
+                        {% if campaign.status == "Sent" %}
+
+                            <span class="status-badge status-sent">
+                                ✓ Sent
+                            </span>
+
+                        {% elif campaign.status == "Sending" %}
+
+                            <span class="status-badge status-sending">
+                                ↗ Sending
+                            </span>
+
+                        {% elif campaign.status == "Draft" %}
+
+                            <span class="status-badge status-draft">
+                                ● Draft
+                            </span>
+
+                        {% else %}
+
+                            <span class="status-badge status-default">
+                                {{ campaign.status }}
+                            </span>
+
+                        {% endif %}
+
+                    </div>
+
+
+                    <!-- SENT -->
+
+                    <div class="campaign-stat sent-stat">
+
+                        {{ campaign.sent_count or 0 }}
+
+                    </div>
+
+
+                    <!-- FAILED -->
+
+                    <div class="campaign-stat failed-stat">
+
+                        {{ campaign.failed_count or 0 }}
+
+                    </div>
+
+
+                    <!-- ACTIONS -->
+
+                    <div class="campaign-actions">
+
+                        <a
+                            href="{{ url_for('preview_campaign', campaign_id=campaign.id) }}"
+                            class="action-button"
+                        >
+                            Preview
+                        </a>
+
+
+                        <a
+                            href="{{ url_for('send_test_email', campaign_id=campaign.id) }}"
+                            class="action-button"
+                        >
+                            Test
+                        </a>
+
+
+                        {% if campaign.status != "Sent" %}
+
+                            <form
+                                method="POST"
+                                action="{{ url_for('send_campaign', campaign_id=campaign.id) }}"
+                                style="display:inline;"
+                            >
+
+                                <button
+                                    type="submit"
+                                    class="action-button action-send"
+                                    onclick="return confirm('Send this campaign to your contacts?');"
+                                >
+                                    Send
+                                </button>
+
+                            </form>
+
+                        {% endif %}
+
+                    </div>
+
+                </div>
+
+            {% endfor %}
+
+        </div>
+
+    {% else %}
+
+        <!-- EMPTY STATE -->
+
+        <div class="content-card campaign-empty-state">
+
+            <div class="empty-icon">
+                ✉
+            </div>
+
+            <div class="empty-title">
+                No campaigns yet
+            </div>
+
+            <div class="empty-text">
+                Create your first campaign using the editor above.
+            </div>
+
+        </div>
+
+    {% endif %}
+
+</div>
 
 {% endblock %}
