@@ -22,7 +22,6 @@ from email_service import send_email
 
 # =========================================================
 # APP CONFIGURATION
-# =========================================================
 
 app = Flask(__name__)
 
@@ -1432,7 +1431,6 @@ def send_campaign(campaign_id):
 
 # =========================================================
 # FORMS
-# =========================================================
 
 @app.route("/forms")
 def forms():
@@ -1526,7 +1524,6 @@ def create_form():
 
         # -------------------------------------------------
         # CREATE FORM
-        # -------------------------------------------------
 
         new_form = Form(
             name=name,
@@ -1576,10 +1573,76 @@ def create_form():
 @app.route(
     "/forms/<int:form_id>"
 )
+
+@app.route("/forms/<int:form_id>/edit", methods=["GET", "POST"])
+def edit_form(form_id):
+
+    if "user_id" not in session:
+        return redirect(url_for("login"))
+
+    form = Form.query.filter_by(
+        id=form_id,
+        created_by=session["user_id"]
+    ).first_or_404()
+
+    if request.method == "POST":
+
+        name = request.form.get("name", "").strip()
+        headline = request.form.get("headline", "").strip()
+        description = request.form.get("description", "").strip()
+        button_text = request.form.get(
+            "button_text",
+            "Subscribe"
+        ).strip() or "Subscribe"
+
+        if not name:
+            flash("Please enter a form name.", "warning")
+
+            return redirect(
+                url_for(
+                    "edit_form",
+                    form_id=form.id
+                )
+            )
+
+        if not headline:
+            flash("Please enter a headline.", "warning")
+
+            return redirect(
+                url_for(
+                    "edit_form",
+                    form_id=form.id
+                )
+            )
+
+        form.name = name
+        form.headline = headline
+        form.description = description
+        form.button_text = button_text
+
+        db.session.commit()
+
+        flash(
+            "Form updated successfully!",
+            "success"
+        )
+
+        return redirect(
+            url_for(
+                "edit_form",
+                form_id=form.id
+            )
+        )
+
+    return render_template(
+        "edit_form.html",
+        form=form
+    )
+
+@app.route("/forms/<int:form_id>/preview")
 def preview_form(form_id):
 
     if "user_id" not in session:
-
         return redirect(url_for("login"))
 
     form = Form.query.filter_by(
@@ -1588,10 +1651,68 @@ def preview_form(form_id):
     ).first_or_404()
 
     return render_template(
-        "form_preview.html",
+        "preview_form.html",
         form=form
     )
 
+@app.route("/subscribe/<int:form_id>", methods=["GET", "POST"])
+def subscribe_form(form_id):
+
+    form = Form.query.get_or_404(form_id)
+
+    if request.method == "POST":
+
+        name = request.form.get("name", "").strip()
+        email = request.form.get("email", "").strip().lower()
+
+        if not name:
+            flash("Please enter your name.", "warning")
+            return redirect(
+                url_for("subscribe_form", form_id=form.id)
+            )
+
+        if not email:
+            flash("Please enter your email address.", "warning")
+            return redirect(
+                url_for("subscribe_form", form_id=form.id)
+            )
+
+        existing_contact = Contact.query.filter_by(
+            email=email,
+            created_by=form.created_by
+        ).first()
+
+        if existing_contact:
+            flash(
+                "This email is already subscribed.",
+                "warning"
+            )
+            return redirect(
+                url_for("subscribe_form", form_id=form.id)
+            )
+
+        new_contact = Contact(
+            name=name,
+            email=email,
+            created_by=form.created_by
+        )
+
+        db.session.add(new_contact)
+        db.session.commit()
+
+        flash(
+            "You have successfully subscribed!",
+            "success"
+        )
+
+        return redirect(
+            url_for("subscribe_form", form_id=form.id)
+        )
+
+    return render_template(
+        "subscribe_form.html",
+        form=form
+    )
 
 # =========================================================
 # DELETE FORM

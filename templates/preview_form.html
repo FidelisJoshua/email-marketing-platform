@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        {{ form.name }} - EmailFlow
+    </title>
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 30px;
+            font-family: Arial, sans-serif;
+            background: #f5f7fb;
+        }
+
+        .form-container {
+            width: 100%;
+            max-width: 520px;
+            background: white;
+            padding: 45px;
+            border-radius: 16px;
+            box-shadow: 0 15px 45px rgba(0, 0, 0, 0.08);
+        }
+
+        .brand {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 18px;
+            font-weight: 700;
+            color: #5b4bdb;
+        }
+
+        h1 {
+            margin: 0 0 15px;
+            text-align: center;
+            color: #111827;
+            font-size: 30px;
+            line-height: 1.25;
+        }
+
+        .description {
+            text-align: center;
+            color: #6b7280;
+            line-height: 1.7;
+            margin-bottom: 30px;
+        }
+
+        .field {
+            margin-bottom: 15px;
+        }
+
+        .field label {
+            display: block;
+            margin-bottom: 7px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #374151;
+        }
+
+        .field input {
+            width: 100%;
+            padding: 13px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 15px;
+        }
+
+        .subscribe-button {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 8px;
+            background: #5b4bdb;
+            color: white;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            margin-top: 5px;
+        }
+
+        .subscribe-button:hover {
+            background: #4939c7;
+        }
+
+        .preview-label {
+            text-align: center;
+            margin-top: 25px;
+            font-size: 12px;
+            color: #9ca3af;
+        }
+
+        .back-link {
+            display: block;
+            text-align: center;
+            margin-top: 15px;
+            color: #5b4bdb;
+            text-decoration: none;
+            font-size: 14px;
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+    <div class="form-container">
+
+        <div class="brand">
+            EmailFlow
+        </div>
+
+
+        <h1>
+            {{ form.headline }}
+        </h1>
+
+
+        {% if form.description %}
+
+            <div class="description">
+                {{ form.description }}
+            </div>
+
+        {% else %}
+
+            <div class="description">
+                Join our mailing list to receive
+                updates and exclusive content.
+            </div>
+
+        {% endif %}
+
+
+        <form>
+
+            <div class="field">
+
+                <label>
+                    Name
+                </label>
+
+                <input
+                    type="text"
+                    placeholder="Enter your name"
+                >
+
+            </div>
+
+
+            <div class="field">
+
+                <label>
+                    Email Address
+                </label>
+
+                <input
+                    type="email"
+                    placeholder="Enter your email address"
+                >
+
+            </div>
+
+
+            <button
+                type="button"
+                class="subscribe-button"
+            >
+                {{ form.button_text }}
+            </button>
+
+        </form>
+
+
+        <div class="preview-label">
+            Form Preview
+        </div>
+
+
+        <a
+            href="{{ url_for(
+                'edit_form',
+                form_id=form.id
+            ) }}"
+            class="back-link"
+        >
+            ← Back to Editor
+        </a>
+
+    </div>
+
+</body>
+
+</html>

@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>{{ form.headline }} - EmailFlow</title>
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f5f7fb;
+            color: #1f2937;
+
+            min-height: 100vh;
+
+            display: flex;
+            justify-content: center;
+            align-items: center;
+
+            padding: 30px;
+        }
+
+        .subscribe-container {
+            width: 100%;
+            max-width: 520px;
+        }
+
+        .brand {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .brand h1 {
+            margin: 0;
+            font-size: 28px;
+            color: #111827;
+        }
+
+        .brand p {
+            margin-top: 6px;
+            color: #6b7280;
+        }
+
+        .subscribe-card {
+            background: white;
+            border-radius: 14px;
+            padding: 35px;
+
+            box-shadow:
+                0 10px 30px rgba(0, 0, 0, 0.08);
+        }
+
+        .subscribe-card h2 {
+            margin-top: 0;
+            margin-bottom: 12px;
+
+            font-size: 28px;
+            line-height: 1.25;
+        }
+
+        .description {
+            color: #6b7280;
+            line-height: 1.6;
+            margin-bottom: 28px;
+        }
+
+        .form-group {
+            margin-bottom: 18px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 7px;
+
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .form-group input {
+            width: 100%;
+
+            padding: 13px 14px;
+
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+
+            font-size: 15px;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #6366f1;
+        }
+
+        .subscribe-button {
+            width: 100%;
+
+            padding: 14px;
+
+            border: none;
+            border-radius: 8px;
+
+            background: #111827;
+            color: white;
+
+            font-size: 16px;
+            font-weight: 600;
+
+            cursor: pointer;
+        }
+
+        .subscribe-button:hover {
+            opacity: 0.9;
+        }
+
+        .flash-message {
+            padding: 12px 14px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+
+            background: #f3f4f6;
+            color: #374151;
+        }
+
+        @media (max-width: 600px) {
+
+            body {
+                padding: 15px;
+            }
+
+            .subscribe-card {
+                padding: 25px;
+            }
+
+            .subscribe-card h2 {
+                font-size: 24px;
+            }
+        }
+
+    </style>
+</head>
+
+<body>
+
+<div class="subscribe-container">
+
+    <div class="brand">
+        <h1>EmailFlow</h1>
+        <p>Join our community</p>
+    </div>
+
+    <div class="subscribe-card">
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+
+            {% if messages %}
+
+                {% for category, message in messages %}
+
+                    <div class="flash-message">
+                        {{ message }}
+                    </div>
+
+                {% endfor %}
+
+            {% endif %}
+
+        {% endwith %}
+
+
+        <h2>{{ form.headline }}</h2>
+
+        {% if form.description %}
+            <div class="description">
+                {{ form.description }}
+            </div>
+        {% endif %}
+
+
+        <form method="POST"
+              action="{{ url_for('subscribe_form', form_id=form.id) }}">
+
+            <div class="form-group">
+
+                <label for="name">
+                    Name
+                </label>
+
+                <input
+                    type="text"
+                    id="name"
+                    name="name"
+                    placeholder="Enter your name"
+                    required
+                >
+
+            </div>
+
+
+            <div class="form-group">
+
+                <label for="email">
+                    Email
+                </label>
+
+                <input
+                    type="email"
+                    id="email"
+                    name="email"
+                    placeholder="Enter your email address"
+                    required
+                >
+
+            </div>
+
+
+            <button
+                type="submit"
+                class="subscribe-button">
+
+                {{ form.button_text }}
+
+            </button>
+
+        </form>
+
+    </div>
+
+</div>
+
+</body>
+</html>

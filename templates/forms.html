@@ -81,6 +81,17 @@ Forms & Landing Pages - EmailFlow
         background: #e1e4ec;
     }
 
+    .forms-btn-danger {
+        background: #fee2e2;
+        color: #dc2626 !important;
+        border: 1px solid #fecaca;
+    }
+
+    .forms-btn-danger:hover {
+        background: #fecaca;
+        color: #b91c1c !important;
+    }
+
 
     /* =========================
        SECTION CARD
@@ -161,25 +172,38 @@ Forms & Landing Pages - EmailFlow
         background: #fafafa;
     }
 
+
+    /* Five-column layout */
+
     .forms-table th:nth-child(1),
     .forms-table td:nth-child(1) {
-        width: 24%;
+        width: 20%;
     }
 
     .forms-table th:nth-child(2),
     .forms-table td:nth-child(2) {
-        width: 42%;
+        width: 32%;
     }
 
     .forms-table th:nth-child(3),
     .forms-table td:nth-child(3) {
-        width: 15%;
+        width: 12%;
     }
 
     .forms-table th:nth-child(4),
     .forms-table td:nth-child(4) {
-        width: 19%;
+        width: 14%;
     }
+
+    .forms-table th:nth-child(5),
+    .forms-table td:nth-child(5) {
+        width: 22%;
+    }
+
+
+    /* =========================
+       FORM CONTENT
+    ========================= */
 
     .form-name {
         font-weight: 700;
@@ -208,11 +232,12 @@ Forms & Landing Pages - EmailFlow
 
 
     /* =========================
-       LANDING PAGE ACTIONS
+       ACTION BUTTONS
     ========================= */
 
     .action-buttons {
         display: flex;
+        align-items: center;
         gap: 8px;
         flex-wrap: wrap;
     }
@@ -220,6 +245,11 @@ Forms & Landing Pages - EmailFlow
     .action-buttons .forms-btn {
         padding: 8px 13px;
         font-size: 13px;
+    }
+
+    .action-buttons form {
+        margin: 0;
+        padding: 0;
     }
 
 
@@ -261,6 +291,15 @@ Forms & Landing Pages - EmailFlow
        RESPONSIVE
     ========================= */
 
+    @media (max-width: 1000px) {
+
+        .forms-table {
+            min-width: 850px;
+        }
+
+    }
+
+
     @media (max-width: 850px) {
 
         .forms-page-header {
@@ -282,6 +321,7 @@ Forms & Landing Pages - EmailFlow
 
     }
 
+
     @media (max-width: 600px) {
 
         .forms-page-header h1 {
@@ -298,10 +338,145 @@ Forms & Landing Pages - EmailFlow
 
     }
 
+    /* Share Modal */
+
+.share-modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.share-modal.active {
+    display: flex;
+}
+
+.share-modal-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.45);
+}
+
+.share-modal-content {
+    position: relative;
+    width: 100%;
+    max-width: 520px;
+    background: #ffffff;
+    border-radius: 14px;
+    padding: 30px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.18);
+    z-index: 1;
+}
+
+.share-modal-content h2 {
+    margin: 0 0 8px;
+    font-size: 22px;
+    color: #111827;
+}
+
+.share-modal-subtitle {
+    margin: 0 0 18px;
+    color: #6b7280;
+    font-size: 14px;
+}
+
+.share-modal-close {
+    position: absolute;
+    top: 15px;
+    right: 18px;
+    border: none;
+    background: transparent;
+    font-size: 28px;
+    line-height: 1;
+    color: #6b7280;
+    cursor: pointer;
+}
+
+.share-modal-close:hover {
+    color: #111827;
+}
+
+.share-link-container {
+    display: flex;
+    gap: 10px;
+    width: 100%;
+}
+
+.share-link-container input {
+    flex: 1;
+    min-width: 0;
+    padding: 12px 14px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    background: #f9fafb;
+    color: #374151;
+    font-size: 14px;
+}
+
+.share-copy-button {
+    padding: 12px 20px;
+    border: none;
+    border-radius: 8px;
+    background: #4f46e5;
+    color: white;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.share-copy-button:hover {
+    opacity: 0.9;
+}
+
+.copy-message {
+    display: none;
+    margin-top: 12px;
+    color: #059669;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.copy-message.show {
+    display: block;
+}
+
+.share-open-link {
+    display: inline-block;
+    margin-top: 20px;
+    color: #4f46e5;
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.share-open-link:hover {
+    text-decoration: underline;
+}
+
+@media (max-width: 600px) {
+
+    .share-modal-content {
+        padding: 25px 20px;
+    }
+
+    .share-link-container {
+        flex-direction: column;
+    }
+
+    .share-copy-button {
+        width: 100%;
+    }
+
+}
+
 </style>
 
 
 <div class="forms-page">
+
 
     <!-- =========================
          PAGE HEADER
@@ -310,13 +485,18 @@ Forms & Landing Pages - EmailFlow
     <div class="forms-page-header">
 
         <div>
-            <h1>Forms &amp; Landing Pages</h1>
+
+            <h1>
+                Forms &amp; Landing Pages
+            </h1>
 
             <p>
                 Create forms and landing pages to grow your audience
                 and collect new subscribers.
             </p>
+
         </div>
+
 
         <div class="header-actions">
 
@@ -339,6 +519,7 @@ Forms & Landing Pages - EmailFlow
     </div>
 
 
+
     <!-- =========================
          FORMS SECTION
     ========================== -->
@@ -349,13 +530,16 @@ Forms & Landing Pages - EmailFlow
 
             <div class="forms-section-title">
 
-                <h2>Your Forms</h2>
+                <h2>
+                    Your Forms
+                </h2>
 
                 <p>
                     Forms you have created for collecting subscribers.
                 </p>
 
             </div>
+
 
             <a
                 href="{{ url_for('create_form') }}"
@@ -377,15 +561,30 @@ Forms & Landing Pages - EmailFlow
 
                         <tr>
 
-                            <th>Name</th>
-                            <th>Headline</th>
-                            <th>Button</th>
-                            <th>Created</th>
-                            <th>Actions</th>
+                            <th>
+                                Name
+                            </th>
+
+                            <th>
+                                Headline
+                            </th>
+
+                            <th>
+                                Button
+                            </th>
+
+                            <th>
+                                Created
+                            </th>
+
+                            <th>
+                                Actions
+                            </th>
 
                         </tr>
 
                     </thead>
+
 
                     <tbody>
 
@@ -394,57 +593,75 @@ Forms & Landing Pages - EmailFlow
                         <tr>
 
                             <td>
+
                                 <div class="form-name">
                                     {{ form.name }}
                                 </div>
+
                             </td>
 
+
                             <td>
+
                                 <div class="form-headline">
                                     {{ form.headline }}
                                 </div>
+
                             </td>
 
+
                             <td>
+
                                 <span class="button-preview">
                                     {{ form.button_text }}
                                 </span>
+
                             </td>
 
+
                             <td>
+
                                 <span class="created-date">
                                     {{ form.created_at.strftime("%b %d, %Y") }}
                                 </span>
+
                             </td>
+
+
+                            <!-- ACTIONS -->
 
                             <td>
 
                                 <div class="action-buttons">
 
-                                    <a
-                                        href="#"
-                                        class="forms-btn forms-btn-secondary"
-                                    >
-                                        Preview
-                                    </a>
+                                <a href="{{ url_for('preview_form', form_id=form.id) }}"
+                                   class="forms-btn">
+                                    Preview
+                                </a>
 
-                                    <form
-                                        method="POST"
-                                        action="{{ url_for('delete_form', form_id=form.id) }}"
-                                        onsubmit="return confirm('Are you sure you want to delete this form?');"
-                                        style="display: inline;"
-                                    >
+                                <a href="{{ url_for('edit_form', form_id=form.id) }}"
+                                   class="forms-btn">
+                                    Edit
+                                </a>
 
-                                        <button
-                                            type="submit"
-                                            class="forms-btn forms-btn-danger"
-                                        >
-                                            Delete
-                                        </button>
+                                <button type="button"
+                                        class="forms-btn forms-btn-share"
+                                    onclick="openShareModal('{{ url_for('subscribe_form', form_id=form.id, _external=True) }}')">
+                                    Share
+                                </button>
 
-                                    </form>
+                                <form method="POST"
+                                      action="{{ url_for('delete_form', form_id=form.id) }}"
+                                      onsubmit="return confirm('Are you sure you want to delete this form?');">
 
-                                </div>
+                                    <button type="submit"
+                                            class="forms-btn forms-btn-danger">
+                                        Delete
+                                    </button>
+
+                                </form>
+
+                            </div>
 
                             </td>
 
@@ -458,7 +675,11 @@ Forms & Landing Pages - EmailFlow
 
             </div>
 
+
         {% else %}
+
+
+            <!-- EMPTY FORMS -->
 
             <div class="forms-empty">
 
@@ -466,7 +687,9 @@ Forms & Landing Pages - EmailFlow
                     ✉
                 </div>
 
-                <h3>No forms yet</h3>
+                <h3>
+                    No forms yet
+                </h3>
 
                 <p>
                     Create your first form to start collecting subscribers.
@@ -481,9 +704,11 @@ Forms & Landing Pages - EmailFlow
 
             </div>
 
+
         {% endif %}
 
     </div>
+
 
 
     <!-- =========================
@@ -496,13 +721,16 @@ Forms & Landing Pages - EmailFlow
 
             <div class="forms-section-title">
 
-                <h2>Your Landing Pages</h2>
+                <h2>
+                    Your Landing Pages
+                </h2>
 
                 <p>
                     Create full marketing pages for your campaigns and offers.
                 </p>
 
             </div>
+
 
             <a
                 href="{{ url_for('create_landing_page') }}"
@@ -523,13 +751,27 @@ Forms & Landing Pages - EmailFlow
                     <thead>
 
                         <tr>
-                            <th>Name</th>
-                            <th>Headline</th>
-                            <th>Created</th>
-                            <th>Actions</th>
+
+                            <th>
+                                Name
+                            </th>
+
+                            <th>
+                                Headline
+                            </th>
+
+                            <th>
+                                Created
+                            </th>
+
+                            <th>
+                                Actions
+                            </th>
+
                         </tr>
 
                     </thead>
+
 
                     <tbody>
 
@@ -538,22 +780,31 @@ Forms & Landing Pages - EmailFlow
                         <tr>
 
                             <td>
+
                                 <div class="form-name">
                                     {{ page.name }}
                                 </div>
+
                             </td>
 
+
                             <td>
+
                                 <div class="form-headline">
                                     {{ page.headline }}
                                 </div>
+
                             </td>
 
+
                             <td>
+
                                 <span class="created-date">
                                     {{ page.created_at.strftime("%b %d, %Y") }}
                                 </span>
+
                             </td>
+
 
                             <td>
 
@@ -568,6 +819,7 @@ Forms & Landing Pages - EmailFlow
                                     >
                                         Preview
                                     </a>
+
 
                                     <a
                                         href="{{ url_for(
@@ -593,7 +845,11 @@ Forms & Landing Pages - EmailFlow
 
             </div>
 
+
         {% else %}
+
+
+            <!-- EMPTY LANDING PAGES -->
 
             <div class="forms-empty">
 
@@ -601,7 +857,9 @@ Forms & Landing Pages - EmailFlow
                     ◇
                 </div>
 
-                <h3>No landing pages yet</h3>
+                <h3>
+                    No landing pages yet
+                </h3>
 
                 <p>
                     Create your first landing page to start
@@ -617,10 +875,130 @@ Forms & Landing Pages - EmailFlow
 
             </div>
 
+
         {% endif %}
 
     </div>
 
 </div>
+
+<!-- Share Modal -->
+
+<div id="shareModal" class="share-modal">
+
+    <div class="share-modal-overlay"
+         onclick="closeShareModal()">
+    </div>
+
+    <div class="share-modal-content">
+
+        <button type="button"
+                class="share-modal-close"
+                onclick="closeShareModal()">
+            ×
+        </button>
+
+        <h2>Share Your Form</h2>
+
+        <p class="share-modal-subtitle">
+            Your public form link
+        </p>
+
+        <div class="share-link-container">
+
+            <input type="text"
+                   id="shareLink"
+                   readonly>
+
+            <button type="button"
+                    class="share-copy-button"
+                    onclick="copyShareLink()">
+                Copy
+            </button>
+
+        </div>
+
+        <div id="copyMessage"
+             class="copy-message">
+        </div>
+
+        <a id="openFormLink"
+           href="#"
+           target="_blank"
+           class="share-open-link">
+            ↗ Open in new tab
+        </a>
+
+    </div>
+
+</div>
+
+
+<script>
+
+function openShareModal(link) {
+
+    const modal = document.getElementById("shareModal");
+    const shareLink = document.getElementById("shareLink");
+    const openFormLink = document.getElementById("openFormLink");
+    const copyMessage = document.getElementById("copyMessage");
+
+    shareLink.value = link;
+
+    openFormLink.href = link;
+
+    copyMessage.classList.remove("show");
+
+    modal.classList.add("active");
+}
+
+
+function closeShareModal() {
+
+    const modal = document.getElementById("shareModal");
+
+    modal.classList.remove("active");
+}
+
+
+function copyShareLink() {
+
+    const shareLink = document.getElementById("shareLink");
+    const copyMessage = document.getElementById("copyMessage");
+
+    navigator.clipboard.writeText(shareLink.value)
+        .then(function() {
+
+            copyMessage.textContent = "✓ Link copied!";
+
+            copyMessage.classList.add("show");
+
+        })
+        .catch(function() {
+
+            shareLink.select();
+
+            document.execCommand("copy");
+
+            copyMessage.textContent = "✓ Link copied!";
+
+            copyMessage.classList.add("show");
+
+        });
+}
+
+
+document.addEventListener("keydown", function(event) {
+
+    if (event.key === "Escape") {
+
+        closeShareModal();
+
+    }
+
+});
+
+</script>
+
 
 {% endblock %}
