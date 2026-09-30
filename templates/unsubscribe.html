@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        Unsubscribe - EmailFlow
+    </title>
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+
+            min-height: 100vh;
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: center;
+
+            padding: 20px;
+
+            font-family:
+                Arial,
+                Helvetica,
+                sans-serif;
+
+            background: #f5f7fb;
+
+            color: #111827;
+        }
+
+        .unsubscribe-card {
+
+            width: 100%;
+
+            max-width: 520px;
+
+            background: white;
+
+            border-radius: 16px;
+
+            padding: 40px;
+
+            box-shadow:
+                0 10px 30px
+                rgba(0, 0, 0, 0.08);
+
+            text-align: center;
+        }
+
+        .logo {
+
+            font-size: 28px;
+
+            font-weight: 700;
+
+            color: #4f46e5;
+
+            margin-bottom: 25px;
+        }
+
+        .icon {
+
+            width: 64px;
+
+            height: 64px;
+
+            margin: 0 auto 20px;
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: center;
+
+            border-radius: 50%;
+
+            background: #eef2ff;
+
+            font-size: 30px;
+        }
+
+        h1 {
+
+            margin: 0 0 15px;
+
+            font-size: 28px;
+
+            color: #111827;
+        }
+
+        p {
+
+            margin: 0 0 25px;
+
+            line-height: 1.7;
+
+            color: #6b7280;
+
+            font-size: 16px;
+        }
+
+        .email {
+
+            display: inline-block;
+
+            margin-bottom: 25px;
+
+            padding: 10px 15px;
+
+            border-radius: 8px;
+
+            background: #f3f4f6;
+
+            color: #374151;
+
+            font-weight: 600;
+        }
+
+        button {
+
+            width: 100%;
+
+            border: none;
+
+            border-radius: 10px;
+
+            padding: 14px 20px;
+
+            background: #dc2626;
+
+            color: white;
+
+            font-size: 16px;
+
+            font-weight: 600;
+
+            cursor: pointer;
+        }
+
+        button:hover {
+
+            background: #b91c1c;
+        }
+
+        .success {
+
+            background: #ecfdf5;
+
+            border: 1px solid #a7f3d0;
+
+            color: #065f46;
+
+            padding: 20px;
+
+            border-radius: 10px;
+
+            line-height: 1.6;
+        }
+
+        .error {
+
+            background: #fef2f2;
+
+            border: 1px solid #fecaca;
+
+            color: #991b1b;
+
+            padding: 20px;
+
+            border-radius: 10px;
+
+            line-height: 1.6;
+        }
+
+        .footer {
+
+            margin-top: 30px;
+
+            font-size: 13px;
+
+            color: #9ca3af;
+        }
+
+        @media (max-width: 600px) {
+
+            .unsubscribe-card {
+
+                padding: 30px 22px;
+            }
+
+            h1 {
+
+                font-size: 24px;
+            }
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+    <div class="unsubscribe-card">
+
+        <div class="logo">
+            EmailFlow
+        </div>
+
+
+        {% if error %}
+
+            <div class="icon">
+                ⚠️
+            </div>
+
+            <h1>
+                Unsubscribe Link Problem
+            </h1>
+
+            <div class="error">
+                {{ error }}
+            </div>
+
+
+        {% elif success %}
+
+            <div class="icon">
+                ✓
+            </div>
+
+            <h1>
+                You have been unsubscribed
+            </h1>
+
+            <div class="success">
+
+                You will no longer receive
+                marketing emails from this sender.
+
+            </div>
+
+
+        {% elif contact %}
+
+            <div class="icon">
+                ✉️
+            </div>
+
+            <h1>
+                Unsubscribe from emails?
+            </h1>
+
+            <p>
+
+                Are you sure you want to stop receiving
+                marketing emails from this sender?
+
+            </p>
+
+            <div class="email">
+
+                {{ contact.email }}
+
+            </div>
+
+
+            <form
+                method="POST"
+                action="{{ url_for(
+                    'unsubscribe',
+                    token=token
+                ) }}"
+            >
+
+                <button type="submit">
+
+                    Unsubscribe
+
+                </button>
+
+            </form>
+
+
+        {% else %}
+
+            <div class="icon">
+                ⚠️
+            </div>
+
+            <h1>
+                Invalid Request
+            </h1>
+
+            <div class="error">
+
+                We could not process this unsubscribe request.
+
+            </div>
+
+        {% endif %}
+
+
+        <div class="footer">
+
+            Powered by EmailFlow
+
+        </div>
+
+    </div>
+
+</body>
+
+</html>

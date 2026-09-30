@@ -1,0 +1,522 @@
+{% extends "dashboard_base.html" %}
+
+{% block title %}
+Templates - EmailFlow
+{% endblock %}
+
+{% block content %}
+
+<style>
+
+    .template-library {
+        max-width: 1250px;
+        margin: 0 auto;
+    }
+
+    /* ==============================
+       HEADER
+    ============================== */
+
+    .template-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+        gap: 20px;
+    }
+
+    .template-header h1 {
+        margin: 0;
+        font-size: 30px;
+        font-weight: 700;
+        color: #111827;
+    }
+
+    .template-header p {
+        margin-top: 7px;
+        color: #6b7280;
+        font-size: 15px;
+    }
+
+    .create-template-btn {
+        display: inline-block;
+        padding: 11px 18px;
+        background: #111827;
+        color: white;
+        text-decoration: none;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 14px;
+    }
+
+    .create-template-btn:hover {
+        background: #1f2937;
+        color: white;
+    }
+
+
+    /* ==============================
+       CATEGORY FILTERS
+    ============================== */
+
+    .template-filters {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-bottom: 30px;
+    }
+
+    .template-filter {
+        padding: 8px 15px;
+        border: 1px solid #e5e7eb;
+        background: white;
+        color: #4b5563;
+        border-radius: 20px;
+        font-size: 13px;
+        cursor: pointer;
+    }
+
+    .template-filter:hover,
+    .template-filter.active {
+        background: #111827;
+        color: white;
+        border-color: #111827;
+    }
+
+
+    /* ==============================
+       TEMPLATE GRID
+    ============================== */
+
+    .template-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 25px;
+    }
+
+
+    /* ==============================
+       TEMPLATE CARD
+    ============================== */
+
+    .template-card {
+        background: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 14px;
+        overflow: hidden;
+        transition: 0.2s ease;
+    }
+
+    .template-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+    }
+
+
+    /* ==============================
+       EMAIL PREVIEW
+    ============================== */
+
+    .template-preview {
+        height: 330px;
+        background: #f3f4f6;
+        overflow: hidden;
+        position: relative;
+    }
+
+    .template-preview iframe {
+        width: 200%;
+        height: 660px;
+        border: none;
+        transform: scale(0.5);
+        transform-origin: top left;
+        background: white;
+    }
+
+
+    /* ==============================
+       CARD INFORMATION
+    ============================== */
+
+    .template-info {
+        padding: 18px;
+    }
+
+    .template-title-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 10px;
+    }
+
+    .template-title {
+        margin: 0;
+        font-size: 17px;
+        font-weight: 700;
+        color: #111827;
+    }
+
+    .template-category {
+        display: inline-block;
+        padding: 4px 9px;
+        background: #f3f4f6;
+        color: #6b7280;
+        border-radius: 20px;
+        font-size: 11px;
+        white-space: nowrap;
+    }
+
+    .template-description {
+        margin: 10px 0 18px;
+        color: #6b7280;
+        font-size: 13px;
+        line-height: 1.5;
+    }
+
+
+    /* ==============================
+       USE TEMPLATE BUTTON
+    ============================== */
+
+    .use-template-btn {
+        display: block;
+        width: 100%;
+        padding: 11px;
+        border: none;
+        border-radius: 8px;
+        background: #111827;
+        color: white;
+        text-align: center;
+        text-decoration: none;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+    }
+
+    .use-template-btn:hover {
+        background: #1f2937;
+        color: white;
+    }
+
+
+    /* ==============================
+       EMPTY STATE
+    ============================== */
+
+    .empty-template {
+        background: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 14px;
+        padding: 70px 30px;
+        text-align: center;
+    }
+
+    .empty-template h3 {
+        margin-bottom: 10px;
+        color: #111827;
+    }
+
+    .empty-template p {
+        color: #6b7280;
+    }
+
+
+    /* ==============================
+       RESPONSIVE
+    ============================== */
+
+    @media (max-width: 1000px) {
+
+        .template-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+    }
+
+
+    @media (max-width: 650px) {
+
+        .template-header {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .template-grid {
+            grid-template-columns: 1fr;
+        }
+
+    }
+
+</style>
+
+
+<div class="template-library">
+
+
+    <!-- ==============================
+         PAGE HEADER
+    ============================== -->
+
+    <div class="template-header">
+
+        <div>
+
+            <h1>
+                Email Templates
+            </h1>
+
+            <p>
+                Choose a professionally designed template
+                for your next campaign.
+            </p>
+
+        </div>
+
+
+        <a
+            href="{{ url_for('create_template') }}"
+            class="create-template-btn"
+        >
+            + Create Template
+        </a>
+
+    </div>
+
+
+
+    <!-- ==============================
+         CATEGORY FILTERS
+    ============================== -->
+
+    <div class="template-filters">
+
+        <button
+            class="template-filter active"
+            onclick="filterTemplates('all', this)"
+        >
+            All
+        </button>
+
+        <button
+            class="template-filter"
+            onclick="filterTemplates('Newsletter', this)"
+        >
+            Newsletter
+        </button>
+
+        <button
+            class="template-filter"
+            onclick="filterTemplates('Welcome', this)"
+        >
+            Welcome
+        </button>
+
+        <button
+            class="template-filter"
+            onclick="filterTemplates('Promotion', this)"
+        >
+            Promotion
+        </button>
+
+        <button
+            class="template-filter"
+            onclick="filterTemplates('Announcement', this)"
+        >
+            Announcement
+        </button>
+
+        <button
+            class="template-filter"
+            onclick="filterTemplates('Event', this)"
+        >
+            Event
+        </button>
+
+    </div>
+
+
+
+    <!-- ==============================
+         TEMPLATE GRID
+    ============================== -->
+
+    {% if templates %}
+
+        <div class="template-grid">
+
+            {% for template in templates %}
+
+                <div
+                    class="template-card"
+                    data-category="{{ template.category }}"
+                >
+
+
+                    <!-- EMAIL PREVIEW -->
+
+                    <div class="template-preview">
+
+                        {% if template.html_content %}
+
+                            <iframe
+                                srcdoc="{{ template.html_content|e }}"
+                                sandbox="allow-same-origin"
+                                title="{{ template.name }}"
+                            ></iframe>
+
+                        {% else %}
+
+                            <div
+                                style="
+                                    padding:40px;
+                                    text-align:center;
+                                    color:#6b7280;
+                                "
+                            >
+
+                                <strong>
+                                    {{ template.name }}
+                                </strong>
+
+                                <p>
+                                    Preview unavailable
+                                </p>
+
+                            </div>
+
+                        {% endif %}
+
+                    </div>
+
+
+
+                    <!-- TEMPLATE INFORMATION -->
+
+                    <div class="template-info">
+
+                        <div class="template-title-row">
+
+                            <h3 class="template-title">
+                                {{ template.name }}
+                            </h3>
+
+                            <span class="template-category">
+                                {{ template.category }}
+                            </span>
+
+                        </div>
+
+
+                        <p class="template-description">
+                            {{ template.content }}
+                        </p>
+
+
+                        {% if template.is_system_template %}
+
+                            <a
+                                href="{{ url_for(
+                                    'use_template',
+                                    template_id=template.id
+                                ) }}"
+                                class="use-template-btn"
+                            >
+                                Use Template
+                            </a>
+
+                        {% else %}
+
+                            <a
+                                href="{{ url_for(
+                                    'edit_template',
+                                    template_id=template.id
+                                ) }}"
+                                class="use-template-btn"
+                            >
+                                Edit Template
+                            </a>
+
+                        {% endif %}
+
+                    </div>
+
+                </div>
+
+            {% endfor %}
+
+        </div>
+
+
+    {% else %}
+
+        <div class="empty-template">
+
+            <h3>
+                No templates yet
+            </h3>
+
+            <p>
+                Create your first email template to get started.
+            </p>
+
+            <br>
+
+            <a
+                href="{{ url_for('create_template') }}"
+                class="create-template-btn"
+            >
+                Create Template
+            </a>
+
+        </div>
+
+    {% endif %}
+
+</div>
+
+
+
+<script>
+
+function filterTemplates(category, button) {
+
+    const cards = document.querySelectorAll(".template-card");
+
+    const buttons = document.querySelectorAll(".template-filter");
+
+
+    buttons.forEach(function(btn) {
+
+        btn.classList.remove("active");
+
+    });
+
+
+    button.classList.add("active");
+
+
+    cards.forEach(function(card) {
+
+        const cardCategory = card.dataset.category;
+
+
+        if (
+            category === "all" ||
+            cardCategory === category
+        ) {
+
+            card.style.display = "";
+
+        } else {
+
+            card.style.display = "none";
+
+        }
+
+    });
+
+}
+
+</script>
+
+{% endblock %}

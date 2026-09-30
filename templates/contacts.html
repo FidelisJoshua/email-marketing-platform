@@ -179,22 +179,19 @@ Contacts - EmailFlow
 
 
                         <th>
-                            Name
+                            ID
                         </th>
 
+                        <th>
+                            Name
+                        </th>
 
                         <th>
                             Email
                         </th>
 
-
                         <th>
                             Date Added
-                        </th>
-
-
-                        <th>
-                            Actions
                         </th>
 
                     </tr>
@@ -222,6 +219,15 @@ Contacts - EmailFlow
                                     value="{{ contact.id }}"
                                     class="contact-checkbox"
                                 >
+
+                            </td>
+
+
+                            <!-- CONTACT ID -->
+
+                            <td>
+
+                                {{ contact.id }}
 
                             </td>
 
@@ -316,7 +322,7 @@ Contacts - EmailFlow
 
                     <tr>
 
-                        <td colspan="5">
+                        <td colspan="6">
 
                             <div class="empty-state">
 

@@ -26,16 +26,19 @@ Campaign Preview - EmailFlow
 
     <a
         href="{{ url_for('campaigns') }}"
-        class="btn-secondary-custom">
-
+        class="btn-secondary-custom"
+    >
         ← Back to Campaigns
-
     </a>
 
 </div>
 
 
 <div class="form-card">
+
+    <!-- =========================================
+         SUBJECT
+         ========================================= -->
 
     <div class="mb-4">
 
@@ -50,28 +53,39 @@ Campaign Preview - EmailFlow
     </div>
 
 
+    <!-- =========================================
+         MESSAGE
+         ========================================= -->
+
     <div>
 
         <div class="form-label-custom">
             Message
         </div>
 
+
         <div
             style="
-                background:#f9fafb;
+                background:#ffffff;
                 border:1px solid #e6e8ef;
                 border-radius:10px;
                 padding:20px;
                 line-height:1.7;
-                white-space:pre-wrap;
-            ">
+                min-height:200px;
+                overflow:hidden;
+            "
+        >
 
-            {{ campaign.message }}
+            {{ campaign.message | safe }}
 
         </div>
 
     </div>
 
+
+    <!-- =========================================
+         STATUS
+         ========================================= -->
 
     <div class="mt-4">
 
@@ -79,7 +93,189 @@ Campaign Preview - EmailFlow
             Status:
         </strong>
 
-        {{ campaign.status }}
+        {% if campaign.status == "Draft" %}
+
+            <span
+                style="
+                    display:inline-block;
+                    margin-left:8px;
+                    padding:5px 10px;
+                    border-radius:20px;
+                    background:#fef3c7;
+                    color:#92400e;
+                    font-size:13px;
+                    font-weight:600;
+                "
+            >
+                Draft
+            </span>
+
+        {% elif campaign.status == "Sending" %}
+
+            <span
+                style="
+                    display:inline-block;
+                    margin-left:8px;
+                    padding:5px 10px;
+                    border-radius:20px;
+                    background:#dbeafe;
+                    color:#1e40af;
+                    font-size:13px;
+                    font-weight:600;
+                "
+            >
+                Sending
+            </span>
+
+        {% elif campaign.status == "Sent" %}
+
+            <span
+                style="
+                    display:inline-block;
+                    margin-left:8px;
+                    padding:5px 10px;
+                    border-radius:20px;
+                    background:#dcfce7;
+                    color:#166534;
+                    font-size:13px;
+                    font-weight:600;
+                "
+            >
+                Sent
+            </span>
+
+        {% else %}
+
+            <span
+                style="
+                    display:inline-block;
+                    margin-left:8px;
+                    padding:5px 10px;
+                    border-radius:20px;
+                    background:#f3f4f6;
+                    color:#374151;
+                    font-size:13px;
+                    font-weight:600;
+                "
+            >
+                {{ campaign.status }}
+
+            </span>
+
+        {% endif %}
+
+    </div>
+
+
+    <!-- =========================================
+         CAMPAIGN COUNTS
+         ========================================= -->
+
+    <div
+        style="
+            display:flex;
+            gap:20px;
+            flex-wrap:wrap;
+            margin-top:20px;
+            padding-top:18px;
+            border-top:1px solid #e5e7eb;
+        "
+    >
+
+        <div>
+
+            <strong>
+                Sent:
+            </strong>
+
+            {{ campaign.sent_count or 0 }}
+
+        </div>
+
+
+        <div>
+
+            <strong>
+                Failed:
+            </strong>
+
+            {{ campaign.failed_count or 0 }}
+
+        </div>
+
+    </div>
+
+
+    <!-- =========================================
+         ACTIONS
+         ========================================= -->
+
+    <div
+        style="
+            display:flex;
+            gap:10px;
+            flex-wrap:wrap;
+            margin-top:25px;
+            padding-top:20px;
+            border-top:1px solid #e5e7eb;
+        "
+    >
+
+        <!-- BACK -->
+
+        <a
+            href="{{ url_for('campaigns') }}"
+            class="btn-secondary-custom"
+        >
+            ← Back to Campaigns
+        </a>
+
+
+        <!-- SEND CAMPAIGN -->
+
+        {% if campaign.status == "Draft" %}
+
+            <form
+                method="POST"
+                action="{{ url_for('send_campaign', campaign_id=campaign.id) }}"
+                style="margin:0;"
+                onsubmit="
+                    return confirm(
+                        'Are you sure you want to send this campaign?'
+                    );
+                "
+            >
+
+                <button
+                    type="submit"
+                    class="btn-primary-custom"
+                >
+                    📧 Send Campaign
+                </button>
+
+            </form>
+
+        {% elif campaign.status == "Sending" %}
+
+            <button
+                type="button"
+                class="btn-secondary-custom"
+                disabled
+            >
+                ⏳ Campaign Sending...
+            </button>
+
+        {% elif campaign.status == "Sent" %}
+
+            <button
+                type="button"
+                class="btn-secondary-custom"
+                disabled
+            >
+                ✓ Campaign Sent
+            </button>
+
+        {% endif %}
 
     </div>
 

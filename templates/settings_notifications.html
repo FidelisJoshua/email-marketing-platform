@@ -1,0 +1,806 @@
+{% extends "settings_base.html" %}
+
+
+{% block settings_header %}
+
+<h1 class="settings-title">
+    Notifications
+</h1>
+
+<p class="settings-subtitle">
+    Control which updates and alerts you receive from EmailFlow.
+</p>
+
+{% endblock %}
+
+
+
+{% block settings_content %}
+
+
+<!-- =====================================================
+     NOTIFICATION OVERVIEW
+     ===================================================== -->
+
+<section class="settings-card">
+
+    <div class="settings-card-header">
+
+        <div class="settings-card-icon orange">
+            🔔
+        </div>
+
+        <div>
+
+            <h2 class="settings-card-title">
+                Notification Preferences
+            </h2>
+
+            <p class="settings-card-description">
+                Choose the types of notifications you would like
+                EmailFlow to send you.
+            </p>
+
+        </div>
+
+    </div>
+
+
+    <div class="settings-card-body">
+
+
+        <div class="settings-info">
+
+            <div class="settings-info-icon">
+                ℹ
+            </div>
+
+            <div class="settings-info-text">
+
+                <strong>
+                    Keep track of what matters.
+                </strong>
+
+                <br>
+
+                EmailFlow notifications will help you stay informed
+                about your campaigns, subscribers, account activity
+                and important sending events.
+
+            </div>
+
+        </div>
+
+
+        <!-- =============================================
+             NOTIFICATION OPTIONS
+             ============================================= -->
+
+        <div class="notification-list">
+
+
+            <!-- CAMPAIGN RESULTS -->
+
+            <div class="notification-option">
+
+                <div class="notification-option-left">
+
+                    <div class="notification-option-icon purple">
+                        📊
+                    </div>
+
+                    <div>
+
+                        <div class="notification-option-title">
+                            Campaign Results
+                        </div>
+
+                        <div class="notification-option-description">
+                            Receive updates when a campaign finishes
+                            sending and view its delivery results.
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <label class="notification-switch">
+
+                    <input
+                        type="checkbox"
+                        name="campaign_results"
+                        disabled
+                    >
+
+                    <span class="notification-slider"></span>
+
+                </label>
+
+            </div>
+
+
+
+            <!-- SENDING FAILURES -->
+
+            <div class="notification-option">
+
+                <div class="notification-option-left">
+
+                    <div class="notification-option-icon red">
+                        ⚠
+                    </div>
+
+                    <div>
+
+                        <div class="notification-option-title">
+                            Sending Failures
+                        </div>
+
+                        <div class="notification-option-description">
+                            Get notified when campaign emails fail
+                            to send or a sending problem occurs.
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <label class="notification-switch">
+
+                    <input
+                        type="checkbox"
+                        name="sending_failures"
+                        disabled
+                    >
+
+                    <span class="notification-slider"></span>
+
+                </label>
+
+            </div>
+
+
+
+            <!-- NEW SUBSCRIBERS -->
+
+            <div class="notification-option">
+
+                <div class="notification-option-left">
+
+                    <div class="notification-option-icon green">
+                        👥
+                    </div>
+
+                    <div>
+
+                        <div class="notification-option-title">
+                            New Subscribers
+                        </div>
+
+                        <div class="notification-option-description">
+                            Receive notifications when new people
+                            subscribe through your forms or landing pages.
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <label class="notification-switch">
+
+                    <input
+                        type="checkbox"
+                        name="new_subscribers"
+                        disabled
+                    >
+
+                    <span class="notification-slider"></span>
+
+                </label>
+
+            </div>
+
+
+
+            <!-- ACCOUNT ACTIVITY -->
+
+            <div class="notification-option">
+
+                <div class="notification-option-left">
+
+                    <div class="notification-option-icon blue">
+                        👤
+                    </div>
+
+                    <div>
+
+                        <div class="notification-option-title">
+                            Account Activity
+                        </div>
+
+                        <div class="notification-option-description">
+                            Receive important updates about your
+                            EmailFlow account.
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <label class="notification-switch">
+
+                    <input
+                        type="checkbox"
+                        name="account_activity"
+                        disabled
+                    >
+
+                    <span class="notification-slider"></span>
+
+                </label>
+
+            </div>
+
+
+
+            <!-- PRODUCT UPDATES -->
+
+            <div class="notification-option">
+
+                <div class="notification-option-left">
+
+                    <div class="notification-option-icon orange">
+                        ✨
+                    </div>
+
+                    <div>
+
+                        <div class="notification-option-title">
+                            EmailFlow Updates
+                        </div>
+
+                        <div class="notification-option-description">
+                            Receive information about new EmailFlow
+                            features, improvements and announcements.
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <label class="notification-switch">
+
+                    <input
+                        type="checkbox"
+                        name="product_updates"
+                        disabled
+                    >
+
+                    <span class="notification-slider"></span>
+
+                </label>
+
+            </div>
+
+
+        </div>
+
+    </div>
+
+</section>
+
+
+
+<!-- =====================================================
+     EMAIL DELIVERY
+     ===================================================== -->
+
+<section class="settings-card">
+
+    <div class="settings-card-header">
+
+        <div class="settings-card-icon blue">
+            ✉
+        </div>
+
+        <div>
+
+            <h2 class="settings-card-title">
+                Notification Delivery
+            </h2>
+
+            <p class="settings-card-description">
+                Choose where EmailFlow will send your notifications.
+            </p>
+
+        </div>
+
+    </div>
+
+
+    <div class="settings-card-body">
+
+
+        <div class="settings-form-grid">
+
+
+            <div class="settings-form-group">
+
+                <label class="settings-label">
+                    Notification Email
+                </label>
+
+                <input
+                    type="email"
+                    class="settings-input"
+                    value="{{ user.email }}"
+                    readonly
+                >
+
+                <div class="settings-help">
+                    Notifications will currently use your
+                    EmailFlow account email address.
+                </div>
+
+            </div>
+
+
+            <div class="settings-form-group">
+
+                <label class="settings-label">
+                    Delivery Status
+                </label>
+
+                <div
+                    style="
+                        height:44px;
+                        display:flex;
+                        align-items:center;
+                        gap:8px;
+                        padding:0 13px;
+                        border:1px solid #d1d5db;
+                        border-radius:9px;
+                        background:#f9fafb;
+                        color:#047857;
+                        font-size:14px;
+                        font-weight:600;
+                    "
+                >
+
+                    <span>
+                        ●
+                    </span>
+
+                    Notification system ready
+
+                </div>
+
+                <div class="settings-help">
+                    Notification delivery controls will be
+                    connected when notification preferences
+                    are added to the database.
+                </div>
+
+            </div>
+
+
+        </div>
+
+    </div>
+
+</section>
+
+
+
+<!-- =====================================================
+     COMING NEXT
+     ===================================================== -->
+
+<section class="settings-card">
+
+    <div class="settings-card-header">
+
+        <div class="settings-card-icon green">
+            ⚡
+        </div>
+
+        <div>
+
+            <h2 class="settings-card-title">
+                Notification Center
+            </h2>
+
+            <p class="settings-card-description">
+                A centralized place for important EmailFlow activity.
+            </p>
+
+        </div>
+
+    </div>
+
+
+    <div class="settings-card-body">
+
+
+        <div
+            style="
+                display:grid;
+                grid-template-columns:repeat(3, minmax(0, 1fr));
+                gap:14px;
+            "
+            class="notification-summary-grid"
+        >
+
+
+            <div
+                style="
+                    padding:18px;
+                    border:1px solid #e5e7eb;
+                    border-radius:12px;
+                    background:#f9fafb;
+                "
+            >
+
+                <div
+                    style="
+                        font-size:24px;
+                        margin-bottom:10px;
+                    "
+                >
+                    📬
+                </div>
+
+                <div
+                    style="
+                        color:#111827;
+                        font-size:14px;
+                        font-weight:800;
+                    "
+                >
+                    Campaigns
+                </div>
+
+                <div
+                    style="
+                        margin-top:5px;
+                        color:#6b7280;
+                        font-size:11px;
+                        line-height:1.5;
+                    "
+                >
+                    Sending and campaign activity.
+                </div>
+
+            </div>
+
+
+
+            <div
+                style="
+                    padding:18px;
+                    border:1px solid #e5e7eb;
+                    border-radius:12px;
+                    background:#f9fafb;
+                "
+            >
+
+                <div
+                    style="
+                        font-size:24px;
+                        margin-bottom:10px;
+                    "
+                >
+                    👥
+                </div>
+
+                <div
+                    style="
+                        color:#111827;
+                        font-size:14px;
+                        font-weight:800;
+                    "
+                >
+                    Subscribers
+                </div>
+
+                <div
+                    style="
+                        margin-top:5px;
+                        color:#6b7280;
+                        font-size:11px;
+                        line-height:1.5;
+                    "
+                >
+                    New subscriber activity.
+                </div>
+
+            </div>
+
+
+
+            <div
+                style="
+                    padding:18px;
+                    border:1px solid #e5e7eb;
+                    border-radius:12px;
+                    background:#f9fafb;
+                "
+            >
+
+                <div
+                    style="
+                        font-size:24px;
+                        margin-bottom:10px;
+                    "
+                >
+                    🔐
+                </div>
+
+                <div
+                    style="
+                        color:#111827;
+                        font-size:14px;
+                        font-weight:800;
+                    "
+                >
+                    Account
+                </div>
+
+                <div
+                    style="
+                        margin-top:5px;
+                        color:#6b7280;
+                        font-size:11px;
+                        line-height:1.5;
+                    "
+                >
+                    Important account events.
+                </div>
+
+            </div>
+
+
+        </div>
+
+
+        <div class="settings-warning">
+
+            <div>
+                💡
+            </div>
+
+            <div class="settings-warning-text">
+
+                <strong>
+                    Preference saving comes next.
+                </strong>
+
+                <br>
+
+                The notification controls are now designed and
+                ready. The next step will connect these preferences
+                to a database so your choices remain saved between
+                sessions.
+
+            </div>
+
+        </div>
+
+
+    </div>
+
+</section>
+
+
+
+<style>
+
+    /* =====================================================
+       NOTIFICATION OPTIONS
+       ===================================================== */
+
+    .notification-list {
+        display: flex;
+        flex-direction: column;
+
+        border: 1px solid #e5e7eb;
+        border-radius: 14px;
+
+        overflow: hidden;
+    }
+
+
+    .notification-option {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+
+        gap: 20px;
+
+        padding: 18px;
+
+        background: #ffffff;
+
+        border-bottom: 1px solid #f0f1f3;
+    }
+
+
+    .notification-option:last-child {
+        border-bottom: none;
+    }
+
+
+    .notification-option-left {
+        display: flex;
+        align-items: center;
+
+        gap: 14px;
+
+        min-width: 0;
+    }
+
+
+    .notification-option-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        width: 42px;
+        height: 42px;
+        min-width: 42px;
+
+        border-radius: 11px;
+
+        background: #f3f4f6;
+
+        font-size: 18px;
+    }
+
+
+    .notification-option-icon.purple {
+        background: #ede9fe;
+    }
+
+
+    .notification-option-icon.red {
+        background: #fee2e2;
+    }
+
+
+    .notification-option-icon.green {
+        background: #dcfce7;
+    }
+
+
+    .notification-option-icon.blue {
+        background: #dbeafe;
+    }
+
+
+    .notification-option-icon.orange {
+        background: #ffedd5;
+    }
+
+
+    .notification-option-title {
+        color: #111827;
+
+        font-size: 14px;
+        font-weight: 800;
+    }
+
+
+    .notification-option-description {
+        margin-top: 4px;
+
+        max-width: 650px;
+
+        color: #6b7280;
+
+        font-size: 12px;
+        line-height: 1.5;
+    }
+
+
+    /* =====================================================
+       SWITCH
+       ===================================================== */
+
+    .notification-switch {
+        position: relative;
+
+        display: inline-block;
+
+        width: 46px;
+        height: 25px;
+
+        min-width: 46px;
+
+        opacity: 0.65;
+    }
+
+
+    .notification-switch input {
+        width: 0;
+        height: 0;
+
+        opacity: 0;
+    }
+
+
+    .notification-slider {
+        position: absolute;
+
+        inset: 0;
+
+        border-radius: 999px;
+
+        background: #d1d5db;
+    }
+
+
+    .notification-slider::before {
+        content: "";
+
+        position: absolute;
+
+        width: 19px;
+        height: 19px;
+
+        left: 3px;
+        top: 3px;
+
+        border-radius: 50%;
+
+        background: #ffffff;
+
+        box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    }
+
+
+    /* =====================================================
+       RESPONSIVE
+       ===================================================== */
+
+    @media (max-width: 700px) {
+
+        .notification-option {
+            align-items: flex-start;
+        }
+
+        .notification-option-description {
+            font-size: 11px;
+        }
+
+        .notification-summary-grid {
+            grid-template-columns: 1fr !important;
+        }
+
+    }
+
+
+    @media (max-width: 500px) {
+
+        .notification-option {
+            gap: 12px;
+            padding: 14px;
+        }
+
+        .notification-option-icon {
+            width: 36px;
+            height: 36px;
+            min-width: 36px;
+            font-size: 15px;
+        }
+
+    }
+
+</style>
+
+
+{% endblock %}

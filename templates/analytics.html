@@ -1,0 +1,1400 @@
+{% extends "dashboard_base.html" %}
+
+
+{% block title %}
+Analytics - EmailFlow
+{% endblock %}
+
+
+{% block content %}
+
+
+<style>
+
+    /* =====================================================
+       ANALYTICS PAGE
+       ===================================================== */
+
+    .analytics-page {
+        width: 100%;
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+
+
+    /* =====================================================
+       HEADER
+       ===================================================== */
+
+    .analytics-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+
+        gap: 20px;
+
+        margin-bottom: 30px;
+    }
+
+
+    .analytics-eyebrow {
+        color: #6d5dfc;
+
+        font-size: 11px;
+        font-weight: 800;
+
+        letter-spacing: 1.2px;
+        text-transform: uppercase;
+
+        margin-bottom: 7px;
+    }
+
+
+    .analytics-title {
+        margin: 0;
+
+        color: #111827;
+
+        font-size: 32px;
+        font-weight: 800;
+
+        letter-spacing: -0.6px;
+    }
+
+
+    .analytics-subtitle {
+        margin: 8px 0 0;
+
+        color: #6b7280;
+
+        font-size: 14px;
+        line-height: 1.6;
+    }
+
+
+    .analytics-period {
+        display: inline-flex;
+        align-items: center;
+
+        gap: 8px;
+
+        padding: 9px 13px;
+
+        border: 1px solid #e5e7eb;
+        border-radius: 9px;
+
+        background: #ffffff;
+
+        color: #6b7280;
+
+        font-size: 12px;
+        font-weight: 700;
+
+        box-shadow:
+            0 3px 12px rgba(15, 23, 42, 0.04);
+    }
+
+
+    /* =====================================================
+       STAT CARDS
+       ===================================================== */
+
+    .analytics-stats {
+        display: grid;
+
+        grid-template-columns:
+            repeat(4, minmax(0, 1fr));
+
+        gap: 18px;
+
+        margin-bottom: 24px;
+    }
+
+
+    .analytics-stat-card {
+        position: relative;
+
+        padding: 22px;
+
+        background: #ffffff;
+
+        border: 1px solid #e5e7eb;
+
+        border-radius: 16px;
+
+        box-shadow:
+            0 5px 18px rgba(15, 23, 42, 0.05);
+
+        overflow: hidden;
+    }
+
+
+    .analytics-stat-card::after {
+        content: "";
+
+        position: absolute;
+
+        width: 80px;
+        height: 80px;
+
+        right: -30px;
+        top: -30px;
+
+        border-radius: 50%;
+
+        background: #f5f3ff;
+    }
+
+
+    .analytics-stat-icon {
+        position: relative;
+        z-index: 2;
+
+        display: flex;
+
+        align-items: center;
+        justify-content: center;
+
+        width: 42px;
+        height: 42px;
+
+        margin-bottom: 18px;
+
+        border-radius: 11px;
+
+        background: #ede9fe;
+
+        color: #6d28d9;
+
+        font-size: 18px;
+    }
+
+
+    .analytics-stat-icon.blue {
+        background: #dbeafe;
+        color: #2563eb;
+    }
+
+
+    .analytics-stat-icon.green {
+        background: #dcfce7;
+        color: #15803d;
+    }
+
+
+    .analytics-stat-icon.red {
+        background: #fee2e2;
+        color: #dc2626;
+    }
+
+
+    .analytics-stat-label {
+        color: #6b7280;
+
+        font-size: 12px;
+        font-weight: 700;
+
+        margin-bottom: 6px;
+    }
+
+
+    .analytics-stat-value {
+        color: #111827;
+
+        font-size: 28px;
+        font-weight: 800;
+
+        letter-spacing: -0.5px;
+    }
+
+
+    .analytics-stat-description {
+        margin-top: 7px;
+
+        color: #9ca3af;
+
+        font-size: 11px;
+    }
+
+
+    /* =====================================================
+       MAIN GRID
+       ===================================================== */
+
+    .analytics-main-grid {
+        display: grid;
+
+        grid-template-columns:
+            minmax(0, 1.65fr)
+            minmax(280px, 0.75fr);
+
+        gap: 22px;
+
+        margin-bottom: 24px;
+    }
+
+
+    .analytics-card {
+        background: #ffffff;
+
+        border: 1px solid #e5e7eb;
+
+        border-radius: 16px;
+
+        box-shadow:
+            0 5px 18px rgba(15, 23, 42, 0.05);
+
+        overflow: hidden;
+    }
+
+
+    .analytics-card-header {
+        display: flex;
+
+        align-items: center;
+        justify-content: space-between;
+
+        gap: 15px;
+
+        padding: 21px 23px;
+
+        border-bottom: 1px solid #f0f1f3;
+    }
+
+
+    .analytics-card-header h2 {
+        margin: 0;
+
+        color: #111827;
+
+        font-size: 16px;
+        font-weight: 800;
+    }
+
+
+    .analytics-card-header p {
+        margin: 5px 0 0;
+
+        color: #9ca3af;
+
+        font-size: 11px;
+    }
+
+
+    .analytics-card-body {
+        padding: 23px;
+    }
+
+
+    /* =====================================================
+       DELIVERY OVERVIEW
+       ===================================================== */
+
+    .delivery-overview {
+        display: flex;
+
+        align-items: center;
+
+        gap: 28px;
+    }
+
+
+    .delivery-circle {
+        position: relative;
+
+        display: flex;
+
+        align-items: center;
+        justify-content: center;
+
+        width: 150px;
+        height: 150px;
+
+        min-width: 150px;
+
+        border-radius: 50%;
+
+        background:
+            conic-gradient(
+                #6d5dfc {{ delivery_rate }}%,
+                #ede9fe {{ delivery_rate }}% 100%
+            );
+    }
+
+
+    .delivery-circle::before {
+        content: "";
+
+        position: absolute;
+
+        width: 112px;
+        height: 112px;
+
+        border-radius: 50%;
+
+        background: #ffffff;
+    }
+
+
+    .delivery-circle-content {
+        position: relative;
+
+        text-align: center;
+    }
+
+
+    .delivery-circle-value {
+        color: #111827;
+
+        font-size: 26px;
+        font-weight: 800;
+    }
+
+
+    .delivery-circle-label {
+        margin-top: 2px;
+
+        color: #9ca3af;
+
+        font-size: 10px;
+        font-weight: 700;
+
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+
+    .delivery-breakdown {
+        flex: 1;
+    }
+
+
+    .delivery-row {
+        display: flex;
+
+        align-items: center;
+
+        gap: 10px;
+
+        margin-bottom: 16px;
+    }
+
+
+    .delivery-row:last-child {
+        margin-bottom: 0;
+    }
+
+
+    .delivery-dot {
+        width: 9px;
+        height: 9px;
+
+        min-width: 9px;
+
+        border-radius: 50%;
+
+        background: #6d5dfc;
+    }
+
+
+    .delivery-dot.failed {
+        background: #ef4444;
+    }
+
+
+    .delivery-dot.pending {
+        background: #f59e0b;
+    }
+
+
+    .delivery-row-name {
+        flex: 1;
+
+        color: #4b5563;
+
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+
+    .delivery-row-value {
+        color: #111827;
+
+        font-size: 13px;
+        font-weight: 800;
+    }
+
+
+    /* =====================================================
+       CAMPAIGN STATUS
+       ===================================================== */
+
+    .status-list {
+        display: flex;
+
+        flex-direction: column;
+
+        gap: 13px;
+    }
+
+
+    .status-item {
+        display: flex;
+
+        align-items: center;
+
+        gap: 12px;
+
+        padding: 13px;
+
+        border-radius: 10px;
+
+        background: #f9fafb;
+    }
+
+
+    .status-icon {
+        display: flex;
+
+        align-items: center;
+        justify-content: center;
+
+        width: 36px;
+        height: 36px;
+
+        border-radius: 9px;
+
+        background: #ede9fe;
+
+        color: #6d28d9;
+    }
+
+
+    .status-icon.green {
+        background: #dcfce7;
+        color: #15803d;
+    }
+
+
+    .status-icon.orange {
+        background: #ffedd5;
+        color: #c2410c;
+    }
+
+
+    .status-item-info {
+        flex: 1;
+    }
+
+
+    .status-item-name {
+        color: #374151;
+
+        font-size: 12px;
+        font-weight: 700;
+    }
+
+
+    .status-item-description {
+        margin-top: 3px;
+
+        color: #9ca3af;
+
+        font-size: 10px;
+    }
+
+
+    .status-item-value {
+        color: #111827;
+
+        font-size: 18px;
+        font-weight: 800;
+    }
+
+
+    /* =====================================================
+       CAMPAIGN TABLE
+       ===================================================== */
+
+    .analytics-table-wrapper {
+        width: 100%;
+
+        overflow-x: auto;
+    }
+
+
+    .analytics-table {
+        width: 100%;
+
+        border-collapse: collapse;
+
+        min-width: 720px;
+    }
+
+
+    .analytics-table th {
+        padding: 13px 18px;
+
+        background: #f9fafb;
+
+        color: #6b7280;
+
+        font-size: 10px;
+        font-weight: 800;
+
+        text-align: left;
+
+        text-transform: uppercase;
+
+        letter-spacing: 0.5px;
+
+        border-bottom: 1px solid #e5e7eb;
+    }
+
+
+    .analytics-table td {
+        padding: 16px 18px;
+
+        color: #374151;
+
+        font-size: 12px;
+
+        border-bottom: 1px solid #f0f1f3;
+    }
+
+
+    .analytics-table tbody tr:last-child td {
+        border-bottom: none;
+    }
+
+
+    .analytics-table tbody tr:hover {
+        background: #fafaff;
+    }
+
+
+    .campaign-name {
+        color: #111827;
+
+        font-weight: 800;
+    }
+
+
+    .campaign-date {
+        margin-top: 4px;
+
+        color: #9ca3af;
+
+        font-size: 10px;
+    }
+
+
+    .number-strong {
+        color: #111827;
+
+        font-weight: 800;
+    }
+
+
+    /* =====================================================
+       PROGRESS BAR
+       ===================================================== */
+
+    .campaign-progress {
+        min-width: 120px;
+    }
+
+
+    .campaign-progress-top {
+        display: flex;
+
+        justify-content: space-between;
+
+        margin-bottom: 6px;
+    }
+
+
+    .campaign-progress-label {
+        color: #6b7280;
+
+        font-size: 10px;
+    }
+
+
+    .campaign-progress-value {
+        color: #111827;
+
+        font-size: 10px;
+        font-weight: 800;
+    }
+
+
+    .campaign-progress-bar {
+        width: 100%;
+        height: 6px;
+
+        border-radius: 999px;
+
+        background: #ede9fe;
+
+        overflow: hidden;
+    }
+
+
+    .campaign-progress-fill {
+        height: 100%;
+
+        border-radius: inherit;
+
+        background: #6d28d9;
+    }
+
+
+    /* =====================================================
+       EMPTY STATE
+       ===================================================== */
+
+    .analytics-empty {
+        padding: 55px 25px;
+
+        text-align: center;
+    }
+
+
+    .analytics-empty-icon {
+        display: flex;
+
+        align-items: center;
+        justify-content: center;
+
+        width: 58px;
+        height: 58px;
+
+        margin: 0 auto 15px;
+
+        border-radius: 15px;
+
+        background: #ede9fe;
+
+        font-size: 25px;
+    }
+
+
+    .analytics-empty h3 {
+        margin: 0;
+
+        color: #111827;
+
+        font-size: 16px;
+    }
+
+
+    .analytics-empty p {
+        max-width: 450px;
+
+        margin: 7px auto 0;
+
+        color: #9ca3af;
+
+        font-size: 12px;
+        line-height: 1.6;
+    }
+
+
+    /* =====================================================
+       FUTURE TRACKING
+       ===================================================== */
+
+    .tracking-notice {
+        display: flex;
+
+        align-items: flex-start;
+
+        gap: 13px;
+
+        padding: 17px;
+
+        border: 1px solid #ddd6fe;
+
+        border-radius: 11px;
+
+        background: #faf5ff;
+    }
+
+
+    .tracking-notice-icon {
+        font-size: 18px;
+    }
+
+
+    .tracking-notice-text {
+        color: #6b21a8;
+
+        font-size: 11px;
+
+        line-height: 1.6;
+    }
+
+
+    /* =====================================================
+       RESPONSIVE
+       ===================================================== */
+
+    @media (max-width: 1100px) {
+
+        .analytics-stats {
+            grid-template-columns:
+                repeat(2, minmax(0, 1fr));
+        }
+
+        .analytics-main-grid {
+            grid-template-columns: 1fr;
+        }
+
+    }
+
+
+    @media (max-width: 650px) {
+
+        .analytics-header {
+            flex-direction: column;
+        }
+
+        .analytics-title {
+            font-size: 26px;
+        }
+
+        .analytics-stats {
+            grid-template-columns: 1fr;
+        }
+
+        .delivery-overview {
+            align-items: flex-start;
+
+            flex-direction: column;
+        }
+
+        .delivery-circle {
+            margin: 0 auto;
+        }
+
+        .analytics-card-header,
+        .analytics-card-body {
+            padding: 18px;
+        }
+
+    }
+
+</style>
+
+
+
+<div class="analytics-page">
+
+
+    <!-- =================================================
+         HEADER
+         ================================================= -->
+
+    <div class="analytics-header">
+
+        <div>
+
+            <div class="analytics-eyebrow">
+                EMAIL PERFORMANCE
+            </div>
+
+            <h1 class="analytics-title">
+                Analytics
+            </h1>
+
+            <p class="analytics-subtitle">
+                Understand how your campaigns and audience
+                are performing.
+            </p>
+
+        </div>
+
+
+        <div class="analytics-period">
+            📈 All-time performance
+        </div>
+
+    </div>
+
+
+
+    <!-- =================================================
+         STAT CARDS
+         ================================================= -->
+
+    <div class="analytics-stats">
+
+
+        <!-- CONTACTS -->
+
+        <div class="analytics-stat-card">
+
+            <div class="analytics-stat-icon blue">
+                👥
+            </div>
+
+            <div class="analytics-stat-label">
+                Total Contacts
+            </div>
+
+            <div class="analytics-stat-value">
+                {{ total_contacts }}
+            </div>
+
+            <div class="analytics-stat-description">
+                People in your audience
+            </div>
+
+        </div>
+
+
+
+        <!-- CAMPAIGNS -->
+
+        <div class="analytics-stat-card">
+
+            <div class="analytics-stat-icon">
+                📬
+            </div>
+
+            <div class="analytics-stat-label">
+                Campaigns
+            </div>
+
+            <div class="analytics-stat-value">
+                {{ total_campaigns }}
+            </div>
+
+            <div class="analytics-stat-description">
+                Campaigns created
+            </div>
+
+        </div>
+
+
+
+        <!-- SENT -->
+
+        <div class="analytics-stat-card">
+
+            <div class="analytics-stat-icon green">
+                ✓
+            </div>
+
+            <div class="analytics-stat-label">
+                Emails Sent
+            </div>
+
+            <div class="analytics-stat-value">
+                {{ total_sent }}
+            </div>
+
+            <div class="analytics-stat-description">
+                Successfully delivered
+            </div>
+
+        </div>
+
+
+
+        <!-- DELIVERY -->
+
+        <div class="analytics-stat-card">
+
+            <div class="analytics-stat-icon">
+                %
+            </div>
+
+            <div class="analytics-stat-label">
+                Delivery Rate
+            </div>
+
+            <div class="analytics-stat-value">
+                {{ delivery_rate }}%
+            </div>
+
+            <div class="analytics-stat-description">
+                Successful sends
+            </div>
+
+        </div>
+
+
+    </div>
+
+
+
+    <!-- =================================================
+         OVERVIEW GRID
+         ================================================= -->
+
+    <div class="analytics-main-grid">
+
+
+        <!-- DELIVERY -->
+
+        <section class="analytics-card">
+
+            <div class="analytics-card-header">
+
+                <div>
+
+                    <h2>
+                        Delivery Overview
+                    </h2>
+
+                    <p>
+                        Overall campaign sending performance
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <div class="analytics-card-body">
+
+                <div class="delivery-overview">
+
+
+                    <div class="delivery-circle">
+
+                        <div class="delivery-circle-content">
+
+                            <div class="delivery-circle-value">
+                                {{ delivery_rate }}%
+                            </div>
+
+                            <div class="delivery-circle-label">
+                                Delivered
+                            </div>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="delivery-breakdown">
+
+
+                        <div class="delivery-row">
+
+                            <span class="delivery-dot"></span>
+
+                            <span class="delivery-row-name">
+                                Sent
+                            </span>
+
+                            <span class="delivery-row-value">
+                                {{ total_sent }}
+                            </span>
+
+                        </div>
+
+
+                        <div class="delivery-row">
+
+                            <span class="delivery-dot failed"></span>
+
+                            <span class="delivery-row-name">
+                                Failed
+                            </span>
+
+                            <span class="delivery-row-value">
+                                {{ total_failed }}
+                            </span>
+
+                        </div>
+
+
+                        <div class="delivery-row">
+
+                            <span class="delivery-dot pending"></span>
+
+                            <span class="delivery-row-name">
+                                Pending
+                            </span>
+
+                            <span class="delivery-row-value">
+                                {{ total_pending }}
+                            </span>
+
+                        </div>
+
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+
+        <!-- CAMPAIGN STATUS -->
+
+        <section class="analytics-card">
+
+            <div class="analytics-card-header">
+
+                <div>
+
+                    <h2>
+                        Campaign Status
+                    </h2>
+
+                    <p>
+                        Current campaign states
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <div class="analytics-card-body">
+
+                <div class="status-list">
+
+
+                    <div class="status-item">
+
+                        <div class="status-icon green">
+                            ✓
+                        </div>
+
+                        <div class="status-item-info">
+
+                            <div class="status-item-name">
+                                Sent
+                            </div>
+
+                            <div class="status-item-description">
+                                Completed campaigns
+                            </div>
+
+                        </div>
+
+                        <div class="status-item-value">
+                            {{ completed_campaigns }}
+                        </div>
+
+                    </div>
+
+
+                    <div class="status-item">
+
+                        <div class="status-icon orange">
+                            ↗
+                        </div>
+
+                        <div class="status-item-info">
+
+                            <div class="status-item-name">
+                                Sending
+                            </div>
+
+                            <div class="status-item-description">
+                                Currently processing
+                            </div>
+
+                        </div>
+
+                        <div class="status-item-value">
+                            {{ sending_campaigns }}
+                        </div>
+
+                    </div>
+
+
+                    <div class="status-item">
+
+                        <div class="status-icon">
+                            📝
+                        </div>
+
+                        <div class="status-item-info">
+
+                            <div class="status-item-name">
+                                Drafts
+                            </div>
+
+                            <div class="status-item-description">
+                                Not yet sent
+                            </div>
+
+                        </div>
+
+                        <div class="status-item-value">
+                            {{ draft_campaigns }}
+                        </div>
+
+                    </div>
+
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+    </div>
+
+
+
+    <!-- =================================================
+         CAMPAIGN PERFORMANCE
+         ================================================= -->
+
+    <section class="analytics-card">
+
+        <div class="analytics-card-header">
+
+            <div>
+
+                <h2>
+                    Campaign Performance
+                </h2>
+
+                <p>
+                    Performance of your recent email campaigns
+                </p>
+
+            </div>
+
+        </div>
+
+
+        {% if campaign_analytics %}
+
+
+        <div class="analytics-table-wrapper">
+
+            <table class="analytics-table">
+
+                <thead>
+
+                    <tr>
+
+                        <th>
+                            Campaign
+                        </th>
+
+                        <th>
+                            Recipients
+                        </th>
+
+                        <th>
+                            Sent
+                        </th>
+
+                        <th>
+                            Failed
+                        </th>
+
+                        <th>
+                            Pending
+                        </th>
+
+                        <th>
+                            Delivery
+                        </th>
+
+                    </tr>
+
+                </thead>
+
+
+                <tbody>
+
+                    {% for item in campaign_analytics %}
+
+                    <tr>
+
+
+                        <td>
+
+                            <div class="campaign-name">
+                                {{ item.campaign.subject }}
+                            </div>
+
+                            <div class="campaign-date">
+
+                                {{ item.campaign.created_at.strftime("%b %d, %Y") }}
+
+                            </div>
+
+                        </td>
+
+
+                        <td>
+
+                            <span class="number-strong">
+                                {{ item.recipient_count }}
+                            </span>
+
+                        </td>
+
+
+                        <td>
+
+                            <span
+                                style="
+                                    color:#15803d;
+                                    font-weight:800;
+                                "
+                            >
+                                {{ item.sent_count }}
+                            </span>
+
+                        </td>
+
+
+                        <td>
+
+                            <span
+                                style="
+                                    color:#dc2626;
+                                    font-weight:800;
+                                "
+                            >
+                                {{ item.failed_count }}
+                            </span>
+
+                        </td>
+
+
+                        <td>
+
+                            <span
+                                style="
+                                    color:#c2410c;
+                                    font-weight:800;
+                                "
+                            >
+                                {{ item.pending_count }}
+                            </span>
+
+                        </td>
+
+
+                        <td>
+
+                            <div class="campaign-progress">
+
+                                <div class="campaign-progress-top">
+
+                                    <span class="campaign-progress-label">
+                                        Delivery
+                                    </span>
+
+                                    <span class="campaign-progress-value">
+                                        {{ item.delivery_rate }}%
+                                    </span>
+
+                                </div>
+
+
+                                <div class="campaign-progress-bar">
+
+                                    <div
+                                        class="campaign-progress-fill"
+                                        style="width: {{ item.delivery_rate }}%;"
+                                    ></div>
+
+                                </div>
+
+                            </div>
+
+                        </td>
+
+
+                    </tr>
+
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+
+        {% else %}
+
+
+        <div class="analytics-empty">
+
+            <div class="analytics-empty-icon">
+                📊
+            </div>
+
+            <h3>
+                No campaign data yet
+            </h3>
+
+            <p>
+                Once you create and send campaigns, your
+                campaign performance will appear here.
+            </p>
+
+        </div>
+
+
+        {% endif %}
+
+    </section>
+
+
+
+    <!-- =================================================
+         FUTURE TRACKING
+         ================================================= -->
+
+    <section
+        class="analytics-card"
+        style="margin-top:24px;"
+    >
+
+        <div class="analytics-card-body">
+
+            <div class="tracking-notice">
+
+                <div class="tracking-notice-icon">
+                    🚀
+                </div>
+
+                <div class="tracking-notice-text">
+
+                    <strong>
+                        Advanced analytics coming next
+                    </strong>
+
+                    <br>
+
+                    EmailFlow currently tracks sending results.
+                    Later we can add open tracking, click tracking,
+                    bounce tracking, unsubscribe tracking and
+                    campaign engagement charts.
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+</div>
+
+
+{% endblock %}

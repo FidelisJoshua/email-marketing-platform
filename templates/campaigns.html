@@ -6,467 +6,722 @@ Campaigns - EmailFlow
 
 {% block content %}
 
-<!-- =====================================================
-     PAGE HEADER
-     ===================================================== -->
+<div class="campaign-starting-page">
 
-<div class="page-header campaign-page-header">
-
-    <div>
-
-        <div class="page-eyebrow">
-            EMAIL MARKETING
-        </div>
-
-        <h1 class="page-title">
-            Campaigns
-        </h1>
-
-        <p class="page-subtitle">
-            Create, manage and send email campaigns to your audience.
-        </p>
-
-    </div>
-
-</div>
-
-
-<!-- =====================================================
-     CREATE CAMPAIGN
-     ===================================================== -->
-
-<div class="campaign-layout">
-
-
-    <!-- LEFT: CAMPAIGN FORM -->
-
-    <div class="content-card campaign-editor">
-
-        <div class="card-heading">
-
-            <div class="card-heading-icon">
-                ✉
-            </div>
-
-            <div>
-
-                <h2>
-                    Create a campaign
-                </h2>
-
-                <p>
-                    Write an email and send it to your contacts.
-                </p>
-
-            </div>
-
-        </div>
-
-
-        <form
-            method="POST"
-            action="{{ url_for('campaigns') }}"
-            class="campaign-form"
-        >
-
-
-            <!-- SUBJECT -->
-
-            <div class="form-group">
-
-                <label for="subject">
-                    Email Subject
-                </label>
-
-                <input
-                    type="text"
-                    id="subject"
-                    name="subject"
-                    placeholder="Enter your email subject..."
-                    required
-                >
-
-            </div>
-
-
-            <!-- MESSAGE -->
-
-            <div class="form-group">
-
-                <label for="message">
-                    Email Message
-                </label>
-
-                <textarea
-                    id="message"
-                    name="message"
-                    rows="14"
-                    placeholder="Write your email message here..."
-                    required
-                ></textarea>
-
-                <div class="field-hint">
-                    Keep your message clear, useful and easy to read.
-                </div>
-
-            </div>
-
-
-            <!-- ACTIONS -->
-
-            <div class="campaign-form-actions">
-
-                <button
-                    type="submit"
-                    class="btn-primary-custom"
-                >
-                    + Save Campaign
-                </button>
-
-                <button
-                    type="reset"
-                    class="btn-secondary-custom"
-                >
-                    Clear
-                </button>
-
-            </div>
-
-        </form>
-
-    </div>
-
-
-
-    <!-- RIGHT: CAMPAIGN TIPS -->
-
-    <div class="campaign-sidebar">
-
-
-        <div class="content-card campaign-tips">
-
-            <div class="dashboard-card-title">
-                Campaign tips
-            </div>
-
-            <div class="dashboard-card-subtitle">
-                Before sending your campaign
-            </div>
-
-
-            <div class="tip-item">
-
-                <div class="tip-icon">
-                    ✓
-                </div>
-
-                <div>
-
-                    <strong>
-                        Write a clear subject
-                    </strong>
-
-                    <p>
-                        Make it easy for your subscribers to understand the email.
-                    </p>
-
-                </div>
-
-            </div>
-
-
-            <div class="tip-item">
-
-                <div class="tip-icon">
-                    ✉
-                </div>
-
-                <div>
-
-                    <strong>
-                        Check your message
-                    </strong>
-
-                    <p>
-                        Preview your campaign before sending it to your audience.
-                    </p>
-
-                </div>
-
-            </div>
-
-
-            <div class="tip-item">
-
-                <div class="tip-icon">
-                    👥
-                </div>
-
-                <div>
-
-                    <strong>
-                        Know your audience
-                    </strong>
-
-                    <p>
-                        Campaigns are currently created for your contacts.
-                    </p>
-
-                </div>
-
-            </div>
-
-        </div>
-
-
-        <div class="content-card campaign-info-card">
-
-            <div class="info-icon">
-                ⚡
-            </div>
-
-            <div>
-
-                <strong>
-                    Ready to send?
-                </strong>
-
-                <p>
-                    Save your campaign first. You can then preview it,
-                    send a test email, or send it to your audience.
-                </p>
-
-            </div>
-
-        </div>
-
-    </div>
-
-</div>
-
-
-
-<!-- =====================================================
-     CAMPAIGN LIST
-     ===================================================== -->
-
-<div class="campaign-list-section">
-
-    <div class="section-row">
+    <!-- PAGE HEADER -->
+    <div class="campaign-starting-header">
 
         <div>
-
             <div class="page-eyebrow">
-                YOUR CAMPAIGNS
+                EMAIL MARKETING
             </div>
 
-            <h2 class="section-title">
-                Recent campaigns
-            </h2>
+            <h1 class="page-title">
+                Choose a template for your campaign
+            </h1>
 
-        </div>
-
-        <div class="campaign-count">
-
-            {{ campaigns|length }}
-
-            {% if campaigns|length == 1 %}
-                campaign
-            {% else %}
-                campaigns
-            {% endif %}
-
+            <p class="page-subtitle">
+                Start with a professionally designed template or create your campaign from scratch.
+            </p>
         </div>
 
     </div>
 
 
-    {% if campaigns %}
+    <!-- ================================================= -->
+    <!-- YOUR TEMPLATES -->
+    <!-- ================================================= -->
 
-        <div class="campaign-table-card">
+    {% set user_templates = templates
+        |selectattr("is_system_template", "equalto", false)
+        |list
+    %}
 
-            <div class="campaign-table-header">
+    {% if user_templates %}
 
-                <div>
-                    Campaign
-                </div>
+    <section class="campaign-template-section">
 
-                <div>
-                    Status
-                </div>
+        <div class="campaign-section-heading">
+            <div>
+                <h2>Your Templates</h2>
 
-                <div>
-                    Sent
-                </div>
-
-                <div>
-                    Failed
-                </div>
-
-                <div>
-                    Actions
-                </div>
-
+                <p>
+                    Templates you have created and saved.
+                </p>
             </div>
+        </div>
 
 
-            {% for campaign in campaigns %}
+        <div class="campaign-template-grid">
 
-                <div class="campaign-row">
+            {% for template in user_templates %}
 
+            <a
+                href="{{ url_for(
+                    'create_campaign',
+                    template_id=template.id
+                ) }}"
+                class="campaign-starting-card"
+            >
 
-                    <!-- CAMPAIGN -->
+                <div class="campaign-card-preview">
 
-                    <div class="campaign-main">
+                    {% if template.html_content %}
 
-                        <div class="campaign-icon">
-                            ✉
-                        </div>
+                        <iframe
+                            srcdoc="{{ template.html_content|e }}"
+                            title="{{ template.name }}"
+                            sandbox="allow-same-origin"
+                            scrolling="no"
+                        ></iframe>
 
-                        <div>
+                    {% else %}
 
-                            <div class="campaign-subject">
+                        <div class="campaign-text-preview">
+                            <strong>
+                                {{ template.subject }}
+                            </strong>
 
-                                {{ campaign.subject }}
-
-                            </div>
-
-                            <div class="campaign-message-preview">
-
-                                {{ campaign.message[:90] }}
-
-                                {% if campaign.message|length > 90 %}
+                            <p>
+                                {{ template.content[:180] }}
+                                {% if template.content|length > 180 %}
                                     ...
                                 {% endif %}
-
-                            </div>
-
+                            </p>
                         </div>
 
-                    </div>
-
-
-                    <!-- STATUS -->
-
-                    <div>
-
-                        {% if campaign.status == "Sent" %}
-
-                            <span class="status-badge status-sent">
-                                ✓ Sent
-                            </span>
-
-                        {% elif campaign.status == "Sending" %}
-
-                            <span class="status-badge status-sending">
-                                ↗ Sending
-                            </span>
-
-                        {% elif campaign.status == "Draft" %}
-
-                            <span class="status-badge status-draft">
-                                ● Draft
-                            </span>
-
-                        {% else %}
-
-                            <span class="status-badge status-default">
-                                {{ campaign.status }}
-                            </span>
-
-                        {% endif %}
-
-                    </div>
-
-
-                    <!-- SENT -->
-
-                    <div class="campaign-stat sent-stat">
-
-                        {{ campaign.sent_count or 0 }}
-
-                    </div>
-
-
-                    <!-- FAILED -->
-
-                    <div class="campaign-stat failed-stat">
-
-                        {{ campaign.failed_count or 0 }}
-
-                    </div>
-
-
-                    <!-- ACTIONS -->
-
-                    <div class="campaign-actions">
-
-                        <a
-                            href="{{ url_for('preview_campaign', campaign_id=campaign.id) }}"
-                            class="action-button"
-                        >
-                            Preview
-                        </a>
-
-
-                        <a
-                            href="{{ url_for('send_test_email', campaign_id=campaign.id) }}"
-                            class="action-button"
-                        >
-                            Test
-                        </a>
-
-
-                        {% if campaign.status != "Sent" %}
-
-                            <form
-                                method="POST"
-                                action="{{ url_for('send_campaign', campaign_id=campaign.id) }}"
-                                style="display:inline;"
-                            >
-
-                                <button
-                                    type="submit"
-                                    class="action-button action-send"
-                                    onclick="return confirm('Send this campaign to your contacts?');"
-                                >
-                                    Send
-                                </button>
-
-                            </form>
-
-                        {% endif %}
-
-                    </div>
+                    {% endif %}
 
                 </div>
+
+
+                <div class="campaign-card-details">
+
+                    <h3>
+                        {{ template.name }}
+                    </h3>
+
+                    <span>
+                        {{ template.category }}
+                    </span>
+
+                </div>
+
+            </a>
 
             {% endfor %}
 
         </div>
 
-    {% else %}
+    </section>
 
-        <!-- EMPTY STATE -->
+    {% endif %}
 
-        <div class="content-card campaign-empty-state">
 
-            <div class="empty-icon">
-                ✉
-            </div>
+    <!-- ================================================= -->
+    <!-- STARTING POINTS -->
+    <!-- ================================================= -->
 
-            <div class="empty-title">
-                No campaigns yet
-            </div>
+    <section class="campaign-template-section">
 
-            <div class="empty-text">
-                Create your first campaign using the editor above.
+        <div class="campaign-section-heading">
+
+            <div>
+                <h2>
+                    Starting Points
+                </h2>
+
+                <p>
+                    Choose a starting point for your new campaign.
+                </p>
             </div>
 
         </div>
 
+
+        <div class="campaign-template-grid">
+
+            {% for template in templates
+                if template.is_system_template
+            %}
+
+            <a
+                href="{{ url_for(
+                    'create_campaign',
+                    template_id=template.id
+                ) }}"
+                class="campaign-starting-card"
+            >
+
+                <div class="campaign-card-preview">
+
+                    {% if template.html_content %}
+
+                        <iframe
+                            srcdoc="{{ template.html_content|e }}"
+                            title="{{ template.name }}"
+                            sandbox="allow-same-origin"
+                            scrolling="no"
+                        ></iframe>
+
+                    {% else %}
+
+                        <div class="campaign-text-preview">
+
+                            <strong>
+                                {{ template.subject }}
+                            </strong>
+
+                            <p>
+                                {{ template.content[:180] }}
+
+                                {% if template.content|length > 180 %}
+                                    ...
+                                {% endif %}
+                            </p>
+
+                        </div>
+
+                    {% endif %}
+
+                </div>
+
+
+                <div class="campaign-card-details">
+
+                    <h3>
+                        {{ template.name }}
+                    </h3>
+
+                    <span>
+                        {{ template.category }}
+                    </span>
+
+                </div>
+
+            </a>
+
+            {% endfor %}
+
+
+            <!-- START FROM SCRATCH -->
+
+            <a
+                href="{{ url_for('create_campaign') }}"
+                class="campaign-starting-card scratch-card"
+            >
+
+                <div class="campaign-card-preview scratch-preview">
+
+                    <div class="scratch-icon">
+                        ✎
+                    </div>
+
+                    <strong>
+                        Start from scratch
+                    </strong>
+
+                    <span>
+                        Create your own campaign
+                    </span>
+
+                </div>
+
+
+                <div class="campaign-card-details">
+
+                    <h3>
+                        Start from scratch
+                    </h3>
+
+                    <span>
+                        Blank campaign
+                    </span>
+
+                </div>
+
+            </a>
+
+        </div>
+
+    </section>
+
+
+    <!-- ================================================= -->
+    <!-- EXISTING CAMPAIGNS -->
+    <!-- ================================================= -->
+
+    {% if campaigns %}
+
+    <section class="campaign-existing-section">
+
+        <div class="campaign-section-heading">
+
+            <div>
+                <h2>
+                    Your Campaigns
+                </h2>
+
+                <p>
+                    Continue working with campaigns you have already created.
+                </p>
+            </div>
+
+        </div>
+
+
+        <div class="campaign-existing-list">
+
+            {% for campaign in campaigns %}
+
+            <div class="campaign-existing-item">
+
+                <div class="campaign-existing-info">
+
+                    <h3>
+                        {{ campaign.subject }}
+                    </h3>
+
+                    <p>
+                        {{ campaign.message[:120] }}
+
+                        {% if campaign.message|length > 120 %}
+                            ...
+                        {% endif %}
+                    </p>
+
+                </div>
+
+
+                <div class="campaign-existing-meta">
+
+                    <span class="campaign-status">
+                        {{ campaign.status }}
+                    </span>
+
+                    <a
+                        href="{{ url_for(
+                            'preview_campaign',
+                            campaign_id=campaign.id
+                        ) }}"
+                        class="campaign-view-button"
+                    >
+                        View
+                    </a>
+
+                </div>
+
+            </div>
+
+            {% endfor %}
+
+        </div>
+
+    </section>
+
     {% endif %}
 
 </div>
+
+
+<style>
+
+/* =========================================================
+   CAMPAIGN STARTING POINTS
+   ========================================================= */
+
+.campaign-starting-page {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 10px 0 60px;
+}
+
+
+/* HEADER */
+
+.campaign-starting-header {
+    margin-bottom: 42px;
+}
+
+.campaign-starting-header .page-title {
+    margin-bottom: 8px;
+}
+
+.campaign-starting-header .page-subtitle {
+    max-width: 720px;
+}
+
+
+/* SECTION */
+
+.campaign-template-section {
+    margin-bottom: 48px;
+}
+
+.campaign-section-heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-bottom: 20px;
+}
+
+.campaign-section-heading h2 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 700;
+    color: #111827;
+}
+
+.campaign-section-heading p {
+    margin: 6px 0 0;
+    color: #6b7280;
+    font-size: 13px;
+}
+
+
+/* TEMPLATE GRID */
+
+.campaign-template-grid {
+    display: grid;
+    grid-template-columns:
+        repeat(4, minmax(0, 1fr));
+
+    gap: 18px;
+}
+
+
+/* TEMPLATE CARD */
+
+.campaign-starting-card {
+    display: block;
+    text-decoration: none;
+    color: inherit;
+
+    background: #ffffff;
+
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+
+    overflow: hidden;
+
+    transition:
+        transform 0.2s ease,
+        box-shadow 0.2s ease,
+        border-color 0.2s ease;
+}
+
+.campaign-starting-card:hover {
+    transform: translateY(-4px);
+
+    border-color: #d1d5db;
+
+    box-shadow:
+        0 12px 30px rgba(15, 23, 42, 0.10);
+
+    text-decoration: none;
+}
+
+
+/* PREVIEW */
+
+.campaign-card-preview {
+    height: 250px;
+
+    background: #f8fafc;
+
+    overflow: hidden;
+
+    position: relative;
+
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.campaign-card-preview iframe {
+    width: 200%;
+    height: 500px;
+
+    border: none;
+
+    transform: scale(0.5);
+
+    transform-origin: top left;
+
+    pointer-events: none;
+
+    display: block;
+
+    background: #ffffff;
+}
+
+
+/* TEXT PREVIEW */
+
+.campaign-text-preview {
+    padding: 24px;
+}
+
+.campaign-text-preview strong {
+    display: block;
+
+    font-size: 15px;
+
+    color: #111827;
+
+    margin-bottom: 12px;
+}
+
+.campaign-text-preview p {
+    margin: 0;
+
+    color: #6b7280;
+
+    font-size: 13px;
+
+    line-height: 1.6;
+}
+
+
+/* CARD DETAILS */
+
+.campaign-card-details {
+    padding: 14px 16px 16px;
+}
+
+.campaign-card-details h3 {
+    margin: 0;
+
+    color: #111827;
+
+    font-size: 14px;
+
+    font-weight: 700;
+}
+
+.campaign-card-details span {
+    display: block;
+
+    margin-top: 5px;
+
+    color: #6b7280;
+
+    font-size: 12px;
+}
+
+
+/* START FROM SCRATCH */
+
+.scratch-preview {
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: center;
+
+    justify-content: center;
+
+    text-align: center;
+
+    padding: 30px;
+
+    background: #f8fafc;
+}
+
+.scratch-icon {
+    width: 58px;
+    height: 58px;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    margin-bottom: 15px;
+
+    border-radius: 12px;
+
+    background: #ffffff;
+
+    border: 1px solid #e5e7eb;
+
+    font-size: 27px;
+}
+
+.scratch-preview strong {
+    font-size: 15px;
+
+    color: #111827;
+}
+
+.scratch-preview > span {
+    margin-top: 7px;
+
+    color: #6b7280;
+
+    font-size: 12px;
+}
+
+
+/* EXISTING CAMPAIGNS */
+
+.campaign-existing-section {
+    margin-top: 20px;
+}
+
+.campaign-existing-list {
+    background: #ffffff;
+
+    border: 1px solid #e5e7eb;
+
+    border-radius: 14px;
+
+    overflow: hidden;
+}
+
+.campaign-existing-item {
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    gap: 20px;
+
+    padding: 18px 20px;
+
+    border-bottom: 1px solid #f0f1f3;
+}
+
+.campaign-existing-item:last-child {
+    border-bottom: none;
+}
+
+.campaign-existing-info {
+    min-width: 0;
+}
+
+.campaign-existing-info h3 {
+    margin: 0 0 5px;
+
+    font-size: 14px;
+
+    color: #111827;
+}
+
+.campaign-existing-info p {
+    margin: 0;
+
+    color: #6b7280;
+
+    font-size: 13px;
+
+    white-space: nowrap;
+
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+
+    max-width: 650px;
+}
+
+.campaign-existing-meta {
+    display: flex;
+
+    align-items: center;
+
+    gap: 12px;
+
+    flex-shrink: 0;
+}
+
+.campaign-status {
+    padding: 5px 9px;
+
+    border-radius: 999px;
+
+    background: #f3f4f6;
+
+    color: #4b5563;
+
+    font-size: 11px;
+
+    font-weight: 600;
+}
+
+.campaign-view-button {
+    display: inline-flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    padding: 8px 14px;
+
+    border-radius: 8px;
+
+    background: #111827;
+
+    color: #ffffff;
+
+    font-size: 12px;
+
+    font-weight: 600;
+
+    text-decoration: none;
+}
+
+.campaign-view-button:hover {
+    background: #1f2937;
+
+    color: #ffffff;
+
+    text-decoration: none;
+}
+
+
+/* RESPONSIVE */
+
+@media (max-width: 1100px) {
+
+    .campaign-template-grid {
+        grid-template-columns:
+            repeat(3, minmax(0, 1fr));
+    }
+
+}
+
+
+@media (max-width: 800px) {
+
+    .campaign-template-grid {
+        grid-template-columns:
+            repeat(2, minmax(0, 1fr));
+    }
+
+}
+
+
+@media (max-width: 560px) {
+
+    .campaign-template-grid {
+        grid-template-columns:
+            1fr;
+    }
+
+    .campaign-existing-item {
+        flex-direction: column;
+
+        align-items: flex-start;
+    }
+
+    .campaign-existing-meta {
+        width: 100%;
+
+        justify-content: space-between;
+    }
+
+}
+
+</style>
 
 {% endblock %}

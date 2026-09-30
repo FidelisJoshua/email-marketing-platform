@@ -1,0 +1,229 @@
+{% extends "dashboard_base.html" %}
+
+{% block title %}
+{{ page_title }} - EmailFlow
+{% endblock %}
+
+
+{% block content %}
+
+<style>
+
+.settings-placeholder-page {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 10px 0 60px;
+}
+
+.settings-placeholder-header {
+    margin-bottom: 28px;
+}
+
+.settings-placeholder-header h1 {
+    margin: 0 0 8px;
+    font-size: 32px;
+    color: #111827;
+}
+
+.settings-placeholder-header p {
+    margin: 0;
+    color: #6b7280;
+    font-size: 15px;
+}
+
+.settings-placeholder-layout {
+    display: grid;
+    grid-template-columns: 250px minmax(0, 1fr);
+    gap: 24px;
+    align-items: start;
+}
+
+.settings-placeholder-sidebar {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 16px;
+    padding: 10px;
+}
+
+.settings-placeholder-sidebar-title {
+    padding: 14px 13px 10px;
+    color: #9ca3af;
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+}
+
+.settings-placeholder-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.settings-placeholder-nav a {
+    padding: 11px 13px;
+    border-radius: 10px;
+    color: #4b5563;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.settings-placeholder-nav a:hover {
+    background: #f3f4f6;
+}
+
+.settings-placeholder-nav a.active {
+    background: #eef2ff;
+    color: #4f46e5;
+}
+
+.settings-placeholder-card {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 16px;
+    padding: 50px;
+    text-align: center;
+    box-shadow: 0 8px 25px rgba(15, 23, 42, .04);
+}
+
+.settings-placeholder-icon {
+    width: 64px;
+    height: 64px;
+    margin: 0 auto 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 18px;
+    background: #eef2ff;
+    font-size: 28px;
+}
+
+.settings-placeholder-card h2 {
+    margin: 0 0 10px;
+    color: #111827;
+}
+
+.settings-placeholder-card p {
+    max-width: 500px;
+    margin: 0 auto;
+    color: #6b7280;
+    line-height: 1.7;
+}
+
+@media (max-width: 850px) {
+
+    .settings-placeholder-layout {
+        grid-template-columns: 1fr;
+    }
+
+}
+
+</style>
+
+
+<div class="settings-placeholder-page">
+
+
+    <div class="settings-placeholder-header">
+
+        <h1>
+            Settings
+        </h1>
+
+        <p>
+            Manage your EmailFlow account and application preferences.
+        </p>
+
+    </div>
+
+
+    <div class="settings-placeholder-layout">
+
+
+        <!-- SIDEBAR -->
+
+        <aside class="settings-placeholder-sidebar">
+
+            <div class="settings-placeholder-sidebar-title">
+                Settings
+            </div>
+
+
+            <nav class="settings-placeholder-nav">
+
+                <a
+                    href="{{ url_for('account_settings') }}"
+                >
+                    👤 &nbsp; Account
+                </a>
+
+
+                <a
+                    href="{{ url_for('settings_profile') }}"
+                    {% if active_setting =="Profile" %}
+                    class="active"
+                    {% endif %}
+                >
+                    🪪 &nbsp; Profile
+                </a>
+
+
+                <a
+                    href="{{ url_for('settings_email') }}"
+                    {% if active_setting =="Email&Sending" %}
+                    class="active"
+                    {% endif %}
+                >
+                    ✉️ &nbsp; Email & Sending
+                </a>
+
+
+                <a
+                    href="{{ url_for('settings_notifications') }}"
+                    {% if active_setting =="Notifications" %}
+                    class="active"
+                    {% endif %}
+                >
+                    🔔 &nbsp; Notifications
+                </a>
+
+
+                <a
+                    href="{{ url_for('settings_security') }}"
+                >
+                    🔐 &nbsp; Security
+                </a>
+
+            </nav>
+
+        </aside>
+
+
+        <!-- CONTENT -->
+
+        <main>
+
+            <div class="settings-placeholder-card">
+
+                <div class="settings-placeholder-icon">
+                    ⚙️
+                </div>
+
+                <h2>
+                    {{ page_title }}
+                </h2>
+
+                <p>
+                    {{ page_description }}
+                </p>
+
+            </div>
+
+        </main>
+
+    </div>
+
+</div>
+
+{% endblock %}

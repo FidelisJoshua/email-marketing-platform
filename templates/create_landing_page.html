@@ -6,184 +6,634 @@ Create Landing Page - EmailFlow
 
 {% block content %}
 
-<div class="page-header">
+<style>
 
-    <div>
+    .lp-create {
+        max-width: 1120px;
+        margin: 0 auto;
+        padding: 34px 22px 70px;
+    }
+
+    .lp-create-header {
+        margin-bottom: 26px;
+    }
+
+    .eyebrow {
+        font-size: 12px;
+        font-weight: 800;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+        color: #6d5dfc;
+        margin-bottom: 8px;
+    }
+
+    .lp-create-header h1 {
+        margin: 0;
+        font-size: 34px;
+        color: #111827;
+    }
+
+    .lp-create-header p {
+        margin: 8px 0 0;
+        color: #6b7280;
+        font-size: 15px;
+    }
+
+    .create-grid {
+        display: grid;
+        grid-template-columns:
+            minmax(0, 1.25fr)
+            380px;
+        gap: 24px;
+        align-items: start;
+    }
+
+    .card {
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 20px;
+        box-shadow:
+            0 14px 40px
+            rgba(15, 23, 42, .07);
+    }
+
+    .form-card {
+        padding: 30px;
+    }
+
+    .template-card {
+        overflow: hidden;
+        position: sticky;
+        top: 24px;
+    }
+
+    .template-top {
+        padding: 24px;
+        background:
+            linear-gradient(
+                135deg,
+                #f5f3ff,
+                #eef2ff
+            );
+    }
+
+    .template-top h2 {
+        margin: 0 0 5px;
+        font-size: 20px;
+        color: #111827;
+    }
+
+    .template-top p {
+        margin: 0;
+        color: #6b7280;
+        font-size: 14px;
+    }
+
+    .mini-preview {
+        margin-top: 18px;
+        min-height: 260px;
+        border-radius: 16px;
+        padding: 26px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        overflow: hidden;
+    }
+
+    .mini-preview.creator {
+        background: #f5f3ff;
+        color: #312e81;
+    }
+
+    .mini-preview.studio {
+        background: #111827;
+        color: #ffffff;
+    }
+
+    .mini-preview.newsletter {
+        background: #fffdf5;
+        color: #78350f;
+        font-family: Georgia, serif;
+    }
+
+    .mini-preview.product {
+        background: #eff6ff;
+        color: #1e3a8a;
+    }
+
+    .mini-preview.scratch {
+        background: #ffffff;
+        color: #111827;
+        border: 1px solid #e5e7eb;
+    }
+
+    .mini-inner {
+        width: 100%;
+        max-width: 310px;
+    }
+
+    .mini-inner h3 {
+        font-size: 30px;
+        line-height: 1.05;
+        margin: 0 0 12px;
+    }
+
+    .mini-inner p {
+        font-size: 14px;
+        line-height: 1.55;
+        opacity: .78;
+    }
+
+    .mini-form {
+        margin-top: 18px;
+        background: #ffffff;
+        padding: 16px;
+        border-radius: 14px;
+        box-shadow:
+            0 10px 30px
+            rgba(15, 23, 42, .12);
+        color: #111827;
+    }
+
+    .mini-form input {
+        width: 100%;
+        padding: 9px;
+        border: 1px solid #d1d5db;
+        border-radius: 7px;
+        margin-bottom: 8px;
+        box-sizing: border-box;
+    }
+
+    .mini-form button {
+        width: 100%;
+        border: 0;
+        padding: 10px;
+        border-radius: 8px;
+        background: #4f46e5;
+        color: #ffffff;
+        font-weight: 800;
+    }
+
+    .template-bottom {
+        padding: 20px 24px 24px;
+    }
+
+    .template-label {
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: .08em;
+        font-weight: 800;
+        color: #9ca3af;
+    }
+
+    .template-name {
+        font-size: 18px;
+        font-weight: 800;
+        color: #111827;
+        margin-top: 5px;
+    }
+
+    .template-description {
+        font-size: 13px;
+        color: #6b7280;
+        line-height: 1.55;
+        margin-top: 7px;
+    }
+
+    .field {
+        margin-bottom: 20px;
+    }
+
+    .field label {
+        display: block;
+        font-size: 14px;
+        font-weight: 800;
+        color: #111827;
+        margin-bottom: 8px;
+    }
+
+    .field input,
+    .field textarea {
+        width: 100%;
+        padding: 14px 15px;
+        border: 1px solid #d1d5db;
+        border-radius: 12px;
+        background: #ffffff;
+        font: inherit;
+        color: #111827;
+        outline: none;
+        transition: .18s;
+        box-sizing: border-box;
+    }
+
+    .field textarea {
+        min-height: 135px;
+        resize: vertical;
+    }
+
+    .field input:focus,
+    .field textarea:focus {
+        border-color: #6d5dfc;
+        box-shadow:
+            0 0 0 4px
+            rgba(109, 93, 252, .10);
+    }
+
+    .hint {
+        font-size: 12px;
+        color: #9ca3af;
+        margin-top: 6px;
+    }
+
+    .actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 12px;
+        align-items: center;
+        margin-top: 28px;
+        padding-top: 22px;
+        border-top: 1px solid #eef0f4;
+    }
+
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        text-decoration: none;
+        border: 0;
+        border-radius: 11px;
+        padding: 12px 18px;
+        font-weight: 800;
+        font-size: 14px;
+        cursor: pointer;
+        transition: .18s;
+    }
+
+    .btn:hover {
+        transform: translateY(-1px);
+    }
+
+    .btn-cancel {
+        background: #f3f4f6;
+        color: #374151;
+    }
+
+    .btn-create {
+        background:
+            linear-gradient(
+                135deg,
+                #6d5dfc,
+                #4f46e5
+            );
+        color: #ffffff;
+        box-shadow:
+            0 8px 20px
+            rgba(79, 70, 229, .25);
+        min-width: 185px;
+    }
+
+    .btn-create:hover {
+        box-shadow:
+            0 12px 26px
+            rgba(79, 70, 229, .32);
+    }
+
+    .selected-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 11px;
+        border-radius: 999px;
+        background: #ede9fe;
+        color: #5b21b6;
+        font-size: 12px;
+        font-weight: 800;
+        margin-bottom: 22px;
+    }
+
+    @media (max-width: 900px) {
+
+        .create-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .template-card {
+            position: static;
+        }
+
+        .template-card {
+            order: -1;
+        }
+
+    }
+
+</style>
+
+
+<div class="lp-create">
+
+
+    <div class="lp-create-header">
+
+        <div class="eyebrow">
+            Landing Pages
+        </div>
 
         <h1>
-            Create Landing Page
+            Create your landing page
         </h1>
 
         <p>
-            Build a page that turns visitors into subscribers.
+            Start with your selected design,
+            then edit the content and styling
+            in one editor.
         </p>
 
     </div>
 
-</div>
+
+    <div class="create-grid">
 
 
-<div class="card">
+        <!-- FORM -->
 
-    <form
-        method="POST"
-        action="{{ url_for('create_landing_page') }}"
-    >
+        <div class="card form-card">
 
-        <!-- =============================================
-             PAGE NAME
-        ============================================== -->
+            {% if template %}
 
-        <div class="form-group">
+            <div class="selected-pill">
+                ✓ {{ template.name }}
+                template selected
+            </div>
 
-            <label for="name">
-                Landing Page Name
-            </label>
+            {% endif %}
 
-            <input
-                type="text"
-                id="name"
-                name="name"
-                placeholder="Example: Newsletter Signup"
-                required
-            >
 
-            <small>
-                This is an internal name for your landing page.
-            </small>
+            <form method="POST">
+
+                {% if template %}
+
+                <input
+                    type="hidden"
+                    name="template_id"
+                    value="{{ template.id }}"
+                >
+
+                {% endif %}
+
+
+                <div class="field">
+
+                    <label for="name">
+                        Landing Page Name
+                    </label>
+
+                    <input
+                        id="name"
+                        name="name"
+                        required
+                        placeholder="Example: Newsletter Signup"
+                    >
+
+                    <div class="hint">
+                        This is your internal name
+                        inside EmailFlow.
+                    </div>
+
+                </div>
+
+
+                <div class="field">
+
+                    <label for="headline">
+                        Headline
+                    </label>
+
+                    <input
+                        id="headline"
+                        name="headline"
+                        required
+                        value="{{ template.headline if template else '' }}"
+                    >
+
+                </div>
+
+
+                <div class="field">
+
+                    <label for="subheadline">
+                        Subheadline
+                    </label>
+
+                    <input
+                        id="subheadline"
+                        name="subheadline"
+                        value="{{ template.subheadline if template else '' }}"
+                    >
+
+                </div>
+
+
+                <div class="field">
+
+                    <label for="description">
+                        Description
+                    </label>
+
+                    <textarea
+                        id="description"
+                        name="description"
+                        placeholder="Tell visitors why they should subscribe..."
+                    >{{ template.description_text if template else '' }}</textarea>
+
+                </div>
+
+
+                <div class="field">
+
+                    <label for="button_text">
+                        Button Text
+                    </label>
+
+                    <input
+                        id="button_text"
+                        name="button_text"
+                        value="{{ template.button_text if template else 'Get Started' }}"
+                    >
+
+                    <div class="hint">
+                        This is the button visitors
+                        will use to subscribe.
+                    </div>
+
+                </div>
+
+
+                <div class="field">
+
+                    <label for="button_url">
+
+                        Button URL
+
+                        <span
+                            style="
+                                font-weight:500;
+                                color:#9ca3af;
+                            "
+                        >
+                            (optional)
+                        </span>
+
+                    </label>
+
+                    <input
+                        type="url"
+                        id="button_url"
+                        name="button_url"
+                        placeholder="https://example.com"
+                    >
+
+                </div>
+
+
+                <div class="actions">
+
+                    <a
+                        class="btn btn-cancel"
+                        href="{{ url_for('landing_pages') }}"
+                    >
+                        Cancel
+                    </a>
+
+                    <button
+                        class="btn btn-create"
+                        type="submit"
+                    >
+                        Create Landing Page
+                        <span>→</span>
+                    </button>
+
+                </div>
+
+            </form>
 
         </div>
 
 
-        <!-- =============================================
-             HEADLINE
-        ============================================== -->
+        <!-- TEMPLATE PREVIEW -->
 
-        <div class="form-group">
+        <aside class="card template-card">
 
-            <label for="headline">
-                Headline
-            </label>
+            <div class="template-top">
 
-            <input
-                type="text"
-                id="headline"
-                name="headline"
-                placeholder="Grow your audience with EmailFlow"
-                required
-            >
+                <h2>
+                    Selected design
+                </h2>
 
-        </div>
+                <p>
+                    Your template will be applied
+                    when you create the page.
+                </p>
 
 
-        <!-- =============================================
-             SUBHEADLINE
-        ============================================== -->
-
-        <div class="form-group">
-
-            <label for="subheadline">
-                Subheadline
-            </label>
-
-            <input
-                type="text"
-                id="subheadline"
-                name="subheadline"
-                placeholder="Build your email list and grow your business."
-            >
-
-        </div>
+                {% set style =
+                    template.style
+                    if template
+                    else 'scratch'
+                %}
 
 
-        <!-- =============================================
-             DESCRIPTION
-        ============================================== -->
+                <div class="mini-preview {{ style }}">
 
-        <div class="form-group">
+                    <div class="mini-inner">
 
-            <label for="description">
-                Description
-            </label>
+                        <h3>
+                            {{
+                                template.headline
+                                if template
+                                else
+                                'Your headline goes here.'
+                            }}
+                        </h3>
 
-            <textarea
-                id="description"
-                name="description"
-                rows="6"
-                placeholder="Tell visitors why they should subscribe..."
-            ></textarea>
-
-        </div>
-
-
-        <!-- =============================================
-             BUTTON TEXT
-        ============================================== -->
-
-        <div class="form-group">
-
-            <label for="button_text">
-                Button Text
-            </label>
-
-            <input
-                type="text"
-                id="button_text"
-                name="button_text"
-                value="Get Started"
-            >
-
-        </div>
+                        <p>
+                            {{
+                                template.subheadline
+                                if template
+                                else
+                                'Add a short description of your offer.'
+                            }}
+                        </p>
 
 
-        <!-- =============================================
-             BUTTON URL
-        ============================================== -->
+                        <div class="mini-form">
 
-        <div class="form-group">
+                            <input
+                                placeholder="Your name"
+                                disabled
+                            >
 
-            <label for="button_url">
-                Button URL
-            </label>
+                            <input
+                                placeholder="you@example.com"
+                                disabled
+                            >
 
-            <input
-                type="url"
-                id="button_url"
-                name="button_url"
-                placeholder="https://example.com"
-            >
+                            <button type="button">
 
-            <small>
-                Optional. You can add this later.
-            </small>
+                                {{
+                                    template.button_text
+                                    if template
+                                    else
+                                    'Subscribe'
+                                }}
 
-        </div>
+                            </button>
 
+                        </div>
 
-        <!-- =============================================
-             ACTIONS
-        ============================================== -->
+                    </div>
 
-        <div class="form-actions">
+                </div>
 
-            <a
-                href="{{ url_for('landing_pages') }}"
-                class="btn btn-secondary"
-            >
-                Cancel
-            </a>
+            </div>
 
 
-            <button
-                type="submit"
-                class="btn btn-primary"
-            >
-                Create Landing Page
-            </button>
+            <div class="template-bottom">
 
-        </div>
+                <div class="template-label">
+                    Template
+                </div>
 
-    </form>
+                <div class="template-name">
+
+                    {{
+                        template.name
+                        if template
+                        else
+                        'From Scratch'
+                    }}
+
+                </div>
+
+                <div class="template-description">
+
+                    {{
+                        template.description
+                        if template
+                        else
+                        'A blank starting point for your own design.'
+                    }}
+
+                </div>
+
+            </div>
+
+        </aside>
+
+
+    </div>
 
 </div>
 

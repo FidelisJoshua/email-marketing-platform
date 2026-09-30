@@ -1,0 +1,824 @@
+{% extends "dashboard_base.html" %}
+
+{% block title %}
+Edit Landing Page Design - EmailFlow
+{% endblock %}
+
+{% block content %}
+
+<style>
+
+    .design-page {
+        max-width: 1250px;
+        margin: 0 auto;
+        padding: 32px 22px 70px;
+    }
+
+    .design-header {
+        margin-bottom: 25px;
+    }
+
+    .eyebrow {
+        font-size: 12px;
+        font-weight: 800;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+        color: #6d5dfc;
+        margin-bottom: 7px;
+    }
+
+    .design-header h1 {
+        margin: 0;
+        font-size: 32px;
+        color: #111827;
+    }
+
+    .design-header p {
+        margin: 7px 0 0;
+        color: #6b7280;
+    }
+
+    .design-grid {
+        display: grid;
+        grid-template-columns:
+            360px
+            minmax(0, 1fr);
+        gap: 24px;
+        align-items: start;
+    }
+
+    .panel {
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 20px;
+        box-shadow:
+            0 12px 35px
+            rgba(15, 23, 42, .06);
+    }
+
+    .controls {
+        padding: 25px;
+        position: sticky;
+        top: 22px;
+    }
+
+    .controls h2 {
+        margin: 0;
+        font-size: 19px;
+        color: #111827;
+    }
+
+    .controls-description {
+        margin: 6px 0 23px;
+        color: #9ca3af;
+        font-size: 13px;
+        line-height: 1.5;
+    }
+
+    .field {
+        margin-bottom: 20px;
+    }
+
+    .field label {
+        display: block;
+        margin-bottom: 8px;
+        font-size: 13px;
+        font-weight: 800;
+        color: #111827;
+    }
+
+    .color-control {
+        display: flex;
+        gap: 9px;
+        align-items: center;
+    }
+
+    .color-control input[type="color"] {
+        width: 48px;
+        height: 42px;
+        padding: 3px;
+        border: 1px solid #d1d5db;
+        border-radius: 9px;
+        background: #ffffff;
+        cursor: pointer;
+    }
+
+    .color-value {
+        flex: 1;
+        padding: 10px 11px;
+        border: 1px solid #d1d5db;
+        border-radius: 9px;
+        font-family: monospace;
+        color: #374151;
+        background: #f9fafb;
+        font-size: 13px;
+    }
+
+    .field select {
+        width: 100%;
+        padding: 12px;
+        border: 1px solid #d1d5db;
+        border-radius: 10px;
+        background: #ffffff;
+        font: inherit;
+        color: #111827;
+    }
+
+    .range-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .range-row input {
+        flex: 1;
+    }
+
+    .range-value {
+        min-width: 48px;
+        padding: 7px 8px;
+        text-align: center;
+        background: #f3f4f6;
+        border-radius: 8px;
+        font-size: 12px;
+        font-weight: 800;
+        color: #374151;
+    }
+
+    .actions {
+        display: flex;
+        gap: 9px;
+        padding-top: 20px;
+        border-top: 1px solid #eef0f4;
+        margin-top: 24px;
+    }
+
+    .btn {
+        flex: 1;
+        display: inline-flex;
+        justify-content: center;
+        align-items: center;
+        padding: 11px 13px;
+        border-radius: 10px;
+        text-decoration: none;
+        border: 0;
+        font-size: 13px;
+        font-weight: 800;
+        cursor: pointer;
+    }
+
+    .btn-cancel {
+        background: #f3f4f6;
+        color: #374151;
+    }
+
+    .btn-save {
+        background:
+            linear-gradient(
+                135deg,
+                #6d5dfc,
+                #4f46e5
+            );
+        color: #ffffff;
+        box-shadow:
+            0 8px 18px
+            rgba(79, 70, 229, .22);
+    }
+
+    /*
+        PREVIEW
+    */
+
+    .preview-panel {
+        overflow: hidden;
+    }
+
+    .preview-heading {
+        padding: 21px 24px;
+        border-bottom: 1px solid #eef0f4;
+    }
+
+    .preview-heading h2 {
+        margin: 0;
+        font-size: 18px;
+        color: #111827;
+    }
+
+    .preview-heading p {
+        margin: 5px 0 0;
+        color: #9ca3af;
+        font-size: 12px;
+    }
+
+    .preview-area {
+        padding: 25px;
+        background: #f8fafc;
+    }
+
+    .landing-preview {
+        min-height: 650px;
+        padding: 50px 28px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+        overflow: hidden;
+        transition: .2s;
+    }
+
+    .preview-inner {
+        width: 100%;
+        max-width: 540px;
+    }
+
+    .preview-logo {
+        font-size: 12px;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: .1em;
+        margin-bottom: 22px;
+    }
+
+    .preview-headline {
+        margin: 0 0 17px;
+        font-size: clamp(35px, 5vw, 58px);
+        line-height: 1.04;
+    }
+
+    .preview-subheadline {
+        font-size: 19px;
+        line-height: 1.5;
+        opacity: .78;
+        margin-bottom: 13px;
+    }
+
+    .preview-description {
+        font-size: 14px;
+        line-height: 1.65;
+        opacity: .70;
+        margin-bottom: 27px;
+    }
+
+    .signup-card {
+        background: #ffffff;
+        color: #111827;
+        padding: 23px;
+        max-width: 430px;
+        margin: 0 auto;
+        box-shadow:
+            0 22px 55px
+            rgba(15, 23, 42, .14);
+    }
+
+    .signup-card input {
+        width: 100%;
+        box-sizing: border-box;
+        padding: 13px;
+        border: 1px solid #d1d5db;
+        border-radius: 8px;
+        margin-bottom: 9px;
+    }
+
+    .signup-card button {
+        width: 100%;
+        padding: 13px;
+        border: 0;
+        font-weight: 800;
+        cursor: pointer;
+    }
+
+    @media (max-width: 900px) {
+
+        .design-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .controls {
+            position: static;
+        }
+
+    }
+
+</style>
+
+
+<div class="design-page">
+
+
+    <div class="design-header">
+
+        <div class="eyebrow">
+            Landing Page Design
+        </div>
+
+        <h1>
+            Customize your design
+        </h1>
+
+        <p>
+            Change the colors, font and shape of
+            your landing page and preview the result.
+        </p>
+
+    </div>
+
+
+    <div class="design-grid">
+
+
+        <!-- CONTROLS -->
+
+        <div class="panel controls">
+
+            <h2>
+                Design Settings
+            </h2>
+
+            <div class="controls-description">
+                Your changes are shown immediately
+                in the preview.
+            </div>
+
+
+            <form method="POST">
+
+
+                <!-- BACKGROUND -->
+
+                <div class="field">
+
+                    <label>
+                        Background Color
+                    </label>
+
+                    <div class="color-control">
+
+                        <input
+                            type="color"
+                            id="background_color"
+                            name="background_color"
+                            value="{{ landing_page.background_color or '#f8fafc' }}"
+                            oninput="updateDesign()"
+                        >
+
+                        <div
+                            class="color-value"
+                            id="backgroundValue"
+                        >
+                            {{ landing_page.background_color or '#f8fafc' }}
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <!-- HEADLINE -->
+
+                <div class="field">
+
+                    <label>
+                        Headline Color
+                    </label>
+
+                    <div class="color-control">
+
+                        <input
+                            type="color"
+                            id="headline_color"
+                            name="headline_color"
+                            value="{{ landing_page.headline_color or '#111827' }}"
+                            oninput="updateDesign()"
+                        >
+
+                        <div
+                            class="color-value"
+                            id="headlineValue"
+                        >
+                            {{ landing_page.headline_color or '#111827' }}
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <!-- BUTTON -->
+
+                <div class="field">
+
+                    <label>
+                        Button Color
+                    </label>
+
+                    <div class="color-control">
+
+                        <input
+                            type="color"
+                            id="button_color"
+                            name="button_color"
+                            value="{{ landing_page.button_color or '#4f46e5' }}"
+                            oninput="updateDesign()"
+                        >
+
+                        <div
+                            class="color-value"
+                            id="buttonValue"
+                        >
+                            {{ landing_page.button_color or '#4f46e5' }}
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <!-- BUTTON TEXT -->
+
+                <div class="field">
+
+                    <label>
+                        Button Text Color
+                    </label>
+
+                    <div class="color-control">
+
+                        <input
+                            type="color"
+                            id="button_text_color"
+                            name="button_text_color"
+                            value="{{ landing_page.button_text_color or '#ffffff' }}"
+                            oninput="updateDesign()"
+                        >
+
+                        <div
+                            class="color-value"
+                            id="buttonTextValue"
+                        >
+                            {{ landing_page.button_text_color or '#ffffff' }}
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <!-- FONT -->
+
+                <div class="field">
+
+                    <label for="font_family">
+                        Font
+                    </label>
+
+                    <select
+                        id="font_family"
+                        name="font_family"
+                        onchange="updateDesign()"
+                    >
+
+                        <option
+                            value="Arial"
+                            {% if landing_page.font_family =='Arial' %}
+                            selected
+                            {% endif %}
+                        >
+                            Arial
+                        </option>
+
+                        <option
+                            value="Helvetica"
+                            {% if landing_page.font_family =='Helvetica' %}
+                            selected
+                            {% endif %}
+                        >
+                            Helvetica
+                        </option>
+
+                        <option
+                            value="Georgia"
+                            {% if landing_page.font_family =='Georgia' %}
+                            selected
+                            {% endif %}
+                        >
+                            Georgia
+                        </option>
+
+                        <option
+                            value="Verdana"
+                            {% if landing_page.font_family =='Verdana' %}
+                            selected
+                            {% endif %}
+                        >
+                            Verdana
+                        </option>
+
+                        <option
+                            value="Trebuchet MS"
+                            {% if landing_page.font_family =='Trebuchet' MS %}
+                            selected
+                            {% endif %}
+                        >
+                            Trebuchet MS
+                        </option>
+
+                    </select>
+
+                </div>
+
+
+                <!-- RADIUS -->
+
+                <div class="field">
+
+                    <label>
+                        Corner Radius
+                    </label>
+
+                    <div class="range-row">
+
+                        <input
+                            type="range"
+                            id="border_radius"
+                            name="border_radius"
+                            min="0"
+                            max="40"
+                            value="{{ landing_page.border_radius if landing_page.border_radius is not none else 14 }}"
+                            oninput="updateDesign()"
+                        >
+
+                        <div
+                            class="range-value"
+                            id="radiusValue"
+                        >
+                            {{ landing_page.border_radius if landing_page.border_radius is not none else 14 }}px
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <div class="actions">
+
+                    <a
+                        href="{{ url_for(
+                            'edit_landing_page',
+                            landing_page_id=landing_page.id
+                        ) }}"
+                        class="btn btn-cancel"
+                    >
+                        Back
+                    </a>
+
+                    <button
+                        type="submit"
+                        class="btn btn-save"
+                    >
+                        Save Design
+                    </button>
+
+                </div>
+
+
+            </form>
+
+        </div>
+
+
+        <!-- PREVIEW -->
+
+        <div class="panel preview-panel">
+
+            <div class="preview-heading">
+
+                <h2>
+                    Live Preview
+                </h2>
+
+                <p>
+                    This is an example of what visitors
+                    will see.
+                </p>
+
+            </div>
+
+
+            <div class="preview-area">
+
+                <div
+                    id="landingPreview"
+                    class="landing-preview {{ landing_page.style or 'scratch' }}"
+                    style="
+                        background-color:
+                        {{ landing_page.background_color or '#f8fafc' }};
+
+                        font-family:
+                        {{ landing_page.font_family or 'Arial' }};
+
+                        border-radius:
+                        {{ landing_page.border_radius if landing_page.border_radius is not none else 14 }}px;
+                    "
+                >
+
+                    <div class="preview-inner">
+
+
+                        <div class="preview-logo">
+                            EmailFlow
+                        </div>
+
+
+                        <h2
+                            id="previewHeadline"
+                            class="preview-headline"
+                            style="
+                                color:
+                                {{ landing_page.headline_color or '#111827' }};
+                            "
+                        >
+                            {{ landing_page.headline }}
+                        </h2>
+
+
+                        <div class="preview-subheadline">
+                            {{ landing_page.subheadline or '' }}
+                        </div>
+
+
+                        <div class="preview-description">
+                            {{ landing_page.description or '' }}
+                        </div>
+
+
+                        <div
+                            id="signupCard"
+                            class="signup-card"
+                            style="
+                                border-radius:
+                                {{ landing_page.border_radius if landing_page.border_radius is not none else 14 }}px;
+                            "
+                        >
+
+                            <input
+                                type="text"
+                                placeholder="Your name"
+                                disabled
+                            >
+
+                            <input
+                                type="email"
+                                placeholder="you@example.com"
+                                disabled
+                            >
+
+                            <button
+                                id="previewButton"
+                                type="button"
+                                style="
+                                    background-color:
+                                    {{ landing_page.button_color or '#4f46e5' }};
+
+                                    color:
+                                    {{ landing_page.button_text_color or '#ffffff' }};
+
+                                    border-radius:
+                                    {{ landing_page.border_radius if landing_page.border_radius is not none else 14 }}px;
+                                "
+                            >
+                                {{ landing_page.button_text }}
+                            </button>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+    </div>
+
+</div>
+
+
+<script>
+
+    function updateDesign() {
+
+        const background =
+            document.getElementById(
+                "background_color"
+            ).value;
+
+        const headline =
+            document.getElementById(
+                "headline_color"
+            ).value;
+
+        const button =
+            document.getElementById(
+                "button_color"
+            ).value;
+
+        const buttonText =
+            document.getElementById(
+                "button_text_color"
+            ).value;
+
+        const font =
+            document.getElementById(
+                "font_family"
+            ).value;
+
+        const radius =
+            document.getElementById(
+                "border_radius"
+            ).value;
+
+
+        const preview =
+            document.getElementById(
+                "landingPreview"
+            );
+
+        preview.style.backgroundColor =
+            background;
+
+        preview.style.fontFamily =
+            font;
+
+        preview.style.borderRadius =
+            radius + "px";
+
+
+        document.getElementById(
+            "previewHeadline"
+        ).style.color =
+            headline;
+
+
+        const previewButton =
+            document.getElementById(
+                "previewButton"
+            );
+
+        previewButton.style.backgroundColor =
+            button;
+
+        previewButton.style.color =
+            buttonText;
+
+        previewButton.style.borderRadius =
+            radius + "px";
+
+
+        document.getElementById(
+            "signupCard"
+        ).style.borderRadius =
+            radius + "px";
+
+
+        document.getElementById(
+            "backgroundValue"
+        ).textContent =
+            background;
+
+
+        document.getElementById(
+            "headlineValue"
+        ).textContent =
+            headline;
+
+
+        document.getElementById(
+            "buttonValue"
+        ).textContent =
+            button;
+
+
+        document.getElementById(
+            "buttonTextValue"
+        ).textContent =
+            buttonText;
+
+
+        document.getElementById(
+            "radiusValue"
+        ).textContent =
+            radius + "px";
+
+    }
+
+
+    document.addEventListener(
+        "DOMContentLoaded",
+        updateDesign
+    );
+
+</script>
+
+{% endblock %}

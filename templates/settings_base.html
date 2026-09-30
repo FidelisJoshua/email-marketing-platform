@@ -1,0 +1,827 @@
+{% extends "dashboard_base.html" %}
+
+{% block content %}
+
+<style>
+
+    /* =====================================================
+       EMAILFLOW SETTINGS SYSTEM
+       Shared styling for every Settings page
+       ===================================================== */
+
+    .settings-page {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 10px 10px 50px;
+    }
+
+
+    /* =====================================================
+       HEADER
+       ===================================================== */
+
+    .settings-header {
+        margin-bottom: 28px;
+    }
+
+    .settings-header-top {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 20px;
+    }
+
+    .settings-title {
+        margin: 0;
+        color: #111827;
+        font-size: 30px;
+        font-weight: 800;
+        letter-spacing: -0.5px;
+    }
+
+    .settings-subtitle {
+        margin: 8px 0 0;
+        max-width: 760px;
+        color: #6b7280;
+        font-size: 15px;
+        line-height: 1.6;
+    }
+
+    .settings-status {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+
+        padding: 8px 14px;
+
+        border: 1px solid #a7f3d0;
+        border-radius: 999px;
+
+        background: #ecfdf5;
+        color: #047857;
+
+        font-size: 13px;
+        font-weight: 700;
+
+        white-space: nowrap;
+    }
+
+    .settings-status-dot {
+        width: 8px;
+        height: 8px;
+
+        border-radius: 50%;
+
+        background: #10b981;
+    }
+
+
+    /* =====================================================
+       SETTINGS LAYOUT
+       ===================================================== */
+
+    .settings-layout {
+        display: grid;
+        grid-template-columns: 240px minmax(0, 1fr);
+        gap: 26px;
+        align-items: start;
+    }
+
+
+    /* =====================================================
+       SETTINGS SIDEBAR
+       ===================================================== */
+
+    .settings-sidebar {
+        overflow: hidden;
+
+        background: #ffffff;
+
+        border: 1px solid #e5e7eb;
+        border-radius: 16px;
+
+        box-shadow:
+            0 4px 16px rgba(15, 23, 42, 0.05);
+    }
+
+    .settings-sidebar-header {
+        padding: 18px;
+        border-bottom: 1px solid #f0f1f3;
+    }
+
+    .settings-sidebar-title {
+        color: #9ca3af;
+
+        font-size: 12px;
+        font-weight: 800;
+
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+    }
+
+    .settings-nav {
+        padding: 8px;
+    }
+
+    .settings-nav-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+
+        width: 100%;
+
+        margin-bottom: 3px;
+        padding: 12px;
+
+        border-radius: 10px;
+
+        color: #4b5563;
+        text-decoration: none;
+
+        transition:
+            background 0.18s ease,
+            color 0.18s ease;
+    }
+
+    .settings-nav-item:hover {
+        background: #f5f3ff;
+        color: #5b21b6;
+        text-decoration: none;
+    }
+
+    .settings-nav-item.active {
+        background: #f0eaff;
+        color: #5b21b6;
+    }
+
+    .settings-nav-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        width: 36px;
+        height: 36px;
+        flex: 0 0 36px;
+
+        border-radius: 9px;
+
+        background: #f3f4f6;
+
+        font-size: 16px;
+    }
+
+    .settings-nav-item.active .settings-nav-icon {
+        background: #6d28d9;
+        color: #ffffff;
+    }
+
+    .settings-nav-text {
+        min-width: 0;
+    }
+
+    .settings-nav-name {
+        display: block;
+
+        color: inherit;
+
+        font-size: 13px;
+        font-weight: 700;
+    }
+
+    .settings-nav-description {
+        display: block;
+
+        margin-top: 2px;
+
+        color: #9ca3af;
+
+        font-size: 11px;
+        line-height: 1.3;
+    }
+
+    .settings-nav-item.active .settings-nav-description {
+        color: #7c3aed;
+    }
+
+
+    /* =====================================================
+       MAIN CONTENT
+       ===================================================== */
+
+    .settings-content {
+        min-width: 0;
+    }
+
+
+    /* =====================================================
+       CARDS
+       ===================================================== */
+
+    .settings-card {
+        margin-bottom: 20px;
+
+        overflow: hidden;
+
+        background: #ffffff;
+
+        border: 1px solid #e5e7eb;
+        border-radius: 16px;
+
+        box-shadow:
+            0 4px 16px rgba(15, 23, 42, 0.05);
+    }
+
+    .settings-card-header {
+        display: flex;
+        align-items: flex-start;
+        gap: 14px;
+
+        padding: 22px 24px;
+
+        border-bottom: 1px solid #f0f1f3;
+    }
+
+    .settings-card-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        width: 42px;
+        height: 42px;
+        flex: 0 0 42px;
+
+        border-radius: 11px;
+
+        background: #ede9fe;
+        color: #6d28d9;
+
+        font-size: 18px;
+    }
+
+    .settings-card-icon.blue {
+        background: #dbeafe;
+        color: #2563eb;
+    }
+
+    .settings-card-icon.green {
+        background: #dcfce7;
+        color: #15803d;
+    }
+
+    .settings-card-icon.orange {
+        background: #ffedd5;
+        color: #c2410c;
+    }
+
+    .settings-card-icon.red {
+        background: #fee2e2;
+        color: #dc2626;
+    }
+
+    .settings-card-title {
+        margin: 0;
+
+        color: #111827;
+
+        font-size: 17px;
+        font-weight: 800;
+    }
+
+    .settings-card-description {
+        margin: 5px 0 0;
+
+        color: #6b7280;
+
+        font-size: 13px;
+        line-height: 1.5;
+    }
+
+    .settings-card-body {
+        padding: 24px;
+    }
+
+
+    /* =====================================================
+       FORM GRID
+       ===================================================== */
+
+    .settings-form-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 20px;
+    }
+
+    .settings-form-group {
+        min-width: 0;
+    }
+
+    .settings-form-group.full {
+        grid-column: 1 / -1;
+    }
+
+    .settings-label {
+        display: block;
+
+        margin-bottom: 7px;
+
+        color: #374151;
+
+        font-size: 13px;
+        font-weight: 700;
+    }
+
+    .settings-required {
+        color: #ef4444;
+    }
+
+    .settings-input,
+    .settings-select,
+    .settings-textarea {
+        width: 100%;
+
+        padding: 11px 13px;
+
+        border: 1px solid #d1d5db;
+        border-radius: 9px;
+
+        background: #ffffff;
+        color: #111827;
+
+        font-family: inherit;
+        font-size: 14px;
+
+        outline: none;
+
+        transition:
+            border-color 0.18s ease,
+            box-shadow 0.18s ease;
+    }
+
+    .settings-input,
+    .settings-select {
+        height: 44px;
+    }
+
+    .settings-textarea {
+        min-height: 120px;
+        resize: vertical;
+    }
+
+    .settings-input:focus,
+    .settings-select:focus,
+    .settings-textarea:focus {
+        border-color: #7c3aed;
+
+        box-shadow:
+            0 0 0 3px rgba(124, 58, 237, 0.12);
+    }
+
+    .settings-input::placeholder,
+    .settings-textarea::placeholder {
+        color: #9ca3af;
+    }
+
+    .settings-help {
+        margin-top: 6px;
+
+        color: #9ca3af;
+
+        font-size: 11px;
+        line-height: 1.5;
+    }
+
+
+    /* =====================================================
+       INFORMATION BOX
+       ===================================================== */
+
+    .settings-info {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+
+        margin-bottom: 22px;
+        padding: 14px 16px;
+
+        border: 1px solid #dbeafe;
+        border-radius: 10px;
+
+        background: #eff6ff;
+        color: #1e40af;
+    }
+
+    .settings-info-icon {
+        font-size: 17px;
+    }
+
+    .settings-info-text {
+        font-size: 12px;
+        line-height: 1.6;
+    }
+
+
+    /* =====================================================
+       WARNING BOX
+       ===================================================== */
+
+    .settings-warning {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+
+        margin-top: 20px;
+        padding: 14px 16px;
+
+        border: 1px solid #fde68a;
+        border-radius: 10px;
+
+        background: #fffbeb;
+        color: #92400e;
+    }
+
+    .settings-warning-text {
+        font-size: 11px;
+        line-height: 1.6;
+    }
+
+
+    /* =====================================================
+       SAVE BAR
+       ===================================================== */
+
+    .settings-save-bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 20px;
+
+        padding: 18px 20px;
+
+        background: #ffffff;
+
+        border: 1px solid #e5e7eb;
+        border-radius: 14px;
+
+        box-shadow:
+            0 4px 16px rgba(15, 23, 42, 0.05);
+    }
+
+    .settings-save-note {
+        color: #6b7280;
+
+        font-size: 12px;
+        line-height: 1.5;
+    }
+
+    .settings-save-button {
+        border: none;
+        border-radius: 9px;
+
+        padding: 11px 20px;
+
+        background: #6d28d9;
+        color: #ffffff;
+
+        font-family: inherit;
+        font-size: 13px;
+        font-weight: 700;
+
+        cursor: pointer;
+
+        transition:
+            background 0.18s ease,
+            transform 0.18s ease,
+            box-shadow 0.18s ease;
+    }
+
+    .settings-save-button:hover {
+        background: #5b21b6;
+
+        box-shadow:
+            0 5px 14px rgba(109, 40, 217, 0.25);
+
+        transform: translateY(-1px);
+    }
+
+    .settings-save-button:active {
+        transform: translateY(0);
+    }
+
+
+    /* =====================================================
+       SMALL STATUS BADGE
+       ===================================================== */
+
+    .settings-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+
+        padding: 6px 10px;
+
+        border-radius: 999px;
+
+        background: #f3f4f6;
+        color: #6b7280;
+
+        font-size: 11px;
+        font-weight: 700;
+    }
+
+    .settings-badge.success {
+        background: #ecfdf5;
+        color: #047857;
+    }
+
+
+    /* =====================================================
+       RESPONSIVE
+       ===================================================== */
+
+    @media (max-width: 900px) {
+
+        .settings-layout {
+            grid-template-columns: 1fr;
+        }
+
+        .settings-nav {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 4px;
+        }
+
+        .settings-nav-item {
+            margin-bottom: 0;
+        }
+
+    }
+
+
+    @media (max-width: 650px) {
+
+        .settings-page {
+            padding: 5px 0 40px;
+        }
+
+        .settings-header-top {
+            flex-direction: column;
+        }
+
+        .settings-title {
+            font-size: 25px;
+        }
+
+        .settings-status {
+            align-self: flex-start;
+        }
+
+        .settings-nav {
+            grid-template-columns: 1fr;
+        }
+
+        .settings-form-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .settings-form-group.full {
+            grid-column: auto;
+        }
+
+        .settings-card-header,
+        .settings-card-body {
+            padding: 18px;
+        }
+
+        .settings-save-bar {
+            align-items: stretch;
+            flex-direction: column;
+        }
+
+        .settings-save-button {
+            width: 100%;
+        }
+
+    }
+
+</style>
+
+
+<div class="settings-page">
+
+
+    <!-- =================================================
+         SETTINGS HEADER
+         ================================================= -->
+
+    <div class="settings-header">
+
+        <div class="settings-header-top">
+
+            <div>
+
+                {% block settings_header %}
+
+                <h1 class="settings-title">
+                    Settings
+                </h1>
+
+                <p class="settings-subtitle">
+                    Manage your EmailFlow account and preferences.
+                </p>
+
+                {% endblock %}
+
+            </div>
+
+
+            <div class="settings-status">
+
+                <span class="settings-status-dot"></span>
+
+                Settings
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- =================================================
+         SETTINGS LAYOUT
+         ================================================= -->
+
+    <div class="settings-layout">
+
+
+        <!-- =================================================
+             SIDEBAR
+             ================================================= -->
+
+        <aside class="settings-sidebar">
+
+            <div class="settings-sidebar-header">
+
+                <div class="settings-sidebar-title">
+                    Settings
+                </div>
+
+            </div>
+
+
+            <nav class="settings-nav">
+
+
+                <!-- ACCOUNT -->
+
+                <a
+                    href="{{ url_for('settings_account') }}"
+                    class="settings-nav-item {% if request.endpoint == 'settings_account' %}active{% endif %}"
+                >
+
+                    <span class="settings-nav-icon">
+                        👤
+                    </span>
+
+                    <span class="settings-nav-text">
+
+                        <span class="settings-nav-name">
+                            Account
+                        </span>
+
+                        <span class="settings-nav-description">
+                            Name, email & password
+                        </span>
+
+                    </span>
+
+                </a>
+
+
+                <!-- EMAIL -->
+
+                <a
+                    href="{{ url_for('settings_email') }}"
+                    class="settings-nav-item {% if request.endpoint == 'settings_email' %}active{% endif %}"
+                >
+
+                    <span class="settings-nav-icon">
+                        ✉
+                    </span>
+
+                    <span class="settings-nav-text">
+
+                        <span class="settings-nav-name">
+                            Email & Sending
+                        </span>
+
+                        <span class="settings-nav-description">
+                            Sender & SMTP
+                        </span>
+
+                    </span>
+
+                </a>
+
+
+                <!-- PROFILE -->
+
+                <a
+                    href="{{ url_for('settings_profile') }}"
+                    class="settings-nav-item {% if request.endpoint == 'settings_profile' %}active{% endif %}"
+                >
+
+                    <span class="settings-nav-icon">
+                        ◉
+                    </span>
+
+                    <span class="settings-nav-text">
+
+                        <span class="settings-nav-name">
+                            Profile
+                        </span>
+
+                        <span class="settings-nav-description">
+                            Public profile
+                        </span>
+
+                    </span>
+
+                </a>
+
+
+                <!-- NOTIFICATIONS -->
+
+                <a
+                    href="{{ url_for('settings_notifications') }}"
+                    class="settings-nav-item {% if request.endpoint == 'settings_notifications' %}active{% endif %}"
+                >
+
+                    <span class="settings-nav-icon">
+                        🔔
+                    </span>
+
+                    <span class="settings-nav-text">
+
+                        <span class="settings-nav-name">
+                            Notifications
+                        </span>
+
+                        <span class="settings-nav-description">
+                            Notification preferences
+                        </span>
+
+                    </span>
+
+                </a>
+
+
+                <!-- SECURITY -->
+
+                <a
+                    href="{{ url_for('settings_security') }}"
+                    class="settings-nav-item {% if request.endpoint == 'settings_security' %}active{% endif %}"
+                >
+
+                    <span class="settings-nav-icon">
+                        🔒
+                    </span>
+
+                    <span class="settings-nav-text">
+
+                        <span class="settings-nav-name">
+                            Security
+                        </span>
+
+                        <span class="settings-nav-description">
+                            Security settings
+                        </span>
+
+                    </span>
+
+                </a>
+
+
+            </nav>
+
+        </aside>
+
+
+        <!-- =================================================
+             PAGE CONTENT
+             ================================================= -->
+
+        <main class="settings-content">
+
+            {% block settings_content %}
+
+            {% endblock %}
+
+        </main>
+
+
+    </div>
+
+</div>
+
+{% endblock %}

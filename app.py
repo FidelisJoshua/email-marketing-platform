@@ -1,8 +1,8 @@
 import os
 import time
 from datetime import datetime, timezone
-
 import pandas as pd
+from itsdangerous import URLSafeSerializer
 from flask import Flask, render_template, request, session, redirect, url_for, flash
 from sqlalchemy import text, inspect
 from flask_bcrypt import Bcrypt
@@ -15,10 +15,15 @@ from models import (
     Campaign,
     CampaignRecipient,
     Form,
-    LandingPage
+    LandingPage,
+    LandingPageTemplate,
+    Template,
+    EmailSettings
 )
-from email_service import send_email
-
+from email_service import (
+    test_smtp_connection,
+    send_email
+)
 
 # =========================================================
 # APP CONFIGURATION
@@ -34,6 +39,15 @@ app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///database.db"
 
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+def create_unsubscribe_token(contact_id):
+    serializer = URLSafeSerializer(
+        app.secret_key,
+        salt="emailflow-unsubscribe"
+    )
+
+    return serializer.dumps({
+        "contact_id": contact_id
+    })
 
 
 # =========================================================
@@ -1006,17 +1020,75 @@ def edit_contact(contact_id):
 # CAMPAIGNS
 # =========================================================
 
-@app.route(
-    "/campaigns",
-    methods=["GET", "POST"]
-)
+# =========================================================
+# CAMPAIGNS - STARTING POINTS
+# =========================================================
+
+@app.route("/campaigns")
 def campaigns():
 
     if "user_id" not in session:
 
-        return redirect(url_for("login"))
+        return redirect(
+            url_for("login")
+        )
 
     user_id = session["user_id"]
+
+
+    # -----------------------------------------------------
+    # GET AVAILABLE CAMPAIGN TEMPLATES
+    # -----------------------------------------------------
+
+    template_list = Template.query.filter(
+        (Template.is_system_template.is_(True)) |
+        (Template.created_by == user_id)
+    ).order_by(
+        Template.is_system_template.desc(),
+        Template.created_at.desc()
+    ).all()
+
+
+    # -----------------------------------------------------
+    # GET EXISTING CAMPAIGNS
+    # -----------------------------------------------------
+
+    campaign_list = Campaign.query.filter_by(
+        created_by=user_id
+    ).order_by(
+        Campaign.created_at.desc()
+    ).all()
+
+
+    return render_template(
+        "campaigns.html",
+        templates=template_list,
+        campaigns=campaign_list
+    )
+
+
+# =========================================================
+# CREATE CAMPAIGN - EDITOR
+# =========================================================
+
+@app.route(
+    "/campaigns/create",
+    methods=["GET", "POST"]
+)
+def create_campaign():
+
+    if "user_id" not in session:
+
+        return redirect(
+            url_for("login")
+        )
+
+    user_id = session["user_id"]
+
+
+    # =====================================================
+    # POST - SAVE CAMPAIGN
+    # =====================================================
 
     if request.method == "POST":
 
@@ -1030,16 +1102,38 @@ def campaigns():
             ""
         ).strip()
 
-        if not subject or not message:
+
+        # -------------------------------------------------
+        # VALIDATION
+        # -------------------------------------------------
+
+        if not subject:
 
             flash(
-                "Subject and message are required.",
+                "Please enter a subject line.",
                 "warning"
             )
 
             return redirect(
-                url_for("campaigns")
+                url_for("create_campaign")
             )
+
+
+        if not message:
+
+            flash(
+                "Please enter your email message.",
+                "warning"
+            )
+
+            return redirect(
+                url_for("create_campaign")
+            )
+
+
+        # -------------------------------------------------
+        # CREATE CAMPAIGN
+        # -------------------------------------------------
 
         new_campaign = Campaign(
             subject=subject,
@@ -1047,17 +1141,24 @@ def campaigns():
             created_by=user_id
         )
 
-        db.session.add(new_campaign)
+        db.session.add(
+            new_campaign
+        )
+
+
+        # Commit so campaign receives its ID
 
         db.session.commit()
 
+
         # -------------------------------------------------
-        # CREATE RECIPIENT RECORDS
+        # CREATE CAMPAIGN RECIPIENTS
         # -------------------------------------------------
 
         contacts_for_campaign = Contact.query.filter_by(
             created_by=user_id
         ).all()
+
 
         for contact in contacts_for_campaign:
 
@@ -1067,31 +1168,64 @@ def campaigns():
                 status="Pending"
             )
 
-            db.session.add(recipient)
+            db.session.add(
+                recipient
+            )
+
 
         db.session.commit()
+
 
         flash(
             "Campaign created successfully.",
             "success"
         )
 
+
         return redirect(
-            url_for("campaigns")
+            url_for(
+                "preview_campaign",
+                campaign_id=new_campaign.id
+            )
         )
 
-    campaign_list = Campaign.query.filter_by(
-        created_by=user_id
-    ).order_by(
-        Campaign.created_at.desc()
-    ).all()
 
-    return render_template(
-        "campaigns.html",
-        campaigns=campaign_list
+    # =====================================================
+    # GET - OPEN CAMPAIGN EDITOR
+    # =====================================================
+
+    template_id = request.args.get(
+        "template_id",
+        type=int
     )
 
 
+    selected_template = None
+
+
+    if template_id:
+
+        selected_template = Template.query.filter_by(
+            id=template_id
+        ).first()
+
+
+        # Make sure a user cannot use
+        # another user's private template
+
+        if (
+            selected_template
+            and not selected_template.is_system_template
+            and selected_template.created_by != user_id
+        ):
+
+            selected_template = None
+
+
+    return render_template(
+        "campaign_editor.html",
+        template=selected_template
+    )
 # =========================================================
 # PREVIEW CAMPAIGN
 # =========================================================
@@ -1171,18 +1305,114 @@ def send_campaign(campaign_id):
 
     if "user_id" not in session:
 
-        return redirect(url_for("login"))
+        return redirect(
+            url_for("login")
+        )
 
     user_id = session["user_id"]
+
+
+    # =====================================================
+    # GET CAMPAIGN
+    # =====================================================
 
     campaign = Campaign.query.filter_by(
         id=campaign_id,
         created_by=user_id
     ).first_or_404()
 
-    # -----------------------------------------------------
+
+    # =====================================================
+    # GET EMAIL SETTINGS
+    # =====================================================
+
+    email_settings = EmailSettings.query.filter_by(
+        user_id=user_id
+    ).first()
+
+
+    if not email_settings:
+
+        flash(
+            "Please configure your Email & Sending settings first.",
+            "warning"
+        )
+
+        return redirect(
+            url_for(
+                "preview_campaign",
+                campaign_id=campaign.id
+            )
+        )
+
+
+    # =====================================================
+    # CHECK SMTP SETTINGS
+    # =====================================================
+
+    if not email_settings.smtp_host:
+
+        flash(
+            "Please configure your SMTP host before sending.",
+            "warning"
+        )
+
+        return redirect(
+            url_for(
+                "preview_campaign",
+                campaign_id=campaign.id
+            )
+        )
+
+
+    if not email_settings.smtp_username:
+
+        flash(
+            "Please configure your SMTP username before sending.",
+            "warning"
+        )
+
+        return redirect(
+            url_for(
+                "preview_campaign",
+                campaign_id=campaign.id
+            )
+        )
+
+
+    if not email_settings.smtp_password:
+
+        flash(
+            "Please configure your SMTP password before sending.",
+            "warning"
+        )
+
+        return redirect(
+            url_for(
+                "preview_campaign",
+                campaign_id=campaign.id
+            )
+        )
+
+
+    if not email_settings.sender_email:
+
+        flash(
+            "Please configure your sender email before sending.",
+            "warning"
+        )
+
+        return redirect(
+            url_for(
+                "preview_campaign",
+                campaign_id=campaign.id
+            )
+        )
+
+
+    # =====================================================
     # PREVENT DUPLICATE CAMPAIGN RUNS
-    # -----------------------------------------------------
+    # =====================================================
 
     updated = Campaign.query.filter(
         Campaign.id == campaign.id,
@@ -1197,6 +1427,7 @@ def send_campaign(campaign_id):
 
     db.session.commit()
 
+
     if updated == 0:
 
         flash(
@@ -1208,21 +1439,42 @@ def send_campaign(campaign_id):
             url_for("campaigns")
         )
 
-    # -----------------------------------------------------
+
+    # =====================================================
     # GET PENDING RECIPIENTS
-    # -----------------------------------------------------
+    # =====================================================
 
     recipients = CampaignRecipient.query.filter_by(
         campaign_id=campaign.id,
         status="Pending"
     ).all()
 
+
+    if not recipients:
+
+        campaign.status = "Sent"
+
+        db.session.commit()
+
+        flash(
+            "This campaign has no pending recipients.",
+            "warning"
+        )
+
+        return redirect(
+            url_for(
+                "preview_campaign",
+                campaign_id=campaign.id
+            )
+        )
+
+
     sent = 0
 
     failed = 0
 
-    print("")
 
+    print("")
     print("=" * 60)
 
     print(
@@ -1237,9 +1489,10 @@ def send_campaign(campaign_id):
 
     print("")
 
-    # -----------------------------------------------------
+
+    # =====================================================
     # SEND TO EACH RECIPIENT
-    # -----------------------------------------------------
+    # =====================================================
 
     for recipient in recipients:
 
@@ -1248,8 +1501,9 @@ def send_campaign(campaign_id):
             recipient.contact_id
         )
 
+
         # -------------------------------------------------
-        # CONTACT NO LONGER EXISTS
+        # CONTACT DOES NOT EXIST
         # -------------------------------------------------
 
         if not contact:
@@ -1267,9 +1521,11 @@ def send_campaign(campaign_id):
 
             continue
 
+
         attempts = 0
 
         success = False
+
 
         # -------------------------------------------------
         # THREE ATTEMPTS
@@ -1278,6 +1534,7 @@ def send_campaign(campaign_id):
         while attempts < 3:
 
             attempts += 1
+
 
             try:
 
@@ -1288,11 +1545,45 @@ def send_campaign(campaign_id):
                     f"for {contact.email}"
                 )
 
-                send_email(
+
+                # =========================================
+                # SEND USING SAVED SMTP SETTINGS
+                # =========================================
+
+                success, message = send_email(
+
+                    smtp_host=email_settings.smtp_host,
+
+                    smtp_port=email_settings.smtp_port,
+
+                    smtp_username=email_settings.smtp_username,
+
+                    smtp_password=email_settings.smtp_password,
+
+                    smtp_encryption=email_settings.smtp_encryption,
+
+                    sender_name=email_settings.sender_name,
+
+                    sender_email=email_settings.sender_email,
+
+                    recipient_email=contact.email,
+
                     subject=campaign.subject,
+
                     body=campaign.message,
-                    recipient=contact.email
+
+                    reply_to_email=email_settings.reply_to_email
                 )
+
+
+                # =========================================
+                # CHECK RESULT
+                # =========================================
+
+                if not success:
+
+                    raise Exception(message)
+
 
                 recipient.status = "Sent"
 
@@ -1304,8 +1595,6 @@ def send_campaign(campaign_id):
 
                 sent += 1
 
-                success = True
-
                 print(
                     f"✅ Sent to: {contact.email}"
                 )
@@ -1313,6 +1602,7 @@ def send_campaign(campaign_id):
                 time.sleep(2)
 
                 break
+
 
             except Exception as e:
 
@@ -1325,6 +1615,7 @@ def send_campaign(campaign_id):
                     f"Error: {e}"
                 )
 
+
                 if attempts < 3:
 
                     print(
@@ -1332,6 +1623,7 @@ def send_campaign(campaign_id):
                     )
 
                     time.sleep(5)
+
 
         # -------------------------------------------------
         # ALL ATTEMPTS FAILED
@@ -1352,22 +1644,25 @@ def send_campaign(campaign_id):
                 f"{contact.email} after 3 attempts."
             )
 
-    # -----------------------------------------------------
+
+    # =====================================================
     # UPDATE CAMPAIGN TOTALS
-    # -----------------------------------------------------
+    # =====================================================
 
     campaign.sent_count += sent
 
     campaign.failed_count += failed
 
-    # -----------------------------------------------------
+
+    # =====================================================
     # CHECK REMAINING
-    # -----------------------------------------------------
+    # =====================================================
 
     remaining = CampaignRecipient.query.filter_by(
         campaign_id=campaign.id,
         status="Pending"
     ).count()
+
 
     if remaining == 0:
 
@@ -1377,13 +1672,21 @@ def send_campaign(campaign_id):
 
         campaign.status = "Draft"
 
+
     db.session.commit()
+
+
+    # =====================================================
+    # CAMPAIGN LOG
+    # =====================================================
 
     print("")
 
     print("=" * 60)
 
-    print("🏁 CAMPAIGN RUN FINISHED")
+    print(
+        "🏁 CAMPAIGN RUN FINISHED"
+    )
 
     print(
         f"✅ Sent this run: {sent}"
@@ -1401,9 +1704,10 @@ def send_campaign(campaign_id):
 
     print("")
 
-    # -----------------------------------------------------
+
+    # =====================================================
     # USER MESSAGE
-    # -----------------------------------------------------
+    # =====================================================
 
     if remaining == 0:
 
@@ -1424,10 +1728,10 @@ def send_campaign(campaign_id):
             "warning"
         )
 
+
     return redirect(
         url_for("campaigns")
     )
-
 
 # =========================================================
 # FORMS
@@ -1658,25 +1962,31 @@ def preview_form(form_id):
 @app.route("/subscribe/<int:form_id>", methods=["GET", "POST"])
 def subscribe_form(form_id):
 
+    # Find the form
     form = Form.query.get_or_404(form_id)
 
+    # Only process this section when the visitor submits the form
     if request.method == "POST":
 
+        # Get the submitted values
         name = request.form.get("name", "").strip()
         email = request.form.get("email", "").strip().lower()
 
+        # Check name
         if not name:
             flash("Please enter your name.", "warning")
             return redirect(
                 url_for("subscribe_form", form_id=form.id)
             )
 
+        # Check email
         if not email:
             flash("Please enter your email address.", "warning")
             return redirect(
                 url_for("subscribe_form", form_id=form.id)
             )
 
+        # Check if this email already belongs to this user's contacts
         existing_contact = Contact.query.filter_by(
             email=email,
             created_by=form.created_by
@@ -1691,29 +2001,43 @@ def subscribe_form(form_id):
                 url_for("subscribe_form", form_id=form.id)
             )
 
+        # Create the new contact
         new_contact = Contact(
             name=name,
             email=email,
             created_by=form.created_by
         )
 
-        db.session.add(new_contact)
-        db.session.commit()
+        try:
+            # Save the contact
+            db.session.add(new_contact)
+            db.session.commit()
 
-        flash(
-            "You have successfully subscribed!",
-            "success"
-        )
+            # Tell the subscriber it worked
+            flash(
+                "You have successfully subscribed!",
+                "success"
+            )
 
+        except IntegrityError:
+            # Undo the failed database transaction
+            db.session.rollback()
+
+            flash(
+                "This email is already subscribed.",
+                "warning"
+            )
+
+        # Return to the subscription form
         return redirect(
             url_for("subscribe_form", form_id=form.id)
         )
 
+    # Display the form when the visitor first opens the page
     return render_template(
         "subscribe_form.html",
         form=form
     )
-
 # =========================================================
 # DELETE FORM
 # =========================================================
@@ -1746,43 +2070,471 @@ def delete_form(form_id):
         url_for("forms")
     )
 
-
 # =========================================================
-# LOGOUT
-# =========================================================
-
-# =========================================================
-# LANDING PAGES
+# BUILT-IN EMAIL TEMPLATES
 # =========================================================
 
-@app.route("/landing-pages")
-def landing_pages():
+SYSTEM_TEMPLATES = [
 
-    # User must be logged in
+    {
+        "name": "Clean Newsletter",
+        "category": "Newsletter",
+        "subject": "Your latest newsletter",
+        "content": "A clean and professional newsletter email.",
+        "html_content": """
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+</head>
+
+<body style="margin:0; padding:0; background:#f3f4f6; font-family:Arial, sans-serif;">
+
+    <div style="max-width:600px; margin:40px auto; background:white;">
+
+        <div style="padding:35px; border-bottom:1px solid #e5e7eb;">
+            <h1 style="margin:0; color:#111827;">
+                Your Newsletter
+            </h1>
+
+            <p style="color:#6b7280; margin-top:10px;">
+                The latest updates, ideas and news from us.
+            </p>
+        </div>
+
+        <div style="padding:35px;">
+
+            <h2 style="color:#111827;">
+                What's new?
+            </h2>
+
+            <p style="color:#4b5563; line-height:1.7;">
+                Share your latest news, useful information,
+                company updates or helpful content with your audience.
+            </p>
+
+            <a href="#"
+               style="display:inline-block;
+                      margin-top:20px;
+                      padding:12px 22px;
+                      background:#111827;
+                      color:white;
+                      text-decoration:none;
+                      border-radius:6px;">
+                Read More
+            </a>
+
+        </div>
+
+        <div style="padding:25px; background:#f9fafb; text-align:center;">
+            <p style="font-size:12px; color:#9ca3af;">
+                © Your Company
+            </p>
+        </div>
+
+    </div>
+
+</body>
+</html>
+"""
+    },
+
+    {
+        "name": "Welcome Email",
+        "category": "Welcome",
+        "subject": "Welcome to our community!",
+        "content": "A friendly welcome email for new subscribers.",
+        "html_content": """
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+</head>
+
+<body style="margin:0; background:#eef2ff; font-family:Arial, sans-serif;">
+
+    <div style="max-width:600px; margin:40px auto; background:white; border-radius:12px; overflow:hidden;">
+
+        <div style="padding:45px; text-align:center; background:#4f46e5; color:white;">
+
+            <h1 style="margin:0;">
+                Welcome! 👋
+            </h1>
+
+            <p style="margin-top:12px;">
+                We're excited to have you here.
+            </p>
+
+        </div>
+
+        <div style="padding:40px;">
+
+            <h2 style="color:#111827;">
+                Thanks for joining us
+            </h2>
+
+            <p style="color:#4b5563; line-height:1.7;">
+                We're happy you're part of our community.
+                You'll receive useful updates, resources and
+                announcements from us.
+            </p>
+
+            <div style="text-align:center; margin-top:30px;">
+
+                <a href="#"
+                   style="display:inline-block;
+                          padding:14px 25px;
+                          background:#4f46e5;
+                          color:white;
+                          text-decoration:none;
+                          border-radius:7px;">
+                    Get Started
+                </a>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</body>
+</html>
+"""
+    },
+
+    {
+        "name": "Product Launch",
+        "category": "Promotion",
+        "subject": "Something exciting is here 🚀",
+        "content": "A bold product launch announcement.",
+        "html_content": """
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+</head>
+
+<body style="margin:0; background:#111827; font-family:Arial, sans-serif;">
+
+    <div style="max-width:600px; margin:40px auto; background:white;">
+
+        <div style="padding:55px 40px; text-align:center; background:#111827; color:white;">
+
+            <p style="text-transform:uppercase; letter-spacing:2px; font-size:12px;">
+                New Release
+            </p>
+
+            <h1 style="font-size:38px; margin:15px 0;">
+                It's finally here.
+            </h1>
+
+            <p style="color:#d1d5db;">
+                Meet our newest product.
+            </p>
+
+        </div>
+
+        <div style="padding:40px; text-align:center;">
+
+            <h2 style="color:#111827;">
+                Built for better results
+            </h2>
+
+            <p style="color:#6b7280; line-height:1.7;">
+                Introduce your product, explain what makes it
+                different and give your audience a reason to try it.
+            </p>
+
+            <a href="#"
+               style="display:inline-block;
+                      margin-top:20px;
+                      padding:14px 28px;
+                      background:#111827;
+                      color:white;
+                      text-decoration:none;
+                      border-radius:7px;">
+                Explore Product
+            </a>
+
+        </div>
+
+    </div>
+
+</body>
+</html>
+"""
+    },
+
+    {
+        "name": "Special Offer",
+        "category": "Promotion",
+        "subject": "A special offer just for you 🎁",
+        "content": "A promotional email for discounts and offers.",
+        "html_content": """
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+</head>
+
+<body style="margin:0; background:#fff7ed; font-family:Arial, sans-serif;">
+
+    <div style="max-width:600px; margin:40px auto; background:white;">
+
+        <div style="padding:50px; text-align:center; background:#f97316; color:white;">
+
+            <div style="font-size:45px;">
+                🎁
+            </div>
+
+            <h1 style="margin:15px 0;">
+                Special Offer
+            </h1>
+
+            <p>
+                Don't miss this limited-time opportunity.
+            </p>
+
+        </div>
+
+        <div style="padding:45px; text-align:center;">
+
+            <h2 style="font-size:32px; color:#111827;">
+                25% OFF
+            </h2>
+
+            <p style="color:#6b7280;">
+                Give your subscribers an exclusive discount.
+            </p>
+
+            <a href="#"
+               style="display:inline-block;
+                      margin-top:20px;
+                      padding:14px 30px;
+                      background:#f97316;
+                      color:white;
+                      text-decoration:none;
+                      border-radius:7px;">
+                Claim Offer
+            </a>
+
+            <p style="margin-top:25px; font-size:12px; color:#9ca3af;">
+                Offer available for a limited time.
+            </p>
+
+        </div>
+
+    </div>
+
+</body>
+</html>
+"""
+    },
+
+    {
+        "name": "Announcement",
+        "category": "Announcement",
+        "subject": "Important announcement",
+        "content": "A simple announcement email.",
+        "html_content": """
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+</head>
+
+<body style="margin:0; background:#f9fafb; font-family:Arial, sans-serif;">
+
+    <div style="max-width:600px; margin:40px auto; background:white; border:1px solid #e5e7eb;">
+
+        <div style="padding:30px; border-bottom:1px solid #e5e7eb;">
+
+            <strong style="font-size:20px; color:#111827;">
+                EmailFlow
+            </strong>
+
+        </div>
+
+        <div style="padding:45px;">
+
+            <p style="font-size:13px; color:#6b7280;">
+                IMPORTANT UPDATE
+            </p>
+
+            <h1 style="color:#111827;">
+                We have something to share.
+            </h1>
+
+            <p style="color:#4b5563; line-height:1.8;">
+                Use this template when you need to communicate
+                an important update, change or announcement
+                to your subscribers.
+            </p>
+
+            <a href="#"
+               style="display:inline-block;
+                      margin-top:20px;
+                      padding:12px 22px;
+                      background:#111827;
+                      color:white;
+                      text-decoration:none;
+                      border-radius:6px;">
+                Learn More
+            </a>
+
+        </div>
+
+    </div>
+
+</body>
+</html>
+"""
+    },
+
+    {
+        "name": "Event Invitation",
+        "category": "Event",
+        "subject": "You're invited! 🎉",
+        "content": "An elegant event invitation email.",
+        "html_content": """
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+</head>
+
+<body style="margin:0; background:#f5f3ff; font-family:Arial, sans-serif;">
+
+    <div style="max-width:600px; margin:40px auto; background:white;">
+
+        <div style="padding:50px; text-align:center; background:#7c3aed; color:white;">
+
+            <p style="letter-spacing:2px; text-transform:uppercase;">
+                You're Invited
+            </p>
+
+            <h1 style="font-size:36px;">
+                Join Our Event
+            </h1>
+
+            <p>
+                An experience you won't want to miss.
+            </p>
+
+        </div>
+
+        <div style="padding:40px; text-align:center;">
+
+            <h2 style="color:#111827;">
+                Save the Date
+            </h2>
+
+            <p style="color:#6b7280;">
+                Saturday, June 20
+            </p>
+
+            <p style="color:#6b7280;">
+                2:00 PM · Online Event
+            </p>
+
+            <a href="#"
+               style="display:inline-block;
+                      margin-top:20px;
+                      padding:14px 26px;
+                      background:#7c3aed;
+                      color:white;
+                      text-decoration:none;
+                      border-radius:7px;">
+                Reserve My Spot
+            </a>
+
+        </div>
+
+    </div>
+
+</body>
+</html>
+"""
+    }
+]
+
+# =========================================================
+# CREATE BUILT-IN TEMPLATES FOR A USER
+# =========================================================
+
+def seed_system_templates_for_user(user_id):
+
+    existing_templates = Template.query.filter_by(
+        created_by=user_id,
+        is_system_template=True
+    ).all()
+
+    existing_names = {
+        template.name
+        for template in existing_templates
+    }
+
+    templates_created = False
+
+    for template_data in SYSTEM_TEMPLATES:
+
+        if template_data["name"] in existing_names:
+            continue
+
+        new_template = Template(
+            name=template_data["name"],
+            subject=template_data["subject"],
+            content=template_data["content"],
+            category=template_data["category"],
+            html_content=template_data["html_content"],
+            is_system_template=True,
+            created_by=user_id
+        )
+
+        db.session.add(new_template)
+
+        templates_created = True
+
+    if templates_created:
+        db.session.commit()
+
+# =========================================================
+# TEMPLATES
+# =========================================================
+
+@app.route("/templates")
+def templates():
+
     if "user_id" not in session:
         return redirect(url_for("login"))
 
-    # Get only landing pages belonging to this user
-    landing_pages_list = LandingPage.query.filter_by(
-        created_by=session["user_id"]
+    user_id = session["user_id"]
+
+    # Create the built-in templates if this user
+    # does not already have them.
+    seed_system_templates_for_user(user_id)
+
+    template_list = Template.query.filter_by(
+        created_by=user_id
     ).order_by(
-        LandingPage.created_at.desc()
+        Template.is_system_template.desc(),
+        Template.created_at.desc()
     ).all()
 
     return render_template(
-        "landing_pages.html",
-        landing_pages=landing_pages_list
+        "templates.html",
+        templates=template_list
     )
-
-
 # =========================================================
-# CREATE LANDING PAGE
+# CREATE TEMPLATE
 # =========================================================
 
-@app.route("/landing-pages/create", methods=["GET", "POST"])
-def create_landing_page():
+@app.route(
+    "/templates/create",
+    methods=["GET", "POST"]
+)
+def create_template():
 
-    # User must be logged in
     if "user_id" not in session:
         return redirect(url_for("login"))
 
@@ -1793,64 +2545,451 @@ def create_landing_page():
             ""
         ).strip()
 
-        headline = request.form.get(
-            "headline",
+        subject = request.form.get(
+            "subject",
             ""
         ).strip()
 
-        subheadline = request.form.get(
-            "subheadline",
+        content = request.form.get(
+            "content",
             ""
         ).strip()
 
-        description = request.form.get(
-            "description",
-            ""
-        ).strip()
-
-        button_text = request.form.get(
-            "button_text",
-            "Get Started"
-        ).strip()
-
-        button_url = request.form.get(
-            "button_url",
-            ""
-        ).strip()
-
-        # -------------------------------------------------
+        # -----------------------------------------
         # VALIDATION
-        # -------------------------------------------------
+        # -----------------------------------------
 
         if not name:
 
             flash(
-                "Please enter a landing page name.",
+                "Please enter a template name.",
                 "warning"
             )
 
             return redirect(
-                url_for("create_landing_page")
+                url_for("create_template")
             )
 
-        if not headline:
+        if not subject:
 
             flash(
-                "Please enter a headline.",
+                "Please enter an email subject.",
                 "warning"
             )
 
             return redirect(
-                url_for("create_landing_page")
+                url_for("create_template")
             )
 
-        if not button_text:
+        if not content:
 
-            button_text = "Get Started"
+            flash(
+                "Please enter your email content.",
+                "warning"
+            )
 
-        # -------------------------------------------------
-        # CREATE LANDING PAGE
-        # -------------------------------------------------
+            return redirect(
+                url_for("create_template")
+            )
+
+        # -----------------------------------------
+        # CREATE TEMPLATE
+        # -----------------------------------------
+
+        new_template = Template(
+            name=name,
+            subject=subject,
+            content=content,
+            created_by=session["user_id"]
+        )
+
+        try:
+
+            db.session.add(new_template)
+
+            db.session.commit()
+
+            flash(
+                "Template created successfully!",
+                "success"
+            )
+
+            return redirect(
+                url_for("templates")
+            )
+
+        except Exception as e:
+
+            db.session.rollback()
+
+            flash(
+                f"Could not create template: {e}",
+                "danger"
+            )
+
+            return redirect(
+                url_for("create_template")
+            )
+
+    return render_template(
+        "create_template.html"
+    )
+
+
+# =========================================================
+# EDIT TEMPLATE
+# =========================================================
+
+@app.route(
+    "/templates/<int:template_id>/edit",
+    methods=["GET", "POST"]
+)
+def edit_template(template_id):
+
+    if "user_id" not in session:
+        return redirect(url_for("login"))
+
+    template = Template.query.filter_by(
+        id=template_id,
+        created_by=session["user_id"]
+    ).first_or_404()
+
+    if request.method == "POST":
+
+        name = request.form.get(
+            "name",
+            ""
+        ).strip()
+
+        subject = request.form.get(
+            "subject",
+            ""
+        ).strip()
+
+        content = request.form.get(
+            "content",
+            ""
+        ).strip()
+
+        if not name:
+
+            flash(
+                "Please enter a template name.",
+                "warning"
+            )
+
+            return redirect(
+                url_for(
+                    "edit_template",
+                    template_id=template.id
+                )
+            )
+
+        if not subject:
+
+            flash(
+                "Please enter an email subject.",
+                "warning"
+            )
+
+            return redirect(
+                url_for(
+                    "edit_template",
+                    template_id=template.id
+                )
+            )
+
+        if not content:
+
+            flash(
+                "Please enter your email content.",
+                "warning"
+            )
+
+            return redirect(
+                url_for(
+                    "edit_template",
+                    template_id=template.id
+                )
+            )
+
+        template.name = name
+        template.subject = subject
+        template.content = content
+
+        try:
+
+            db.session.commit()
+
+            flash(
+                "Template updated successfully!",
+                "success"
+            )
+
+        except Exception as e:
+
+            db.session.rollback()
+
+            flash(
+                f"Could not update template: {e}",
+                "danger"
+            )
+
+        return redirect(
+            url_for(
+                "edit_template",
+                template_id=template.id
+            )
+        )
+
+    return render_template(
+        "edit_template.html",
+        template=template
+    )
+
+# =========================================================
+# USE EMAIL TEMPLATE
+# =========================================================
+
+@app.route(
+    "/templates/<int:template_id>/use",
+    methods=["GET"]
+)
+def use_template(template_id):
+
+    if "user_id" not in session:
+        return redirect(url_for("login"))
+
+    template = Template.query.filter_by(
+        id=template_id,
+        created_by=session["user_id"]
+    ).first_or_404()
+
+    return render_template(
+        "use_template.html",
+        template=template
+    )
+
+# =========================================================
+# DELETE TEMPLATE
+# =========================================================
+
+@app.route(
+    "/templates/<int:template_id>/delete",
+    methods=["POST"]
+)
+def delete_template(template_id):
+
+    if "user_id" not in session:
+        return redirect(url_for("login"))
+
+    template = Template.query.filter_by(
+        id=template_id,
+        created_by=session["user_id"]
+    ).first_or_404()
+
+    try:
+
+        db.session.delete(template)
+
+        db.session.commit()
+
+        flash(
+            "Template deleted successfully.",
+            "success"
+        )
+
+    except Exception as e:
+
+        db.session.rollback()
+
+        flash(
+            f"Could not delete template: {e}",
+            "danger"
+        )
+
+    return redirect(
+        url_for("templates")
+    )
+
+# =========================================================
+# LANDING PAGES
+# =========================================================
+
+@app.route("/landing-pages")
+def landing_pages():
+
+    if "user_id" not in session:
+        return redirect(url_for("login"))
+
+    # Only show the five official EmailFlow landing-page templates.
+    # This prevents old/legacy template rows in database.db from
+    # appearing in the chooser.
+    template_names = [
+        "Creator",
+        "Studio",
+        "Newsletter",
+        "Product",
+        "From Scratch",
+    ]
+
+    found_templates = LandingPageTemplate.query.filter(
+        LandingPageTemplate.is_system_template.is_(True),
+        LandingPageTemplate.name.in_(template_names)
+    ).all()
+
+    template_order = {name: index for index, name in enumerate(template_names)}
+    found_templates.sort(key=lambda item: template_order.get(item.name, 999))
+
+    return render_template(
+        "landing_pages.html",
+        templates=found_templates
+    )
+
+
+@app.route("/landing-pages/templates/<int:template_id>/preview")
+def preview_landing_template(template_id):
+
+    if "user_id" not in session:
+        return redirect(url_for("login"))
+
+    template = LandingPageTemplate.query.filter_by(
+        id=template_id,
+        is_system_template=True
+    ).first_or_404()
+
+    return render_template(
+        "preview_landing_template.html",
+        template=template
+    )
+
+
+# =========================================================
+# CREATE LANDING PAGE
+# =========================================================
+
+@app.route("/landing-pages/create", methods=["GET", "POST"])
+def create_landing_page():
+
+    if "user_id" not in session:
+        return redirect(url_for("login"))
+
+    template_id = request.args.get("template_id", type=int)
+    selected_template = None
+
+    if template_id:
+        selected_template = LandingPageTemplate.query.filter_by(
+            id=template_id,
+            is_system_template=True
+        ).first_or_404()
+
+    if request.method == "POST":
+
+        posted_template_id = request.form.get(
+            "template_id",
+            type=int
+        )
+
+        if posted_template_id:
+            selected_template = LandingPageTemplate.query.filter_by(
+                id=posted_template_id,
+                is_system_template=True
+            ).first()
+
+        name = request.form.get("name", "").strip()
+        headline = request.form.get("headline", "").strip()
+        subheadline = request.form.get("subheadline", "").strip()
+        description = request.form.get("description", "").strip()
+        button_text = request.form.get(
+            "button_text",
+            "Get Started"
+        ).strip() or "Get Started"
+        button_url = request.form.get("button_url", "").strip()
+
+        if not name:
+            flash("Please enter a landing page name.", "warning")
+            return redirect(url_for(
+                "create_landing_page",
+                template_id=posted_template_id
+            ))
+
+        if not headline:
+            flash("Please enter a headline.", "warning")
+            return redirect(url_for(
+                "create_landing_page",
+                template_id=posted_template_id
+            ))
+
+        # Default design for pages created from scratch.
+        selected_style = "classic"
+        background_color = "#f8fafc"
+        headline_color = "#111827"
+        button_color = "#4f46e5"
+        button_text_color = "#ffffff"
+        font_family = "Arial"
+        border_radius = 14
+
+        # Each starting template gets its own initial design.
+        if selected_template:
+
+            selected_style = selected_template.style
+
+            if selected_style == "creator":
+                background_color = "#f5f3ff"
+                headline_color = "#312e81"
+                button_color = "#7c3aed"
+                button_text_color = "#ffffff"
+                font_family = "Arial"
+                border_radius = 20
+
+            elif selected_style == "studio":
+                background_color = "#111827"
+                headline_color = "#ffffff"
+                button_color = "#f59e0b"
+                button_text_color = "#111827"
+                font_family = "Arial"
+                border_radius = 4
+
+            elif selected_style == "newsletter":
+                background_color = "#fffdf5"
+                headline_color = "#78350f"
+                button_color = "#b45309"
+                button_text_color = "#ffffff"
+                font_family = "Georgia"
+                border_radius = 8
+
+            elif selected_style == "product":
+                background_color = "#eff6ff"
+                headline_color = "#1e3a8a"
+                button_color = "#2563eb"
+                button_text_color = "#ffffff"
+                font_family = "Arial"
+                border_radius = 18
+
+            elif selected_style == "scratch":
+                background_color = "#ffffff"
+                headline_color = "#111827"
+                button_color = "#111827"
+                button_text_color = "#ffffff"
+                font_family = "Arial"
+                border_radius = 0
+
+            # If the template supplies text, use it unless the user
+            # explicitly submitted different values.
+            if not request.form.get("headline") and selected_template.headline:
+                headline = selected_template.headline
+
+        # Create the internal signup form.
+        new_form = Form(
+            name=f"{name} Signup Form",
+            headline=headline,
+            description=description,
+            button_text=button_text,
+            created_by=session["user_id"]
+        )
+
+        db.session.add(new_form)
+        db.session.flush()
 
         new_landing_page = LandingPage(
             name=name,
@@ -1859,7 +2998,20 @@ def create_landing_page():
             description=description,
             button_text=button_text,
             button_url=button_url,
-            created_by=session["user_id"]
+            template_id=(
+                selected_template.id
+                if selected_template
+                else None
+            ),
+            style=selected_style,
+            form_id=new_form.id,
+            created_by=session["user_id"],
+            background_color=background_color,
+            headline_color=headline_color,
+            button_color=button_color,
+            button_text_color=button_text_color,
+            font_family=font_family,
+            border_radius=border_radius
         )
 
         db.session.add(new_landing_page)
@@ -1870,16 +3022,55 @@ def create_landing_page():
             "success"
         )
 
-        return redirect(
-            url_for("landing_pages")
-        )
+        return redirect(url_for(
+            "landing_page_created",
+            landing_page_id=new_landing_page.id
+        ))
 
     return render_template(
-        "create_landing_page.html"
+        "create_landing_page.html",
+        template=selected_template
     )
 
-@app.route("/landing-pages/<int:landing_page_id>/edit", methods=["GET", "POST"])
+
+# =========================================================
+# LANDING PAGE CREATED / PUBLIC LINK
+# =========================================================
+
+@app.route("/landing-pages/<int:landing_page_id>/created")
+def landing_page_created(landing_page_id):
+
+    if "user_id" not in session:
+        return redirect(url_for("login"))
+
+    landing_page = LandingPage.query.filter_by(
+        id=landing_page_id,
+        created_by=session["user_id"]
+    ).first_or_404()
+
+    public_link = url_for(
+        "public_landing_page",
+        landing_page_id=landing_page.id,
+        _external=True
+    )
+
+    return render_template(
+        "landing_page_created.html",
+        landing_page=landing_page,
+        public_link=public_link
+    )
+
+
+# =========================================================
+# EDIT LANDING PAGE CONTENT
+# =========================================================
+
+@app.route(
+    "/landing-pages/<int:landing_page_id>/edit",
+    methods=["GET", "POST"]
+)
 def edit_landing_page(landing_page_id):
+
     if "user_id" not in session:
         return redirect(url_for("login"))
 
@@ -1889,20 +3080,57 @@ def edit_landing_page(landing_page_id):
     ).first_or_404()
 
     if request.method == "POST":
+
         name = request.form.get("name", "").strip()
         headline = request.form.get("headline", "").strip()
         subheadline = request.form.get("subheadline", "").strip()
         description = request.form.get("description", "").strip()
-        button_text = request.form.get("button_text", "Get Started").strip() or "Get Started"
+        button_text = request.form.get(
+            "button_text",
+            "Get Started"
+        ).strip() or "Get Started"
         button_url = request.form.get("button_url", "").strip()
+
+        background_color = request.form.get(
+            "background_color",
+            landing_page.background_color or "#f8fafc"
+        ).strip()
+        headline_color = request.form.get(
+            "headline_color",
+            landing_page.headline_color or "#111827"
+        ).strip()
+        button_color = request.form.get(
+            "button_color",
+            landing_page.button_color or "#4f46e5"
+        ).strip()
+        button_text_color = request.form.get(
+            "button_text_color",
+            landing_page.button_text_color or "#ffffff"
+        ).strip()
+        font_family = request.form.get(
+            "font_family",
+            landing_page.font_family or "Arial"
+        ).strip()
+        border_radius = request.form.get(
+            "border_radius",
+            landing_page.border_radius if landing_page.border_radius is not None else 14,
+            type=int
+        )
+        border_radius = max(0, min(border_radius, 50))
 
         if not name:
             flash("Please enter a landing page name.", "warning")
-            return redirect(url_for("edit_landing_page", landing_page_id=landing_page.id))
+            return redirect(url_for(
+                "edit_landing_page",
+                landing_page_id=landing_page.id
+            ))
 
         if not headline:
             flash("Please enter a headline.", "warning")
-            return redirect(url_for("edit_landing_page", landing_page_id=landing_page.id))
+            return redirect(url_for(
+                "edit_landing_page",
+                landing_page_id=landing_page.id
+            ))
 
         landing_page.name = name
         landing_page.headline = headline
@@ -1910,26 +3138,63 @@ def edit_landing_page(landing_page_id):
         landing_page.description = description
         landing_page.button_text = button_text
         landing_page.button_url = button_url
+        landing_page.background_color = background_color
+        landing_page.headline_color = headline_color
+        landing_page.button_color = button_color
+        landing_page.button_text_color = button_text_color
+        landing_page.font_family = font_family
+        landing_page.border_radius = border_radius
 
         db.session.commit()
 
         flash("Landing page updated successfully!", "success")
 
-        return redirect(
-            url_for(
-                "edit_landing_page",
-                landing_page_id=landing_page.id
-            )
-        )
+        return redirect(url_for(
+            "edit_landing_page",
+            landing_page_id=landing_page.id
+        ))
+
+    public_link = url_for(
+        "public_landing_page",
+        landing_page_id=landing_page.id,
+        _external=True
+    )
 
     return render_template(
         "edit_landing_page.html",
-        landing_page=landing_page
+        landing_page=landing_page,
+        public_link=public_link
     )
 
 
+# =========================================================
+# EDIT LANDING PAGE DESIGN
+# =========================================================
+
+@app.route(
+    "/landing-pages/<int:landing_page_id>/design",
+    methods=["GET", "POST"]
+)
+def edit_landing_page_design(landing_page_id):
+
+    if "user_id" not in session:
+        return redirect(url_for("login"))
+
+    # The content and design editor are now one working editor.
+    # Keep this route so old links/bookmarks continue to work.
+    return redirect(url_for(
+        "edit_landing_page",
+        landing_page_id=landing_page_id
+    ))
+
+
+# =========================================================
+# LANDING PAGE PREVIEW
+# =========================================================
+
 @app.route("/landing-pages/<int:landing_page_id>/preview")
 def preview_landing_page(landing_page_id):
+
     if "user_id" not in session:
         return redirect(url_for("login"))
 
@@ -1943,6 +3208,1358 @@ def preview_landing_page(landing_page_id):
         landing_page=landing_page
     )
 
+
+# =========================================================
+# PUBLIC LANDING PAGE
+# =========================================================
+
+@app.route("/page/<int:landing_page_id>")
+def public_landing_page(landing_page_id):
+
+    landing_page = LandingPage.query.get_or_404(
+        landing_page_id
+    )
+
+    return render_template(
+        "public_landing_page.html",
+        landing_page=landing_page
+    )
+
+
+# =========================================================
+# SUBSCRIBE THROUGH LANDING PAGE
+# =========================================================
+
+@app.route(
+    "/page/<int:landing_page_id>/subscribe",
+    methods=["POST"]
+)
+def subscribe_landing_page(landing_page_id):
+
+    landing_page = LandingPage.query.get_or_404(
+        landing_page_id
+    )
+
+    name = request.form.get("name", "").strip()
+    email = request.form.get("email", "").strip().lower()
+
+    if not name:
+        flash("Please enter your name.", "warning")
+        return redirect(url_for(
+            "public_landing_page",
+            landing_page_id=landing_page.id
+        ))
+
+    if not email:
+        flash("Please enter your email address.", "warning")
+        return redirect(url_for(
+            "public_landing_page",
+            landing_page_id=landing_page.id
+        ))
+
+    existing_contact = Contact.query.filter_by(
+        email=email,
+        created_by=landing_page.created_by
+    ).first()
+
+    if existing_contact:
+        flash(
+            "This email is already subscribed.",
+            "warning"
+        )
+        return redirect(url_for(
+            "public_landing_page",
+            landing_page_id=landing_page.id
+        ))
+
+    new_contact = Contact(
+        name=name,
+        email=email,
+        created_by=landing_page.created_by
+    )
+
+    try:
+        db.session.add(new_contact)
+        db.session.commit()
+
+        flash(
+            "You have successfully subscribed!",
+            "success"
+        )
+
+    except IntegrityError:
+        db.session.rollback()
+        flash(
+            "This email is already subscribed.",
+            "warning"
+        )
+
+    return redirect(url_for(
+        "public_landing_page",
+        landing_page_id=landing_page.id
+    ))
+
+
+# =========================================================
+# DELETE LANDING PAGE
+# =========================================================
+
+@app.route(
+    "/landing-pages/<int:landing_page_id>/delete",
+    methods=["POST"]
+)
+def delete_landing_page(landing_page_id):
+
+    if "user_id" not in session:
+        return redirect(url_for("login"))
+
+    landing_page = LandingPage.query.filter_by(
+        id=landing_page_id,
+        created_by=session["user_id"]
+    ).first_or_404()
+
+    try:
+        db.session.delete(landing_page)
+        db.session.commit()
+
+        flash(
+            "Landing page deleted successfully!",
+            "success"
+        )
+
+    except Exception:
+        db.session.rollback()
+        flash(
+            "Unable to delete the landing page.",
+            "danger"
+        )
+
+    return redirect(url_for("forms"))
+
+# =========================================================
+# SETTINGS
+# =========================================================
+
+# =========================================================
+# ANALYTICS
+# =========================================================
+
+@app.route("/analytics")
+def analytics():
+
+    if "user_id" not in session:
+        return redirect(url_for("login"))
+
+    user_id = session["user_id"]
+
+    # -----------------------------------------------------
+    # BASIC COUNTS
+    # -----------------------------------------------------
+
+    total_contacts = Contact.query.filter_by(
+        created_by=user_id
+    ).count()
+
+    total_campaigns = Campaign.query.filter_by(
+        created_by=user_id
+    ).count()
+
+    # -----------------------------------------------------
+    # GET USER CAMPAIGNS
+    # -----------------------------------------------------
+
+    campaigns = Campaign.query.filter_by(
+        created_by=user_id
+    ).order_by(
+        Campaign.created_at.desc()
+    ).all()
+
+    # -----------------------------------------------------
+    # GET RECIPIENT RECORDS
+    # -----------------------------------------------------
+
+    campaign_ids = [
+        campaign.id
+        for campaign in campaigns
+    ]
+
+    if campaign_ids:
+
+        recipient_records = CampaignRecipient.query.filter(
+            CampaignRecipient.campaign_id.in_(campaign_ids)
+        ).all()
+
+    else:
+
+        recipient_records = []
+
+
+    # -----------------------------------------------------
+    # OVERALL EMAIL STATISTICS
+    # -----------------------------------------------------
+
+    total_sent = sum(
+        1
+        for recipient in recipient_records
+        if recipient.status == "Sent"
+    )
+
+    total_failed = sum(
+        1
+        for recipient in recipient_records
+        if recipient.status == "Failed"
+    )
+
+    total_pending = sum(
+        1
+        for recipient in recipient_records
+        if recipient.status == "Pending"
+    )
+
+
+    total_attempted = (
+        total_sent +
+        total_failed
+    )
+
+
+    if total_attempted > 0:
+
+        delivery_rate = round(
+            (total_sent / total_attempted) * 100,
+            1
+        )
+
+    else:
+
+        delivery_rate = 0
+
+
+    # -----------------------------------------------------
+    # CAMPAIGN PERFORMANCE
+    # -----------------------------------------------------
+
+    campaign_analytics = []
+
+
+    for campaign in campaigns:
+
+        campaign_recipients = [
+            recipient
+            for recipient in recipient_records
+            if recipient.campaign_id == campaign.id
+        ]
+
+
+        recipient_count = len(
+            campaign_recipients
+        )
+
+
+        sent_count = sum(
+            1
+            for recipient in campaign_recipients
+            if recipient.status == "Sent"
+        )
+
+
+        failed_count = sum(
+            1
+            for recipient in campaign_recipients
+            if recipient.status == "Failed"
+        )
+
+
+        pending_count = sum(
+            1
+            for recipient in campaign_recipients
+            if recipient.status == "Pending"
+        )
+
+
+        attempted_count = (
+            sent_count +
+            failed_count
+        )
+
+
+        if attempted_count > 0:
+
+            campaign_delivery_rate = round(
+                (sent_count / attempted_count) * 100,
+                1
+            )
+
+        else:
+
+            campaign_delivery_rate = 0
+
+
+        campaign_analytics.append({
+
+            "campaign": campaign,
+
+            "recipient_count": recipient_count,
+
+            "sent_count": sent_count,
+
+            "failed_count": failed_count,
+
+            "pending_count": pending_count,
+
+            "delivery_rate": campaign_delivery_rate
+
+        })
+
+
+    # -----------------------------------------------------
+    # CAMPAIGN STATUS COUNTS
+    # -----------------------------------------------------
+
+    completed_campaigns = sum(
+        1
+        for campaign in campaigns
+        if campaign.status == "Sent"
+    )
+
+    sending_campaigns = sum(
+        1
+        for campaign in campaigns
+        if campaign.status == "Sending"
+    )
+
+    draft_campaigns = sum(
+        1
+        for campaign in campaigns
+        if campaign.status == "Draft"
+    )
+
+
+    return render_template(
+        "analytics.html",
+
+        total_contacts=total_contacts,
+
+        total_campaigns=total_campaigns,
+
+        total_sent=total_sent,
+
+        total_failed=total_failed,
+
+        total_pending=total_pending,
+
+        delivery_rate=delivery_rate,
+
+        completed_campaigns=completed_campaigns,
+
+        sending_campaigns=sending_campaigns,
+
+        draft_campaigns=draft_campaigns,
+
+        campaign_analytics=campaign_analytics
+
+    )
+
+@app.route("/settings")
+def settings():
+    """
+    Main Settings page.
+
+    For now, Account Settings is the first
+    available settings section.
+    """
+
+    if "user_id" not in session:
+        return redirect(url_for("login"))
+
+    return redirect(
+        url_for("account_settings")
+    )
+
+
+# =========================================================
+# ACCOUNT SETTINGS
+# =========================================================
+
+@app.route(
+    "/settings/account",
+    methods=["GET", "POST"]
+)
+def account_settings():
+
+    if "user_id" not in session:
+        return redirect(url_for("login"))
+
+    user = User.query.filter_by(
+        id=session["user_id"]
+    ).first_or_404()
+
+    if request.method == "POST":
+
+        action = request.form.get(
+            "action",
+            ""
+        ).strip()
+
+        # =================================================
+        # UPDATE ACCOUNT INFORMATION
+        # =================================================
+
+        if action == "update_account":
+
+            name = request.form.get(
+                "name",
+                ""
+            ).strip()
+
+            email = request.form.get(
+                "email",
+                ""
+            ).strip().lower()
+
+            # ---------------------------------------------
+            # VALIDATION
+            # ---------------------------------------------
+
+            if not name:
+
+                flash(
+                    "Please enter your name.",
+                    "warning"
+                )
+
+                return redirect(
+                    url_for("account_settings")
+                )
+
+            if not email:
+
+                flash(
+                    "Please enter your email address.",
+                    "warning"
+                )
+
+                return redirect(
+                    url_for("account_settings")
+                )
+
+            # ---------------------------------------------
+            # CHECK WHETHER EMAIL IS ALREADY USED
+            # ---------------------------------------------
+
+            existing_user = User.query.filter(
+                User.email == email,
+                User.id != user.id
+            ).first()
+
+            if existing_user:
+
+                flash(
+                    "That email address is already being used.",
+                    "warning"
+                )
+
+                return redirect(
+                    url_for("account_settings")
+                )
+
+            # ---------------------------------------------
+            # UPDATE USER
+            # ---------------------------------------------
+
+            user.name = name
+            user.email = email
+
+            try:
+
+                db.session.commit()
+
+                # Keep the session name updated
+                session["user_name"] = user.name
+
+                flash(
+                    "Account information updated successfully.",
+                    "success"
+                )
+
+            except IntegrityError:
+
+                db.session.rollback()
+
+                flash(
+                    "That email address is already being used.",
+                    "warning"
+                )
+
+            except Exception as e:
+
+                db.session.rollback()
+
+                flash(
+                    f"Could not update account: {e}",
+                    "danger"
+                )
+
+            return redirect(
+                url_for("account_settings")
+            )
+
+        # =================================================
+        # CHANGE PASSWORD
+        # =================================================
+
+        if action == "change_password":
+
+            current_password = request.form.get(
+                "current_password",
+                ""
+            )
+
+            new_password = request.form.get(
+                "new_password",
+                ""
+            )
+
+            confirm_password = request.form.get(
+                "confirm_password",
+                ""
+            )
+
+            # ---------------------------------------------
+            # VALIDATION
+            # ---------------------------------------------
+
+            if not current_password:
+
+                flash(
+                    "Please enter your current password.",
+                    "warning"
+                )
+
+                return redirect(
+                    url_for("account_settings")
+                )
+
+            if not new_password:
+
+                flash(
+                    "Please enter a new password.",
+                    "warning"
+                )
+
+                return redirect(
+                    url_for("account_settings")
+                )
+
+            if len(new_password) < 8:
+
+                flash(
+                    "Your new password must be at least 8 characters long.",
+                    "warning"
+                )
+
+                return redirect(
+                    url_for("account_settings")
+                )
+
+            if new_password != confirm_password:
+
+                flash(
+                    "The new passwords do not match.",
+                    "warning"
+                )
+
+                return redirect(
+                    url_for("account_settings")
+                )
+
+            # ---------------------------------------------
+            # CHECK CURRENT PASSWORD
+            # ---------------------------------------------
+
+            if not bcrypt.check_password_hash(
+                user.password,
+                current_password
+            ):
+
+                flash(
+                    "Your current password is incorrect.",
+                    "danger"
+                )
+
+                return redirect(
+                    url_for("account_settings")
+                )
+
+            # ---------------------------------------------
+            # HASH NEW PASSWORD
+            # ---------------------------------------------
+
+            user.password = (
+                bcrypt
+                .generate_password_hash(new_password)
+                .decode("utf-8")
+            )
+
+            try:
+
+                db.session.commit()
+
+                flash(
+                    "Password changed successfully.",
+                    "success"
+                )
+
+            except Exception as e:
+
+                db.session.rollback()
+
+                flash(
+                    f"Could not change password: {e}",
+                    "danger"
+                )
+
+            return redirect(
+                url_for("account_settings")
+            )
+
+    return render_template(
+        "settings_account.html",
+        user=user
+    )
+
+
+# =========================================================
+# SETTINGS PLACEHOLDER ROUTES
+# =========================================================
+
+@app.route("/settings/profile")
+def settings_profile():
+    if "user_id" not in session:
+        return redirect(url_for("login"))
+
+    user = User.query.get_or_404(session["user_id"])
+
+    return render_template(
+        "settings_profile.html",
+        user=user
+    )
+@app.route("/settings/notifications")
+def settings_notifications():
+    if "user_id" not in session:
+        return redirect(url_for("login"))
+
+    user = User.query.get_or_404(session["user_id"])
+
+    return render_template(
+        "settings_notifications.html",
+        user=user
+    )
+
+@app.route("/settings/security")
+def settings_security():
+
+    if "user_id" not in session:
+        return redirect(url_for("login"))
+
+    return redirect(
+        url_for("account_settings")
+    )
+
+@app.route("/settings/account", methods=["GET", "POST"])
+def settings_account():
+
+    if "user_id" not in session:
+        return redirect(url_for("login"))
+
+    user = User.query.get(session["user_id"])
+
+    if not user:
+        session.clear()
+        return redirect(url_for("login"))
+
+    if request.method == "POST":
+
+        action = request.form.get("action")
+
+        # ==========================
+        # UPDATE ACCOUNT
+        # ==========================
+
+        if action == "update_account":
+
+            name = request.form.get(
+                "name",
+                ""
+            ).strip()
+
+            email = request.form.get(
+                "email",
+                ""
+            ).strip().lower()
+
+            if not name:
+
+                flash(
+                    "Please enter your name.",
+                    "warning"
+                )
+
+                return redirect(
+                    url_for("settings_account")
+                )
+
+            if not email:
+
+                flash(
+                    "Please enter your email address.",
+                    "warning"
+                )
+
+                return redirect(
+                    url_for("settings_account")
+                )
+
+            existing_user = User.query.filter(
+                User.email == email,
+                User.id != user.id
+            ).first()
+
+            if existing_user:
+
+                flash(
+                    "That email address is already in use.",
+                    "warning"
+                )
+
+                return redirect(
+                    url_for("settings_account")
+                )
+
+            user.name = name
+            user.email = email
+
+            try:
+
+                db.session.commit()
+
+                session["user_name"] = user.name
+
+                flash(
+                    "Account information updated successfully.",
+                    "success"
+                )
+
+            except IntegrityError:
+
+                db.session.rollback()
+
+                flash(
+                    "That email address is already in use.",
+                    "warning"
+                )
+
+            except Exception:
+
+                db.session.rollback()
+
+                flash(
+                    "Unable to update your account.",
+                    "danger"
+                )
+
+            return redirect(
+                url_for("settings_account")
+            )
+
+
+        # ==========================
+        # CHANGE PASSWORD
+        # ==========================
+
+        if action == "change_password":
+
+            current_password = request.form.get(
+                "current_password",
+                ""
+            )
+
+            new_password = request.form.get(
+                "new_password",
+                ""
+            )
+
+            confirm_password = request.form.get(
+                "confirm_password",
+                ""
+            )
+
+            if not current_password:
+
+                flash(
+                    "Please enter your current password.",
+                    "warning"
+                )
+
+                return redirect(
+                    url_for("settings_account")
+                )
+
+            if not new_password:
+
+                flash(
+                    "Please enter a new password.",
+                    "warning"
+                )
+
+                return redirect(
+                    url_for("settings_account")
+                )
+
+            if len(new_password) < 8:
+
+                flash(
+                    "Your new password must be at least 8 characters.",
+                    "warning"
+                )
+
+                return redirect(
+                    url_for("settings_account")
+                )
+
+            if new_password != confirm_password:
+
+                flash(
+                    "The new passwords do not match.",
+                    "warning"
+                )
+
+                return redirect(
+                    url_for("settings_account")
+                )
+
+            if not bcrypt.check_password_hash(
+                user.password,
+                current_password
+            ):
+
+                flash(
+                    "Your current password is incorrect.",
+                    "danger"
+                )
+
+                return redirect(
+                    url_for("settings_account")
+                )
+
+            user.password = bcrypt.generate_password_hash(
+                new_password
+            ).decode("utf-8")
+
+            try:
+
+                db.session.commit()
+
+                flash(
+                    "Password changed successfully.",
+                    "success"
+                )
+
+            except Exception:
+
+                db.session.rollback()
+
+                flash(
+                    "Unable to change your password.",
+                    "danger"
+                )
+
+            return redirect(
+                url_for("settings_account")
+            )
+
+
+    return render_template(
+        "settings_account.html",
+        user=user
+    )
+
+# =========================================================
+# SETTINGS - EMAIL & SENDING
+# =========================================================
+
+@app.route("/settings/email")
+def settings_email():
+
+    if "user_id" not in session:
+        return redirect(url_for("login"))
+
+    user_id = session["user_id"]
+
+    user = User.query.get_or_404(user_id)
+
+    email_settings = EmailSettings.query.filter_by(
+        user_id=user_id
+    ).first()
+
+    if not email_settings:
+
+        email_settings = EmailSettings(
+            user_id=user_id,
+            sender_name=user.name,
+            sender_email=user.email,
+            reply_to_email=user.email,
+            smtp_host="",
+            smtp_port=587,
+            smtp_username="",
+            smtp_password="",
+            smtp_encryption="TLS"
+        )
+
+        db.session.add(email_settings)
+        db.session.commit()
+
+    return render_template(
+        "settings_email.html",
+        email_settings=email_settings,
+        user=user
+    )
+
+@app.route(
+    "/settings/email/sender",
+    methods=["POST"]
+)
+def save_sender_settings():
+
+    if "user_id" not in session:
+        return redirect(url_for("login"))
+
+    user_id = session["user_id"]
+
+    email_settings = EmailSettings.query.filter_by(
+        user_id=user_id
+    ).first()
+
+    if not email_settings:
+
+        flash(
+            "Email settings could not be found.",
+            "danger"
+        )
+
+        return redirect(
+            url_for("settings_email")
+        )
+
+    sender_name = request.form.get(
+        "sender_name",
+        ""
+    ).strip()
+
+    sender_email = request.form.get(
+        "sender_email",
+        ""
+    ).strip().lower()
+
+    reply_to_email = request.form.get(
+        "reply_to_email",
+        ""
+    ).strip().lower()
+
+    print("================================")
+    print("SENDER FORM RECEIVED")
+    print("sender_name:", repr(sender_name))
+    print("sender_email:", repr(sender_email))
+    print("reply_to_email:", repr(reply_to_email))
+    print("================================")
+
+    if not sender_name:
+
+        flash(
+            "Please enter a sender name.",
+            "warning"
+        )
+
+        return redirect(
+            url_for("settings_email")
+        )
+
+    if not sender_email:
+
+        flash(
+            "Please enter a sender email address.",
+            "warning"
+        )
+
+        return redirect(
+            url_for("settings_email")
+        )
+
+    email_settings.sender_name = sender_name
+
+    email_settings.sender_email = sender_email
+
+    email_settings.reply_to_email = reply_to_email
+
+    db.session.commit()
+
+    flash(
+        "Sender details saved successfully.",
+        "success"
+    )
+
+    return redirect(
+        url_for("settings_email")
+    )
+
+@app.route(
+    "/settings/email/smtp",
+    methods=["POST"]
+)
+def save_smtp_settings():
+
+    if "user_id" not in session:
+        return redirect(url_for("login"))
+
+    user_id = session["user_id"]
+
+    email_settings = EmailSettings.query.filter_by(
+        user_id=user_id
+    ).first()
+
+    if not email_settings:
+
+        flash(
+            "Email settings could not be found.",
+            "danger"
+        )
+
+        return redirect(
+            url_for("settings_email")
+        )
+
+    smtp_host = request.form.get(
+        "smtp_host",
+        ""
+    ).strip()
+
+    smtp_port = request.form.get(
+        "smtp_port",
+        "587"
+    ).strip()
+
+    smtp_username = request.form.get(
+        "smtp_username",
+        ""
+    ).strip()
+
+    smtp_password = request.form.get(
+        "smtp_password",
+        ""
+    )
+
+    smtp_encryption = request.form.get(
+        "smtp_encryption",
+        "TLS"
+    ).strip()
+
+    print("================================")
+    print("SMTP FORM RECEIVED")
+    print("smtp_host:", repr(smtp_host))
+    print("smtp_port:", repr(smtp_port))
+    print("smtp_username:", repr(smtp_username))
+    print("smtp_password received:", bool(smtp_password))
+    print("smtp_encryption:", repr(smtp_encryption))
+    print("================================")
+
+    if not smtp_host:
+
+        flash(
+            "Please enter an SMTP host.",
+            "warning"
+        )
+
+        return redirect(
+            url_for("settings_email")
+        )
+
+    if not smtp_username:
+
+        flash(
+            "Please enter an SMTP username.",
+            "warning"
+        )
+
+        return redirect(
+            url_for("settings_email")
+        )
+
+    try:
+
+        smtp_port = int(smtp_port)
+
+    except ValueError:
+
+        flash(
+            "SMTP port must be a number.",
+            "warning"
+        )
+
+        return redirect(
+            url_for("settings_email")
+        )
+
+    email_settings.smtp_host = smtp_host
+
+    email_settings.smtp_port = smtp_port
+
+    email_settings.smtp_username = smtp_username
+
+    if smtp_password:
+
+        email_settings.smtp_password = smtp_password
+
+    email_settings.smtp_encryption = smtp_encryption
+
+    db.session.commit()
+
+    print("================================")
+    print("SMTP SETTINGS SAVED")
+    print("saved host:", repr(email_settings.smtp_host))
+    print("saved port:", email_settings.smtp_port)
+    print("saved username:", repr(email_settings.smtp_username))
+    print(
+        "password saved:",
+        bool(email_settings.smtp_password)
+    )
+    print("================================")
+
+    flash(
+        "SMTP settings saved successfully.",
+        "success"
+    )
+
+    return redirect(
+        url_for("settings_email")
+    )
+
+# =========================================================
+# SETTINGS - TEST SMTP CONNECTION
+# =========================================================
+
+@app.route(
+    "/settings/email/test-connection",
+    methods=["POST"]
+)
+def test_email_smtp():
+
+    if "user_id" not in session:
+        return redirect(url_for("login"))
+
+    user_id = session["user_id"]
+
+    email_settings = EmailSettings.query.filter_by(
+        user_id=user_id
+    ).first()
+
+    if not email_settings:
+
+        flash(
+            "Please save your email settings first.",
+            "warning"
+        )
+
+        return redirect(
+            url_for("settings_email")
+        )
+
+    if not email_settings.smtp_host:
+
+        flash(
+            "Please enter your SMTP host.",
+            "warning"
+        )
+
+        return redirect(
+            url_for("settings_email")
+        )
+
+    if not email_settings.smtp_username:
+
+        flash(
+            "Please enter your SMTP username.",
+            "warning"
+        )
+
+        return redirect(
+            url_for("settings_email")
+        )
+
+    if not email_settings.smtp_password:
+
+        flash(
+            "Please enter your SMTP password.",
+            "warning"
+        )
+
+        return redirect(
+            url_for("settings_email")
+        )
+
+    success, message = test_smtp_connection(
+        smtp_host=email_settings.smtp_host,
+        smtp_port=email_settings.smtp_port,
+        smtp_username=email_settings.smtp_username,
+        smtp_password=email_settings.smtp_password,
+        smtp_encryption=email_settings.smtp_encryption
+    )
+
+    if success:
+
+        flash(
+            message,
+            "success"
+        )
+
+    else:
+
+        flash(
+            message,
+            "danger"
+        )
+
+    return redirect(
+        url_for("settings_email")
+    )
+
+@app.route(
+    "/settings/email/send-test",
+    methods=["POST"]
+)
+def send_settings_test_email():
+
+    if "user_id" not in session:
+        return redirect(url_for("login"))
+
+    user_id = session["user_id"]
+
+    # Get the saved email settings
+    email_settings = EmailSettings.query.filter_by(
+        user_id=user_id
+    ).first()
+
+    if not email_settings:
+
+        flash(
+            "Please save your email settings first.",
+            "warning"
+        )
+
+        return redirect(
+            url_for("settings_email")
+        )
+
+    # Make sure SMTP settings exist
+    if not email_settings.smtp_host:
+
+        flash(
+            "Please enter your SMTP host first.",
+            "warning"
+        )
+
+        return redirect(
+            url_for("settings_email")
+        )
+
+    if not email_settings.smtp_username:
+
+        flash(
+            "Please enter your SMTP username first.",
+            "warning"
+        )
+
+        return redirect(
+            url_for("settings_email")
+        )
+
+    if not email_settings.smtp_password:
+
+        flash(
+            "Please enter your SMTP password first.",
+            "warning"
+        )
+
+        return redirect(
+            url_for("settings_email")
+        )
+
+    # The test email will be sent to the
+    # logged-in user's email address.
+    recipient_email = email_settings.sender_email
+
+    if not recipient_email:
+
+        flash(
+            "Please enter a sender email address first.",
+            "warning"
+        )
+
+        return redirect(
+            url_for("settings_email")
+        )
+
+    # Send the email
+    success, message = send_email(
+
+        smtp_host=email_settings.smtp_host,
+
+        smtp_port=email_settings.smtp_port,
+
+        smtp_username=email_settings.smtp_username,
+
+        smtp_password=email_settings.smtp_password,
+
+        smtp_encryption=email_settings.smtp_encryption,
+
+        sender_name=email_settings.sender_name,
+
+        sender_email=email_settings.sender_email,
+
+        recipient_email=recipient_email,
+
+        subject="EmailFlow Test Email",
+
+        body=(
+            "Hello!\n\n"
+            "This is a test email from EmailFlow.\n\n"
+            "Your SMTP connection is working correctly "
+            "and EmailFlow can now send emails through "
+            "your configured email provider.\n\n"
+            "EmailFlow"
+        ),
+
+        reply_to_email=email_settings.reply_to_email
+    )
+
+    if success:
+
+        flash(
+            "Test email sent successfully! "
+            "Check your inbox.",
+            "success"
+        )
+
+    else:
+
+        flash(
+            message,
+            "danger"
+        )
+
+    return redirect(
+        url_for("settings_email")
+    )
+
 @app.route("/logout")
 def logout():
     session.clear()
@@ -1952,8 +4569,13 @@ def logout():
 with app.app_context():
     db.create_all()
 
-    # Update existing LandingPage table
+    # Update existing database tables
     inspector = inspect(db.engine)
+
+
+    # =====================================================
+    # LANDING PAGE TABLE MIGRATION
+    # =====================================================
 
     if "landing_pages" in inspector.get_table_names():
 
@@ -1967,6 +4589,14 @@ with app.app_context():
             "description": "TEXT",
             "button_text": "VARCHAR(100)",
             "button_url": "VARCHAR(500)",
+            "template_id": "INTEGER",
+            "style": "VARCHAR(50) DEFAULT 'classic'",
+            "background_color": "VARCHAR(20) DEFAULT '#f8fafc'",
+            "headline_color": "VARCHAR(20) DEFAULT '#111827'",
+            "button_color": "VARCHAR(20) DEFAULT '#4f46e5'",
+            "button_text_color": "VARCHAR(20) DEFAULT '#ffffff'",
+            "font_family": "VARCHAR(100) DEFAULT 'Arial'",
+            "border_radius": "INTEGER DEFAULT 14",
         }
 
         with db.engine.connect() as connection:
@@ -1983,6 +4613,251 @@ with app.app_context():
                     )
 
             connection.commit()
+
+
+    # =====================================================
+    # TEMPLATE TABLE MIGRATION
+    # =====================================================
+
+    if "templates" in inspector.get_table_names():
+
+        existing_template_columns = {
+            column["name"]
+            for column in inspector.get_columns("templates")
+        }
+
+        template_columns = {
+            "category": "VARCHAR(100)",
+            "html_content": "TEXT",
+            "is_system_template": "BOOLEAN",
+        }
+
+        with db.engine.connect() as connection:
+
+            for column_name, column_type in template_columns.items():
+
+                if column_name not in existing_template_columns:
+
+                    connection.execute(
+                        text(
+                            f"ALTER TABLE templates "
+                            f"ADD COLUMN {column_name} {column_type}"
+                        )
+                    )
+
+            connection.commit()
+
+
+    # =====================================================
+    # CONTACT UNSUBSCRIBE TABLE MIGRATION
+    # =====================================================
+
+    if "contacts" in inspector.get_table_names():
+
+        existing_contact_columns = {
+            column["name"]
+            for column in inspector.get_columns("contacts")
+        }
+
+        contact_columns = {
+            "unsubscribed": "BOOLEAN DEFAULT 0 NOT NULL",
+            "unsubscribed_at": "DATETIME",
+        }
+
+        with db.engine.connect() as connection:
+
+            for column_name, column_type in contact_columns.items():
+
+                if column_name not in existing_contact_columns:
+
+                    connection.execute(
+                        text(
+                            f"ALTER TABLE contacts "
+                            f"ADD COLUMN {column_name} {column_type}"
+                        )
+                    )
+
+            connection.commit()
+
+    # =====================================================
+    # SEED LANDING PAGE STARTING TEMPLATES
+    # =====================================================
+
+    if "landing_page_templates" in inspector.get_table_names():
+
+        system_templates = [
+            {
+                "name": "Creator",
+                "category": "Email Capture",
+                "description": "A bold creator-focused signup page.",
+                "style": "creator",
+                "headline": "Be known for what you actually do.",
+                "subheadline": "Build your audience and turn your ideas into something people remember.",
+                "description_text": "Join the community and get useful ideas, updates and resources delivered to your inbox.",
+                "button_text": "Subscribe",
+            },
+            {
+                "name": "Studio",
+                "category": "Business",
+                "description": "A polished business-style landing page.",
+                "style": "studio",
+                "headline": "Build something people remember.",
+                "subheadline": "A simple place to share your work, ideas and expertise.",
+                "description_text": "Get practical insights, resources and updates from our studio.",
+                "button_text": "Get Started",
+            },
+            {
+                "name": "Newsletter",
+                "category": "Email Capture",
+                "description": "A clean newsletter signup page.",
+                "style": "newsletter",
+                "headline": "Get the ideas worth reading.",
+                "subheadline": "A short, useful newsletter delivered straight to your inbox.",
+                "description_text": "No spam. Just useful ideas, stories and resources.",
+                "button_text": "Join the Newsletter",
+            },
+            {
+                "name": "Product",
+                "category": "Product Sales",
+                "description": "A product-focused conversion page.",
+                "style": "product",
+                "headline": "Something worth sharing.",
+                "subheadline": "Show people what you have built and give them a reason to take action.",
+                "description_text": "Enter your details below to get access and receive updates.",
+                "button_text": "Get Access",
+            },
+            {
+                "name": "From Scratch",
+                "category": "Blank",
+                "description": "Start with a clean blank layout.",
+                "style": "scratch",
+                "headline": "Your headline goes here.",
+                "subheadline": "Add a short description of your offer.",
+                "description_text": "Tell your visitors why they should subscribe.",
+                "button_text": "Subscribe",
+            },
+        ]
+
+        for item in system_templates:
+
+            existing = LandingPageTemplate.query.filter_by(
+                name=item["name"],
+                is_system_template=True
+            ).first()
+
+            if existing:
+                # Refresh the official system template so old template
+                # text from earlier versions cannot break the chooser.
+                existing.category = item["category"]
+                existing.description = item["description"]
+                existing.style = item["style"]
+                existing.headline = item["headline"]
+                existing.subheadline = item["subheadline"]
+                existing.description_text = item["description_text"]
+                existing.button_text = item["button_text"]
+            else:
+                db.session.add(
+                    LandingPageTemplate(
+                        name=item["name"],
+                        category=item["category"],
+                        description=item["description"],
+                        style=item["style"],
+                        headline=item["headline"],
+                        subheadline=item["subheadline"],
+                        description_text=item["description_text"],
+                        button_text=item["button_text"],
+                        is_system_template=True,
+                    )
+                )
+
+        db.session.commit()
+
+@app.route(
+    "/unsubscribe/<token>",
+    methods=["GET", "POST"]
+)
+def unsubscribe(token):
+
+    serializer = URLSafeSerializer(
+        app.secret_key,
+        salt="emailflow-unsubscribe"
+    )
+
+    try:
+
+        data = serializer.loads(token)
+
+    except Exception:
+
+        return render_template(
+            "unsubscribe.html",
+            error="This unsubscribe link is invalid or has expired."
+        )
+
+    contact_id = data.get("contact_id")
+
+    if not contact_id:
+
+        return render_template(
+            "unsubscribe.html",
+            error="This unsubscribe link is invalid."
+        )
+
+    contact = Contact.query.get(contact_id)
+
+    if not contact:
+
+        return render_template(
+            "unsubscribe.html",
+            error="We could not find this contact."
+        )
+
+    if request.method == "POST":
+
+        if not contact.unsubscribed:
+
+            contact.unsubscribed = True
+
+            contact.unsubscribed_at = datetime.now(timezone.utc)
+
+            db.session.commit()
+
+        return render_template(
+            "unsubscribe.html",
+            success=True,
+            contact=contact
+        )
+
+    return render_template(
+        "unsubscribe.html",
+        contact=contact,
+        token=token
+    )
+
+
+@app.route(
+    "/test-unsubscribe/<int:contact_id>"
+)
+def test_unsubscribe(contact_id):
+
+    if "user_id" not in session:
+        return redirect(url_for("login"))
+
+    contact = Contact.query.filter_by(
+        id=contact_id,
+        created_by=session["user_id"]
+    ).first_or_404()
+
+    token = create_unsubscribe_token(
+        contact.id
+    )
+
+    return redirect(
+        url_for(
+            "unsubscribe",
+            token=token
+        )
+    )
 
 if __name__ == "__main__":
     app.run(debug=True)

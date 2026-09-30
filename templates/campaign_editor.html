@@ -1,0 +1,1700 @@
+{% extends "dashboard_base.html" %}
+
+{% block title %}
+New Campaign - EmailFlow
+{% endblock %}
+
+{% block content %}
+
+<div class="campaign-editor-page">
+
+    <!-- =====================================================
+         TOP BAR
+         ===================================================== -->
+
+    <div class="editor-topbar">
+
+        <a
+            href="{{ url_for('campaigns') }}"
+            class="editor-back-button"
+        >
+            ←
+        </a>
+
+        <div class="editor-title">
+            <h1>
+                New Campaign
+            </h1>
+        </div>
+
+        <div class="editor-status-area">
+
+            <div class="editor-status">
+
+                <span class="status-dot"></span>
+
+                <span>
+                    Draft
+                </span>
+
+            </div>
+
+            <span class="editor-arrow">
+                →
+            </span>
+
+            <div class="publish-status">
+                <span class="publish-dot"></span>
+                Publish
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- =====================================================
+         MAIN EDITOR LAYOUT
+         ===================================================== -->
+
+    <form
+        method="POST"
+        action="{{ url_for('create_campaign') }}"
+        id="campaignEditorForm"
+    >
+
+        <div class="campaign-editor-layout">
+
+
+            <!-- =================================================
+                 LEFT / MAIN EDITOR
+                 ================================================= -->
+
+            <div class="campaign-editor-main">
+
+                <div class="editor-content-card">
+
+
+                    <!-- SUBJECT -->
+
+                    <div class="subject-section">
+
+                        <label
+                            for="subject"
+                            class="editor-label"
+                        >
+                            Subject Line
+                        </label>
+
+                        <input
+                            type="text"
+                            id="subject"
+                            name="subject"
+                            class="subject-input"
+                            value="{% if template %}{{ template.subject }}{% endif %}"
+                            placeholder="New Campaign"
+                            required
+                        >
+
+                        <div class="subject-tools">
+
+                            <button
+                                type="button"
+                                title="AI tools"
+                            >
+                                ✨
+                            </button>
+
+                            <button
+                                type="button"
+                                title="Test"
+                            >
+                                ⚗
+                            </button>
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- PREVIEW TEXT -->
+
+                    <button
+                        type="button"
+                        class="preview-text-button"
+                        onclick="togglePreviewText()"
+                    >
+                        <span class="plus-icon">
+                            +
+                        </span>
+
+                        Add preview text
+                    </button>
+
+                    <div
+                        id="previewTextWrapper"
+                        class="preview-text-wrapper"
+                        style="display: none;"
+                    >
+
+                        <input
+                            type="text"
+                            id="preview_text"
+                            name="preview_text"
+                            placeholder="Add preview text..."
+                            class="preview-text-input"
+                        >
+
+                    </div>
+
+
+                    <!-- =================================================
+                         TOOLBAR
+                         ================================================= -->
+
+                    <div class="editor-toolbar">
+
+                        <button
+                            type="button"
+                            onclick="formatText('formatBlock', 'p')"
+                            title="Paragraph"
+                        >
+                            ¶
+                        </button>
+
+                        <span class="toolbar-divider"></span>
+
+                        <button
+                            type="button"
+                            onclick="document.execCommand('undo')"
+                            title="Undo"
+                        >
+                            ↶
+                        </button>
+
+                        <button
+                            type="button"
+                            onclick="document.execCommand('redo')"
+                            title="Redo"
+                        >
+                            ↷
+                        </button>
+
+                        <span class="toolbar-divider"></span>
+
+                        <button
+                            type="button"
+                            onclick="formatText('bold')"
+                            title="Bold"
+                        >
+                            <strong>B</strong>
+                        </button>
+
+                        <button
+                            type="button"
+                            onclick="formatText('italic')"
+                            title="Italic"
+                        >
+                            <em>I</em>
+                        </button>
+
+                        <button
+                            type="button"
+                            onclick="formatText('underline')"
+                            title="Underline"
+                        >
+                            <u>U</u>
+                        </button>
+
+                        <button
+                            type="button"
+                            onclick="formatText('strikeThrough')"
+                            title="Strikethrough"
+                        >
+                            <s>S</s>
+                        </button>
+
+                        <span class="toolbar-divider"></span>
+
+                        <button
+                            type="button"
+                            onclick="formatText('justifyLeft')"
+                            title="Align left"
+                        >
+                            ☰
+                        </button>
+
+                        <button
+                            type="button"
+                            onclick="formatText('justifyCenter')"
+                            title="Center"
+                        >
+                            ≡
+                        </button>
+
+                        <button
+                            type="button"
+                            onclick="formatText('justifyRight')"
+                            title="Align right"
+                        >
+                            ☷
+                        </button>
+
+                        <button
+                            type="button"
+                            onclick="formatText('justifyFull')"
+                            title="Justify"
+                        >
+                            ☰
+                        </button>
+
+                        <span class="toolbar-divider"></span>
+
+                        <button
+                            type="button"
+                            onclick="changeFontSize()"
+                            title="Text size"
+                        >
+                            Tᵀ
+                        </button>
+
+                        <button
+                            type="button"
+                            onclick="changeTextColor()"
+                            title="Text color"
+                        >
+                            ◉
+                        </button>
+
+                        <button
+                            type="button"
+                            onclick="document.execCommand('italic')"
+                            title="Style"
+                        >
+                            ◇
+                        </button>
+
+                        <button
+                            type="button"
+                            onclick="insertLink()"
+                            title="Insert link"
+                        >
+                            🔗
+                        </button>
+
+                        <button
+                            type="button"
+                            onclick="insertVariable()"
+                            title="Personalization"
+                        >
+                            @
+                        </button>
+
+                        <div class="toolbar-spacer"></div>
+
+                        <button
+                            type="button"
+                            onclick="togglePreview()"
+                            title="Preview"
+                        >
+                            ◉
+                        </button>
+
+                        <button
+                            type="button"
+                            onclick="toggleFullscreen()"
+                            title="Fullscreen"
+                        >
+                            ⛶
+                        </button>
+
+                    </div>
+
+
+                    <!-- =================================================
+                         CONTENT EDITOR
+                         ================================================= -->
+
+                    <div
+                        id="messageEditor"
+                        class="message-editor"
+                        contenteditable="true"
+                        spellcheck="true"
+                    >
+
+                        {% if template %}
+
+                            {% if template.html_content %}
+
+                                {{ template.html_content|safe }}
+
+                            {% else %}
+
+                                {{ template.content|e }}
+
+                            {% endif %}
+
+                        {% else %}
+
+                            <p class="editor-placeholder">
+                                Add content...
+
+                            </p>
+
+                        {% endif %}
+
+                    </div>
+
+
+                    <!-- Hidden field actually submitted to Flask -->
+
+                    <textarea
+                        id="message"
+                        name="message"
+                        style="display: none;"
+                    ></textarea>
+
+
+                    <!-- EMAIL FOOTER -->
+
+                    <div class="email-footer">
+
+                        <div class="footer-links">
+
+                            <a href="#">
+                                Unsubscribe
+                            </a>
+
+                            <span>|</span>
+
+                            <a href="#">
+                                Update your profile
+                            </a>
+
+                            <span>|</span>
+
+                            <span>
+                                Your business address
+                            </span>
+
+                        </div>
+
+                        <div class="built-with">
+                            Built with <strong>EmailFlow</strong>
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- =================================================
+                 RIGHT SIDEBAR
+                 ================================================= -->
+
+            <aside class="campaign-editor-sidebar">
+
+
+                <!-- EMAIL CARD -->
+
+                <div class="sidebar-card">
+
+                    <div class="sidebar-card-header">
+                        Email
+                    </div>
+
+
+                    <div class="sidebar-card-body">
+
+                        <div class="sidebar-title-row">
+
+                            <span>
+                                Template
+                            </span>
+
+                            <span class="template-indicator"></span>
+
+                        </div>
+
+
+                        <!-- TEMPLATE PREVIEW -->
+
+                        <div class="selected-template-preview">
+
+                            {% if template and template.html_content %}
+
+                                <iframe
+                                    srcdoc="{{ template.html_content|e }}"
+                                    title="Selected template"
+                                    sandbox="allow-same-origin"
+                                    scrolling="no"
+                                ></iframe>
+
+                            {% elif template %}
+
+                                <div class="sidebar-text-preview">
+
+                                    <strong>
+                                        {{ template.name }}
+                                    </strong>
+
+                                    <p>
+                                        {{ template.content[:100] }}
+                                    </p>
+
+                                </div>
+
+                            {% else %}
+
+                                <div class="sidebar-blank-preview">
+
+                                    <span>
+                                        Blank email
+                                    </span>
+
+                                </div>
+
+                            {% endif %}
+
+                        </div>
+
+
+                        <!-- TEMPLATE NAME -->
+
+                        <div class="selected-template-name">
+
+                            {% if template %}
+
+                                {{ template.name }}
+
+                            {% else %}
+
+                                Start from scratch
+
+                            {% endif %}
+
+                        </div>
+
+
+                        <!-- BROWSE -->
+
+                        <a
+                            href="{{ url_for('campaigns') }}"
+                            class="sidebar-action-button"
+                        >
+                            Browse templates
+                        </a>
+
+
+                        <!-- SAVE TEMPLATE -->
+
+                        <button
+                            type="button"
+                            class="sidebar-action-button secondary"
+                            onclick="saveTemplateMessage()"
+                        >
+                            Save template
+                        </button>
+
+                    </div>
+
+                </div>
+
+
+                <!-- A/B TEST -->
+
+                <div class="sidebar-card ab-test-card">
+
+                    <div class="ab-test-row">
+
+                        <div>
+
+                            <strong>
+                                Run an A/B Test
+                            </strong>
+
+                        </div>
+
+                        <label class="switch">
+
+                            <input
+                                type="checkbox"
+                                id="abTest"
+                            >
+
+                            <span class="slider"></span>
+
+                        </label>
+
+                    </div>
+
+                </div>
+
+            </aside>
+
+        </div>
+
+
+        <!-- =====================================================
+             BOTTOM BAR
+             ===================================================== -->
+
+        <div class="editor-bottom-bar">
+
+            <div class="bottom-left">
+
+                <button
+                    type="button"
+                    class="bottom-link"
+                >
+                    ◷ Version History
+                </button>
+
+                <span class="saved-status">
+                    ☁ Saved
+                </span>
+
+            </div>
+
+
+            <button
+                type="submit"
+                class="continue-button"
+                onclick="prepareCampaignSubmit()"
+            >
+                Continue
+                →
+            </button>
+
+        </div>
+
+    </form>
+
+</div>
+
+
+<!-- =========================================================
+     EDITOR JAVASCRIPT
+     ========================================================= -->
+
+<script>
+
+const messageEditor =
+    document.getElementById("messageEditor");
+
+const messageField =
+    document.getElementById("message");
+
+
+/* ---------------------------------------------------------
+   TOOLBAR
+--------------------------------------------------------- */
+
+function formatText(command, value = null) {
+
+    messageEditor.focus();
+
+    document.execCommand(
+        command,
+        false,
+        value
+    );
+
+}
+
+
+/* ---------------------------------------------------------
+   PREVIEW TEXT
+--------------------------------------------------------- */
+
+function togglePreviewText() {
+
+    const wrapper =
+        document.getElementById(
+            "previewTextWrapper"
+        );
+
+    if (wrapper.style.display === "none") {
+
+        wrapper.style.display = "block";
+
+    } else {
+
+        wrapper.style.display = "none";
+
+    }
+
+}
+
+
+/* ---------------------------------------------------------
+   INSERT LINK
+--------------------------------------------------------- */
+
+function insertLink() {
+
+    const url =
+        prompt(
+            "Enter the URL:"
+        );
+
+    if (!url) {
+        return;
+    }
+
+    messageEditor.focus();
+
+    document.execCommand(
+        "createLink",
+        false,
+        url
+    );
+
+}
+
+
+/* ---------------------------------------------------------
+   INSERT PERSONALIZATION
+--------------------------------------------------------- */
+
+function insertVariable() {
+
+    messageEditor.focus();
+
+    document.execCommand(
+        "insertText",
+        false,
+        "{% raw %}{{ contact.name }}{% endraw %}"
+    );
+
+}
+
+/* ---------------------------------------------------------
+   FONT SIZE
+--------------------------------------------------------- */
+
+function changeFontSize() {
+
+    const size =
+        prompt(
+            "Enter font size from 1 to 7:",
+            "3"
+        );
+
+    if (!size) {
+        return;
+    }
+
+    messageEditor.focus();
+
+    document.execCommand(
+        "fontSize",
+        false,
+        size
+    );
+
+}
+
+
+/* ---------------------------------------------------------
+   TEXT COLOR
+--------------------------------------------------------- */
+
+function changeTextColor() {
+
+    const color =
+        prompt(
+            "Enter a color, for example #111827:",
+            "#111827"
+        );
+
+    if (!color) {
+        return;
+    }
+
+    messageEditor.focus();
+
+    document.execCommand(
+        "foreColor",
+        false,
+        color
+    );
+
+}
+
+
+/* ---------------------------------------------------------
+   PREVIEW
+--------------------------------------------------------- */
+
+function togglePreview() {
+
+    const editor =
+        document.getElementById(
+            "messageEditor"
+        );
+
+    editor.classList.toggle(
+        "preview-mode"
+    );
+
+}
+
+
+/* ---------------------------------------------------------
+   FULLSCREEN
+--------------------------------------------------------- */
+
+function toggleFullscreen() {
+
+    const page =
+        document.querySelector(
+            ".campaign-editor-page"
+        );
+
+    page.classList.toggle(
+        "editor-fullscreen"
+    );
+
+}
+
+
+/* ---------------------------------------------------------
+   SAVE TEMPLATE
+--------------------------------------------------------- */
+
+function saveTemplateMessage() {
+
+    alert(
+        "Template saving will be connected next."
+    );
+
+}
+
+
+/* ---------------------------------------------------------
+   PREPARE FORM
+--------------------------------------------------------- */
+
+function prepareCampaignSubmit() {
+
+    messageField.value =
+        messageEditor.innerHTML;
+
+}
+
+
+/* ---------------------------------------------------------
+   PREVENT EMPTY PLACEHOLDER
+--------------------------------------------------------- */
+
+messageEditor.addEventListener(
+    "focus",
+    function () {
+
+        const placeholder =
+            messageEditor.querySelector(
+                ".editor-placeholder"
+            );
+
+        if (placeholder) {
+
+            placeholder.remove();
+
+        }
+
+    }
+);
+
+
+/* ---------------------------------------------------------
+   AUTO SAVE INDICATOR
+--------------------------------------------------------- */
+
+messageEditor.addEventListener(
+    "input",
+    function () {
+
+        const status =
+            document.querySelector(
+                ".saved-status"
+            );
+
+        if (status) {
+
+            status.textContent =
+                "● Unsaved changes";
+
+        }
+
+    }
+);
+
+
+/* ---------------------------------------------------------
+   SUBJECT AUTO SAVE STATUS
+--------------------------------------------------------- */
+
+document
+    .getElementById("subject")
+    .addEventListener(
+        "input",
+        function () {
+
+            const status =
+                document.querySelector(
+                    ".saved-status"
+                );
+
+            if (status) {
+
+                status.textContent =
+                    "● Unsaved changes";
+
+            }
+
+        }
+    );
+
+</script>
+
+
+<!-- =========================================================
+     EDITOR CSS
+     ========================================================= -->
+
+<style>
+
+/* =========================================================
+   PAGE
+   ========================================================= */
+
+.campaign-editor-page {
+    width: 100%;
+    min-height: calc(100vh - 70px);
+    background: #f8fafc;
+}
+
+
+/* =========================================================
+   TOP BAR
+   ========================================================= */
+
+.editor-topbar {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+
+    min-height: 68px;
+
+    padding: 0 24px;
+
+    background: #ffffff;
+
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.editor-back-button {
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    width: 38px;
+    height: 38px;
+
+    color: #111827;
+
+    text-decoration: none;
+
+    font-size: 28px;
+
+    border-radius: 8px;
+}
+
+.editor-back-button:hover {
+    background: #f3f4f6;
+}
+
+.editor-title h1 {
+    margin: 0;
+
+    font-size: 20px;
+
+    font-weight: 700;
+
+    color: #111827;
+}
+
+.editor-status-area {
+    display: flex;
+
+    align-items: center;
+
+    gap: 12px;
+
+    margin-left: auto;
+
+    font-size: 13px;
+}
+
+.editor-status {
+    display: flex;
+
+    align-items: center;
+
+    gap: 7px;
+
+    color: #374151;
+
+    font-weight: 600;
+}
+
+.status-dot {
+    width: 10px;
+    height: 10px;
+
+    border-radius: 50%;
+
+    background: #111827;
+}
+
+.editor-arrow {
+    font-size: 20px;
+
+    color: #6b7280;
+}
+
+.publish-status {
+    display: flex;
+
+    align-items: center;
+
+    gap: 7px;
+
+    color: #9ca3af;
+}
+
+.publish-dot {
+    width: 10px;
+    height: 10px;
+
+    border-radius: 50%;
+
+    background: #d1d5db;
+}
+
+
+/* =========================================================
+   LAYOUT
+   ========================================================= */
+
+.campaign-editor-layout {
+    display: grid;
+
+    grid-template-columns:
+        minmax(0, 1fr)
+        360px;
+
+    gap: 18px;
+
+    padding: 18px 24px;
+
+    max-width: 1500px;
+
+    margin: 0 auto;
+}
+
+
+/* =========================================================
+   MAIN CARD
+   ========================================================= */
+
+.editor-content-card {
+    background: #ffffff;
+
+    border: 1px solid #e5e7eb;
+
+    border-radius: 14px;
+
+    overflow: hidden;
+}
+
+
+/* =========================================================
+   SUBJECT
+   ========================================================= */
+
+.subject-section {
+    position: relative;
+
+    padding: 22px 26px 12px;
+}
+
+.editor-label {
+    display: block;
+
+    margin-bottom: 10px;
+
+    color: #111827;
+
+    font-size: 14px;
+
+    font-weight: 600;
+}
+
+.subject-input {
+    width: 100%;
+
+    box-sizing: border-box;
+
+    padding: 12px 80px 12px 12px;
+
+    border: 1px solid #d1d5db;
+
+    border-radius: 10px;
+
+    font-size: 15px;
+
+    color: #111827;
+
+    outline: none;
+}
+
+.subject-input:focus {
+    border-color: #9ca3af;
+
+    box-shadow:
+        0 0 0 3px rgba(17, 24, 39, 0.05);
+}
+
+.subject-tools {
+    position: absolute;
+
+    right: 38px;
+
+    bottom: 20px;
+
+    display: flex;
+
+    gap: 5px;
+}
+
+.subject-tools button {
+    border: none;
+
+    background: transparent;
+
+    color: #4b5563;
+
+    font-size: 17px;
+
+    cursor: pointer;
+}
+
+
+/* =========================================================
+   PREVIEW TEXT
+   ========================================================= */
+
+.preview-text-button {
+    display: flex;
+
+    align-items: center;
+
+    gap: 8px;
+
+    margin: 0 26px 14px;
+
+    border: none;
+
+    background: transparent;
+
+    color: #111827;
+
+    font-size: 13px;
+
+    font-weight: 600;
+
+    cursor: pointer;
+}
+
+.plus-icon {
+    font-size: 22px;
+
+    font-weight: 400;
+}
+
+.preview-text-wrapper {
+    padding: 0 26px 15px;
+}
+
+.preview-text-input {
+    width: 100%;
+
+    box-sizing: border-box;
+
+    padding: 10px 12px;
+
+    border: 1px solid #d1d5db;
+
+    border-radius: 8px;
+}
+
+
+/* =========================================================
+   TOOLBAR
+   ========================================================= */
+
+.editor-toolbar {
+    display: flex;
+
+    align-items: center;
+
+    min-height: 48px;
+
+    padding: 0 12px;
+
+    border-top: 1px solid #e5e7eb;
+
+    border-bottom: 1px solid #e5e7eb;
+
+    background: #ffffff;
+
+    gap: 2px;
+}
+
+.editor-toolbar button {
+    width: 34px;
+    height: 34px;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    border: none;
+
+    background: transparent;
+
+    border-radius: 6px;
+
+    color: #374151;
+
+    font-size: 16px;
+
+    cursor: pointer;
+}
+
+.editor-toolbar button:hover {
+    background: #f3f4f6;
+}
+
+.toolbar-divider {
+    width: 1px;
+
+    height: 24px;
+
+    background: #e5e7eb;
+
+    margin: 0 5px;
+}
+
+.toolbar-spacer {
+    flex: 1;
+}
+
+
+/* =========================================================
+   MESSAGE EDITOR
+   ========================================================= */
+
+.message-editor {
+    min-height: 430px;
+
+    padding: 24px 26px;
+
+    outline: none;
+
+    color: #111827;
+
+    font-size: 15px;
+
+    line-height: 1.7;
+
+    background: #ffffff;
+}
+
+.message-editor:focus {
+    outline: none;
+}
+
+.message-editor.preview-mode {
+    max-width: 680px;
+
+    margin: 25px auto;
+
+    border: 1px solid #e5e7eb;
+
+    box-shadow:
+        0 10px 30px rgba(15, 23, 42, 0.08);
+}
+
+.editor-placeholder {
+    color: #9ca3af;
+
+    margin: 0;
+}
+
+
+/* =========================================================
+   EMAIL FOOTER
+   ========================================================= */
+
+.email-footer {
+    padding: 20px 26px 26px;
+
+    color: #6b7280;
+
+    font-size: 12px;
+}
+
+.footer-links {
+    display: flex;
+
+    flex-wrap: wrap;
+
+    gap: 5px;
+}
+
+.footer-links a {
+    color: #2563eb;
+
+    text-decoration: underline;
+}
+
+.built-with {
+    margin-top: 28px;
+
+    font-size: 17px;
+
+    color: #111827;
+}
+
+.built-with strong {
+    font-size: 24px;
+}
+
+
+/* =========================================================
+   SIDEBAR
+   ========================================================= */
+
+.campaign-editor-sidebar {
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 18px;
+}
+
+.sidebar-card {
+    background: #ffffff;
+
+    border: 1px solid #e5e7eb;
+
+    border-radius: 14px;
+
+    overflow: hidden;
+}
+
+.sidebar-card-header {
+    padding: 20px;
+
+    border-bottom: 1px solid #e5e7eb;
+
+    font-size: 15px;
+
+    font-weight: 700;
+
+    color: #111827;
+}
+
+.sidebar-card-body {
+    padding: 18px;
+}
+
+.sidebar-title-row {
+    display: flex;
+
+    align-items: center;
+
+    gap: 7px;
+
+    margin-bottom: 12px;
+
+    font-size: 13px;
+
+    font-weight: 600;
+}
+
+.template-indicator {
+    width: 8px;
+    height: 8px;
+
+    border-radius: 50%;
+
+    background: #ff7043;
+}
+
+
+/* =========================================================
+   TEMPLATE PREVIEW
+   ========================================================= */
+
+.selected-template-preview {
+    width: 100%;
+
+    height: 150px;
+
+    overflow: hidden;
+
+    border: 1px solid #e5e7eb;
+
+    border-radius: 10px;
+
+    background: #f8fafc;
+
+    position: relative;
+}
+
+.selected-template-preview iframe {
+    width: 200%;
+
+    height: 300px;
+
+    border: none;
+
+    transform: scale(0.5);
+
+    transform-origin: top left;
+
+    display: block;
+
+    pointer-events: none;
+}
+
+.sidebar-text-preview {
+    padding: 18px;
+
+    font-size: 12px;
+}
+
+.sidebar-text-preview strong {
+    font-size: 13px;
+}
+
+.sidebar-text-preview p {
+    color: #6b7280;
+
+    line-height: 1.5;
+}
+
+.sidebar-blank-preview {
+    height: 100%;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    color: #9ca3af;
+
+    font-size: 12px;
+}
+
+.selected-template-name {
+    margin: 10px 0;
+
+    color: #111827;
+
+    font-size: 13px;
+
+    font-weight: 600;
+}
+
+
+/* =========================================================
+   SIDEBAR BUTTONS
+   ========================================================= */
+
+.sidebar-action-button {
+    width: 100%;
+
+    box-sizing: border-box;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    padding: 11px;
+
+    margin-top: 8px;
+
+    border: none;
+
+    border-radius: 8px;
+
+    background: #f3f4f6;
+
+    color: #111827;
+
+    font-size: 13px;
+
+    font-weight: 600;
+
+    text-decoration: none;
+
+    cursor: pointer;
+}
+
+.sidebar-action-button:hover {
+    background: #e5e7eb;
+
+    color: #111827;
+
+    text-decoration: none;
+}
+
+.sidebar-action-button.secondary {
+    background: #ffffff;
+
+    border: 1px solid #d1d5db;
+}
+
+
+/* =========================================================
+   A/B TEST
+   ========================================================= */
+
+.ab-test-row {
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    padding: 20px;
+}
+
+.ab-test-row strong {
+    font-size: 13px;
+}
+
+
+/* SWITCH */
+
+.switch {
+    position: relative;
+
+    width: 48px;
+    height: 28px;
+}
+
+.switch input {
+    opacity: 0;
+
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+
+    inset: 0;
+
+    cursor: pointer;
+
+    background: #d1d5db;
+
+    border-radius: 999px;
+
+    transition: 0.2s;
+}
+
+.slider:before {
+    content: "";
+
+    position: absolute;
+
+    width: 22px;
+    height: 22px;
+
+    left: 3px;
+    top: 3px;
+
+    background: white;
+
+    border-radius: 50%;
+
+    transition: 0.2s;
+}
+
+.switch input:checked + .slider {
+    background: #111827;
+}
+
+.switch input:checked + .slider:before {
+    transform: translateX(20px);
+}
+
+
+/* =========================================================
+   BOTTOM BAR
+   ========================================================= */
+
+.editor-bottom-bar {
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    padding: 14px 24px;
+
+    background: #ffffff;
+
+    border-top: 1px solid #e5e7eb;
+
+    position: sticky;
+
+    bottom: 0;
+
+    z-index: 20;
+}
+
+.bottom-left {
+    display: flex;
+
+    align-items: center;
+
+    gap: 24px;
+}
+
+.bottom-link {
+    border: none;
+
+    background: transparent;
+
+    color: #374151;
+
+    font-size: 13px;
+
+    cursor: pointer;
+}
+
+.saved-status {
+    color: #6b7280;
+
+    font-size: 12px;
+}
+
+.continue-button {
+    border: none;
+
+    border-radius: 9px;
+
+    padding: 12px 20px;
+
+    background: #111827;
+
+    color: #ffffff;
+
+    font-size: 13px;
+
+    font-weight: 700;
+
+    cursor: pointer;
+}
+
+.continue-button:hover {
+    background: #1f2937;
+}
+
+
+/* =========================================================
+   FULLSCREEN
+   ========================================================= */
+
+.editor-fullscreen {
+    position: fixed;
+
+    inset: 0;
+
+    z-index: 9999;
+
+    overflow: auto;
+
+    background: #f8fafc;
+}
+
+
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
+
+@media (max-width: 1000px) {
+
+    .campaign-editor-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .campaign-editor-sidebar {
+        display: grid;
+
+        grid-template-columns:
+            repeat(2, minmax(0, 1fr));
+    }
+
+}
+
+@media (max-width: 650px) {
+
+    .editor-topbar {
+        padding: 0 14px;
+    }
+
+    .editor-status-area {
+        display: none;
+    }
+
+    .campaign-editor-layout {
+        padding: 12px;
+    }
+
+    .campaign-editor-sidebar {
+        display: flex;
+    }
+
+    .editor-bottom-bar {
+        padding: 12px;
+    }
+
+    .bottom-left {
+        gap: 10px;
+    }
+
+    .bottom-link {
+        display: none;
+    }
+
+}
+
+</style>
+
+{% endblock %}

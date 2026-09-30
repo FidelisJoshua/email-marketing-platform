@@ -1,0 +1,250 @@
+{% extends "settings_base.html" %}
+
+
+{% block settings_header %}
+
+<h1 class="settings-title">
+    Account Settings
+</h1>
+
+<p class="settings-subtitle">
+    Manage your account information and password.
+</p>
+
+{% endblock %}
+
+
+
+{% block settings_content %}
+
+
+<!-- =================================================
+     ACCOUNT INFORMATION
+     ================================================= -->
+
+<section class="settings-card">
+
+    <div class="settings-card-header">
+
+        <div class="settings-card-icon">
+            👤
+        </div>
+
+        <div>
+
+            <h2 class="settings-card-title">
+                Account Information
+            </h2>
+
+            <p class="settings-card-description">
+                Update the name and email address associated
+                with your EmailFlow account.
+            </p>
+
+        </div>
+
+    </div>
+
+
+    <div class="settings-card-body">
+
+        <form method="POST">
+
+            <input
+                type="hidden"
+                name="action"
+                value="update_account"
+            >
+
+
+            <div class="settings-form-grid">
+
+
+                <div class="settings-form-group">
+
+                    <label class="settings-label">
+                        Full Name
+                        <span class="settings-required">*</span>
+                    </label>
+
+                    <input
+                        type="text"
+                        name="name"
+                        class="settings-input"
+                        value="{{ user.name }}"
+                        required
+                    >
+
+                </div>
+
+
+                <div class="settings-form-group">
+
+                    <label class="settings-label">
+                        Email Address
+                        <span class="settings-required">*</span>
+                    </label>
+
+                    <input
+                        type="email"
+                        name="email"
+                        class="settings-input"
+                        value="{{ user.email }}"
+                        required
+                    >
+
+                </div>
+
+
+            </div>
+
+
+            <div class="settings-save-bar" style="margin-top:24px;">
+
+                <div class="settings-save-note">
+                    Your account information is used throughout EmailFlow.
+                </div>
+
+                <button
+                    type="submit"
+                    class="settings-save-button"
+                >
+                    Save Account
+                </button>
+
+            </div>
+
+
+        </form>
+
+    </div>
+
+</section>
+
+
+
+<!-- =================================================
+     CHANGE PASSWORD
+     ================================================= -->
+
+<section class="settings-card">
+
+    <div class="settings-card-header">
+
+        <div class="settings-card-icon red">
+            🔒
+        </div>
+
+        <div>
+
+            <h2 class="settings-card-title">
+                Change Password
+            </h2>
+
+            <p class="settings-card-description">
+                Update your password to keep your account secure.
+            </p>
+
+        </div>
+
+    </div>
+
+
+    <div class="settings-card-body">
+
+        <form method="POST">
+
+            <input
+                type="hidden"
+                name="action"
+                value="change_password"
+            >
+
+
+            <div class="settings-form-grid">
+
+
+                <div class="settings-form-group full">
+
+                    <label class="settings-label">
+                        Current Password
+                        <span class="settings-required">*</span>
+                    </label>
+
+                    <input
+                        type="password"
+                        name="current_password"
+                        class="settings-input"
+                        required
+                    >
+
+                </div>
+
+
+                <div class="settings-form-group">
+
+                    <label class="settings-label">
+                        New Password
+                        <span class="settings-required">*</span>
+                    </label>
+
+                    <input
+                        type="password"
+                        name="new_password"
+                        class="settings-input"
+                        minlength="8"
+                        required
+                    >
+
+                    <div class="settings-help">
+                        Minimum 8 characters.
+                    </div>
+
+                </div>
+
+
+                <div class="settings-form-group">
+
+                    <label class="settings-label">
+                        Confirm New Password
+                        <span class="settings-required">*</span>
+                    </label>
+
+                    <input
+                        type="password"
+                        name="confirm_password"
+                        class="settings-input"
+                        minlength="8"
+                        required
+                    >
+
+                </div>
+
+
+            </div>
+
+
+            <div class="settings-save-bar" style="margin-top:24px;">
+
+                <div class="settings-save-note">
+                    You will need your current password to make this change.
+                </div>
+
+                <button
+                    type="submit"
+                    class="settings-save-button"
+                >
+                    Change Password
+                </button>
+
+            </div>
+
+
+        </form>
+
+    </div>
+
+</section>
+
+
+{% endblock %}

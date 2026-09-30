@@ -1,0 +1,422 @@
+{% extends "dashboard_base.html" %}
+
+{% block title %}Landing Page Templates - EmailFlow{% endblock %}
+
+{% block content %}
+
+<style>
+
+    .chooser {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 34px 22px 70px;
+    }
+
+    .head {
+        margin-bottom: 28px;
+    }
+
+    .eyebrow {
+        font-size: 12px;
+        font-weight: 800;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+        color: #6d5dfc;
+    }
+
+    .head h1 {
+        margin: 6px 0 7px;
+        font-size: 34px;
+        color: #111827;
+    }
+
+    .head p {
+        margin: 0;
+        color: #6b7280;
+    }
+
+    .grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 22px;
+    }
+
+    .card {
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 20px;
+        overflow: hidden;
+        box-shadow: 0 12px 34px rgba(15, 23, 42, .06);
+        transition: .18s;
+    }
+
+    .card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 18px 42px rgba(15, 23, 42, .10);
+    }
+
+    .visual {
+        height: 265px;
+        padding: 26px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+    }
+
+    .visual.creator {
+        background: #f5f3ff;
+        color: #312e81;
+    }
+
+    .visual.studio {
+        background: #111827;
+        color: #ffffff;
+    }
+
+    .visual.newsletter {
+        background: #fffdf5;
+        color: #78350f;
+        font-family: Georgia, serif;
+    }
+
+    .visual.product {
+        background: #eff6ff;
+        color: #1e3a8a;
+    }
+
+    .visual.scratch {
+        background: #ffffff;
+        color: #111827;
+    }
+
+    .inner {
+        width: 100%;
+        max-width: 300px;
+    }
+
+    .inner h2 {
+        font-size: 28px;
+        line-height: 1.05;
+        margin: 0 0 12px;
+    }
+
+    .inner p {
+        font-size: 13px;
+        line-height: 1.55;
+        opacity: .78;
+    }
+
+    .fake-form {
+        background: #ffffff;
+        color: #111827;
+        padding: 15px;
+        border-radius: 14px;
+        box-shadow: 0 12px 35px rgba(15, 23, 42, .12);
+        margin-top: 16px;
+    }
+
+    .fake-form input {
+        width: 100%;
+        padding: 8px;
+        border: 1px solid #d1d5db;
+        border-radius: 7px;
+        margin-bottom: 7px;
+        box-sizing: border-box;
+    }
+
+    .fake-form button {
+        width: 100%;
+        padding: 9px;
+        border: 0;
+        border-radius: 8px;
+        background: #4f46e5;
+        color: #ffffff;
+        font-weight: 800;
+    }
+
+    .info {
+        padding: 20px 21px 22px;
+    }
+
+    .tag {
+        display: inline-flex;
+        padding: 5px 8px;
+        border-radius: 999px;
+        background: #f3f4f6;
+        color: #6b7280;
+        font-size: 10px;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: .06em;
+    }
+
+    .info h3 {
+        margin: 9px 0 5px;
+        font-size: 19px;
+    }
+
+    .info p {
+        margin: 0 0 17px;
+        color: #6b7280;
+        font-size: 13px;
+        line-height: 1.55;
+        min-height: 40px;
+    }
+
+    .actions {
+        display: flex;
+        gap: 9px;
+    }
+
+    .btn {
+        display: inline-flex;
+        justify-content: center;
+        align-items: center;
+        text-decoration: none;
+        border-radius: 10px;
+        padding: 11px 13px;
+        font-size: 13px;
+        font-weight: 800;
+        transition: .18s;
+    }
+
+    .btn:hover {
+        transform: translateY(-1px);
+    }
+
+    .btn-preview {
+        flex: 1;
+        background: #f3f4f6;
+        color: #374151;
+    }
+
+    .btn-use {
+        flex: 1;
+        background: linear-gradient(
+            135deg,
+            #6d5dfc,
+            #4f46e5
+        );
+        color: #ffffff;
+        box-shadow: 0 7px 18px rgba(79, 70, 229, .20);
+    }
+
+    .scratch-card {
+        border-style: dashed;
+    }
+
+    .scratch-card .visual {
+        background:
+            linear-gradient(
+                135deg,
+                #ffffff,
+                #f8fafc
+            );
+    }
+
+    @media (max-width: 1000px) {
+
+        .grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+    }
+
+    @media (max-width: 650px) {
+
+        .grid {
+            grid-template-columns: 1fr;
+        }
+
+        .head h1 {
+            font-size: 28px;
+        }
+
+    }
+
+</style>
+
+
+<div class="chooser">
+
+    <div class="head">
+
+        <div class="eyebrow">
+            Landing Pages
+        </div>
+
+        <h1>
+            Choose a starting point
+        </h1>
+
+        <p>
+            Start with a professionally designed landing page
+            and customize it for your audience.
+        </p>
+
+    </div>
+
+
+    <div class="grid">
+
+
+        {% for template in templates %}
+
+        <div class="card">
+
+            <div class="visual {{ template.style }}">
+
+                <div class="inner">
+
+                    <h2>
+                        {{ template.headline }}
+                    </h2>
+
+                    <p>
+                        {{ template.subheadline }}
+                    </p>
+
+
+                    <div class="fake-form">
+
+                        <input
+                            type="text"
+                            placeholder="Your name"
+                            disabled
+                        >
+
+                        <input
+                            type="email"
+                            placeholder="you@example.com"
+                            disabled
+                        >
+
+                        <button type="button">
+                            {{ template.button_text }}
+                        </button>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <div class="info">
+
+                <span class="tag">
+                    {{ template.category }}
+                </span>
+
+                <h3>
+                    {{ template.name }}
+                </h3>
+
+                <p>
+                    {{ template.description }}
+                </p>
+
+
+                <div class="actions">
+
+                    <a
+                        href="{{ url_for(
+                            'preview_landing_template',
+                            template_id=template.id
+                        ) }}"
+                        class="btn btn-preview"
+                    >
+                        Preview
+                    </a>
+
+                    <a
+                        href="{{ url_for(
+                            'create_landing_page',
+                            template_id=template.id
+                        ) }}"
+                        class="btn btn-use"
+                    >
+                        Use Template
+                    </a>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        {% endfor %}
+
+
+        <!-- START FROM SCRATCH -->
+
+        <div class="card scratch-card">
+
+            <div class="visual scratch">
+
+                <div class="inner">
+
+                    <div
+                        style="
+                            font-size:48px;
+                            margin-bottom:15px;
+                        "
+                    >
+                        ✦
+                    </div>
+
+                    <h2>
+                        Start from scratch
+                    </h2>
+
+                    <p>
+                        Build your landing page from
+                        a clean starting point.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <div class="info">
+
+                <span class="tag">
+                    Blank
+                </span>
+
+                <h3>
+                    From Scratch
+                </h3>
+
+                <p>
+                    Create your own layout, message
+                    and design from the beginning.
+                </p>
+
+
+                <div class="actions">
+
+                    <a
+                        href="{{ url_for(
+                            'create_landing_page'
+                        ) }}"
+                        class="btn btn-use"
+                        style="width:100%;"
+                    >
+                        Start from Scratch
+                    </a>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+    </div>
+
+</div>
+
+{% endblock %}

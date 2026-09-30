@@ -1,0 +1,392 @@
+{% extends "settings_base.html" %}
+
+
+{% block settings_header %}
+
+<h1 class="settings-title">
+    Profile
+</h1>
+
+<p class="settings-subtitle">
+    Manage your EmailFlow profile and the information associated
+    with your account.
+</p>
+
+{% endblock %}
+
+
+
+{% block settings_content %}
+
+
+<!-- =====================================================
+     PROFILE CARD
+     ===================================================== -->
+
+<section class="settings-card">
+
+    <div class="settings-card-header">
+
+        <div class="settings-card-icon green">
+            👤
+        </div>
+
+        <div>
+
+            <h2 class="settings-card-title">
+                Your Profile
+            </h2>
+
+            <p class="settings-card-description">
+                This is the information associated with your
+                EmailFlow account.
+            </p>
+
+        </div>
+
+    </div>
+
+
+    <div class="settings-card-body">
+
+
+        <!-- PROFILE IDENTITY -->
+
+        <div
+            style="
+                display:flex;
+                align-items:center;
+                gap:18px;
+                padding:18px;
+                margin-bottom:24px;
+                background:#f9fafb;
+                border:1px solid #e5e7eb;
+                border-radius:14px;
+            "
+        >
+
+            <div
+                style="
+                    width:64px;
+                    height:64px;
+                    min-width:64px;
+                    display:flex;
+                    align-items:center;
+                    justify-content:center;
+                    border-radius:50%;
+                    background:#ede9fe;
+                    color:#6d28d9;
+                    font-size:26px;
+                    font-weight:800;
+                "
+            >
+                {{ user.name[0]|upper if user.name else "U" }}
+            </div>
+
+
+            <div>
+
+                <div
+                    style="
+                        color:#111827;
+                        font-size:18px;
+                        font-weight:800;
+                    "
+                >
+                    {{ user.name }}
+                </div>
+
+
+                <div
+                    style="
+                        margin-top:4px;
+                        color:#6b7280;
+                        font-size:13px;
+                    "
+                >
+                    {{ user.email }}
+                </div>
+
+
+                <div
+                    style="
+                        margin-top:8px;
+                    "
+                >
+
+                    <span class="settings-badge success">
+                        ● Active Account
+                    </span>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+
+        <!-- PROFILE INFORMATION -->
+
+        <div class="settings-form-grid">
+
+
+            <div class="settings-form-group">
+
+                <label class="settings-label">
+                    Full Name
+                </label>
+
+                <input
+                    type="text"
+                    class="settings-input"
+                    value="{{ user.name }}"
+                    readonly
+                >
+
+                <div class="settings-help">
+                    Your account name is displayed throughout
+                    EmailFlow.
+                </div>
+
+            </div>
+
+
+            <div class="settings-form-group">
+
+                <label class="settings-label">
+                    Email Address
+                </label>
+
+                <input
+                    type="email"
+                    class="settings-input"
+                    value="{{ user.email }}"
+                    readonly
+                >
+
+                <div class="settings-help">
+                    This is the email address associated with
+                    your EmailFlow account.
+                </div>
+
+            </div>
+
+
+            <div class="settings-form-group">
+
+                <label class="settings-label">
+                    Account Status
+                </label>
+
+                <input
+                    type="text"
+                    class="settings-input"
+                    value="Active"
+                    readonly
+                >
+
+                <div class="settings-help">
+                    Your EmailFlow account is currently active.
+                </div>
+
+            </div>
+
+
+            <div class="settings-form-group">
+
+                <label class="settings-label">
+                    Account Type
+                </label>
+
+                <input
+                    type="text"
+                    class="settings-input"
+                    value="EmailFlow User"
+                    readonly
+                >
+
+                <div class="settings-help">
+                    Your current EmailFlow account.
+                </div>
+
+            </div>
+
+
+        </div>
+
+    </div>
+
+</section>
+
+
+
+<!-- =====================================================
+     PROFILE PREFERENCES
+     ===================================================== -->
+
+<section class="settings-card">
+
+    <div class="settings-card-header">
+
+        <div class="settings-card-icon blue">
+            ⚙
+        </div>
+
+        <div>
+
+            <h2 class="settings-card-title">
+                Profile Preferences
+            </h2>
+
+            <p class="settings-card-description">
+                Additional profile customization will be
+                available here as EmailFlow grows.
+            </p>
+
+        </div>
+
+    </div>
+
+
+    <div class="settings-card-body">
+
+
+        <div class="settings-info">
+
+            <div class="settings-info-icon">
+                ✨
+            </div>
+
+            <div class="settings-info-text">
+
+                <strong>
+                    More profile options are coming.
+                </strong>
+
+                <br>
+
+                We can add profile photo, company information,
+                bio, website, social links and other public
+                profile settings here later.
+
+            </div>
+
+        </div>
+
+
+        <div class="settings-form-grid">
+
+
+            <div class="settings-form-group">
+
+                <label class="settings-label">
+                    Profile Visibility
+                </label>
+
+                <select
+                    class="settings-select"
+                    disabled
+                >
+
+                    <option>
+                        Private
+                    </option>
+
+                </select>
+
+                <div class="settings-help">
+                    Public profile controls will be added
+                    in a future update.
+                </div>
+
+            </div>
+
+
+            <div class="settings-form-group">
+
+                <label class="settings-label">
+                    Profile Completion
+                </label>
+
+                <div
+                    style="
+                        height:44px;
+                        display:flex;
+                        align-items:center;
+                        padding:0 13px;
+                        border:1px solid #d1d5db;
+                        border-radius:9px;
+                        background:#f9fafb;
+                        color:#6b7280;
+                        font-size:14px;
+                    "
+                >
+                    Basic profile complete
+                </div>
+
+                <div class="settings-help">
+                    More profile fields will become available
+                    as we expand this section.
+                </div>
+
+            </div>
+
+
+        </div>
+
+    </div>
+
+</section>
+
+
+
+<!-- =====================================================
+     ACCOUNT SHORTCUT
+     ===================================================== -->
+
+<section class="settings-card">
+
+    <div class="settings-card-header">
+
+        <div class="settings-card-icon orange">
+            ✏
+        </div>
+
+        <div>
+
+            <h2 class="settings-card-title">
+                Need to change your account information?
+            </h2>
+
+            <p class="settings-card-description">
+                Your name and email can be changed from the
+                Account Settings page.
+            </p>
+
+        </div>
+
+    </div>
+
+
+    <div class="settings-card-body">
+
+        <a
+            href="{{ url_for('settings_account') }}"
+            class="settings-save-button"
+            style="
+                display:inline-flex;
+                align-items:center;
+                justify-content:center;
+                text-decoration:none;
+            "
+        >
+            Go to Account Settings
+        </a>
+
+    </div>
+
+</section>
+
+
+{% endblock %}

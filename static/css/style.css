@@ -2440,3 +2440,427 @@ a.quick-action:hover {
     background: #fecaca;
     color: #b91c1c !important;
 }
+
+/* =====================================================
+   CAMPAIGN TEMPLATE SELECTOR
+   ===================================================== */
+
+.template-selector-box {
+    width: 100%;
+    box-sizing: border-box;
+
+    padding: 15px 17px;
+
+    background: #ffffff;
+
+    border: 1px solid #dfe3eb;
+    border-radius: 10px;
+
+    transition:
+        border-color 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+.template-selector-box:hover {
+    border-color: #cfd4df;
+
+    box-shadow:
+        0 2px 8px rgba(17, 24, 39, 0.04);
+}
+
+
+/* SELECTED TEMPLATE */
+
+.selected-template-info {
+    display: flex;
+    flex-direction: column;
+
+    gap: 4px;
+}
+
+.selected-template-info strong {
+    color: #111827;
+
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.selected-template-info span {
+    color: #6b7280;
+
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+
+/* BROWSE BUTTON */
+
+.browse-template-btn {
+    display: inline-flex;
+
+    align-items: center;
+    justify-content: center;
+
+    gap: 9px;
+
+    margin-top: 12px;
+
+    padding: 10px 17px;
+
+    background: #111827;
+    color: #ffffff;
+
+    border: 1px solid #111827;
+    border-radius: 8px;
+
+    font-size: 13px;
+    font-weight: 600;
+
+    cursor: pointer;
+
+    box-shadow:
+        0 3px 8px rgba(17, 24, 39, 0.12);
+
+    transition:
+        background 0.2s ease,
+        border-color 0.2s ease,
+        box-shadow 0.2s ease,
+        transform 0.2s ease;
+}
+
+.browse-template-btn:hover {
+    background: #1f2937;
+    border-color: #1f2937;
+
+    box-shadow:
+        0 5px 14px rgba(17, 24, 39, 0.18);
+
+    transform: translateY(-1px);
+}
+
+.browse-template-btn:active {
+    transform: translateY(0);
+}
+
+
+/* BUTTON ICON */
+
+.browse-template-icon {
+    display: inline-flex;
+
+    align-items: center;
+    justify-content: center;
+
+    font-size: 16px;
+    line-height: 1;
+}
+
+/* =====================================================
+   CAMPAIGN TEMPLATE MODAL
+   ===================================================== */
+
+#templateModal {
+    display: none;
+
+    position: fixed;
+    inset: 0;
+
+    z-index: 9999;
+
+    background: rgba(15, 23, 42, 0.58);
+
+    padding: 40px 24px;
+
+    overflow-y: auto;
+}
+
+
+/* =====================================================
+   MODAL CONTAINER
+   ===================================================== */
+
+#templateModal > div {
+    width: min(1080px, 100%);
+
+    margin: 0 auto;
+
+    background: #ffffff;
+
+    border-radius: 18px;
+
+    padding: 30px;
+
+    box-sizing: border-box;
+
+    box-shadow:
+        0 20px 60px rgba(15, 23, 42, 0.22);
+}
+
+
+/* =====================================================
+   MODAL CLOSE BUTTON
+   ===================================================== */
+
+#templateModal > div > button {
+    position: absolute;
+
+    top: 18px;
+    right: 20px;
+
+    width: 38px;
+    height: 38px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border: none;
+
+    background: #f3f4f6;
+
+    color: #111827;
+
+    border-radius: 9px;
+
+    font-size: 20px;
+
+    cursor: pointer;
+
+    transition:
+        background 0.2s ease,
+        transform 0.2s ease;
+}
+
+#templateModal > div > button:hover {
+    background: #e5e7eb;
+
+    transform: scale(1.04);
+}
+
+
+/* =====================================================
+   MODAL HEADING
+   ===================================================== */
+
+#templateModal h2 {
+    margin: 0 0 7px;
+
+    color: #111827;
+
+    font-size: 26px;
+
+    font-weight: 700;
+}
+
+#templateModal h2 + p {
+    margin: 0 0 26px;
+
+    color: #6b7280;
+
+    font-size: 14px;
+
+    line-height: 1.5;
+}
+
+
+/* =====================================================
+   TEMPLATE GRID
+   ===================================================== */
+
+#templateModal > div > div {
+    display: grid;
+
+    grid-template-columns:
+        repeat(3, minmax(0, 1fr));
+
+    gap: 20px;
+}
+
+
+/* =====================================================
+   TEMPLATE CARDS
+   ===================================================== */
+
+#templateModal > div > div > div {
+    background: #ffffff;
+
+    border: 1px solid #e5e7eb;
+
+    border-radius: 13px;
+
+    overflow: hidden;
+
+    cursor: pointer;
+
+    transition:
+        transform 0.2s ease,
+        box-shadow 0.2s ease,
+        border-color 0.2s ease;
+}
+
+#templateModal > div > div > div:hover {
+    transform: translateY(-4px);
+
+    border-color: #c7c9ff;
+
+    box-shadow:
+        0 12px 28px rgba(15, 23, 42, 0.12);
+}
+
+
+/* =====================================================
+   TEMPLATE PREVIEW
+   ===================================================== */
+
+#templateModal iframe {
+    width: 200% !important;
+
+    height: 320px !important;
+
+    border: none !important;
+
+    transform: scale(0.5);
+
+    transform-origin: top left;
+
+    display: block;
+
+    pointer-events: none;
+
+    background: #ffffff;
+}
+
+
+/* =====================================================
+   PREVIEW CONTAINER
+   ===================================================== */
+
+#templateModal > div > div > div > div:first-child {
+    height: 160px !important;
+
+    background: #f3f4f6;
+
+    overflow: hidden !important;
+
+    position: relative;
+}
+
+
+/* =====================================================
+   TEMPLATE CARD INFORMATION
+   ===================================================== */
+
+#templateModal > div > div > div > div:last-child {
+    padding: 14px 15px 16px !important;
+
+    background: #ffffff;
+}
+
+#templateModal > div > div > div strong {
+    display: block;
+
+    color: #111827;
+
+    font-size: 16px;
+
+    font-weight: 700;
+
+    line-height: 1.3;
+}
+
+#templateModal > div > div > div strong + div {
+    margin-top: 5px;
+
+    color: #6b7280;
+
+    font-size: 12px;
+}
+
+
+/* =====================================================
+   START FROM SCRATCH CARD
+   ===================================================== */
+
+#templateModal > div > div > div:first-child {
+    text-align: center;
+}
+
+#templateModal > div > div > div:first-child h3 {
+    margin: 14px 0 0;
+
+    color: #111827;
+
+    font-size: 19px;
+
+    font-weight: 700;
+}
+
+#templateModal > div > div > div:first-child p {
+    margin: 8px 0 0;
+
+    color: #6b7280;
+
+    font-size: 13px;
+}
+
+
+/* =====================================================
+   START FROM SCRATCH PREVIEW
+   ===================================================== */
+
+#templateModal > div > div > div:first-child > div:first-child {
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    background: #f3f4f6 !important;
+
+    color: #111827;
+
+    font-size: 32px;
+}
+
+
+/* =====================================================
+   RESPONSIVE
+   ===================================================== */
+
+@media (max-width: 850px) {
+
+    #templateModal {
+        padding: 25px 15px;
+    }
+
+    #templateModal > div {
+        padding: 24px;
+    }
+
+    #templateModal > div > div {
+        grid-template-columns:
+            repeat(2, minmax(0, 1fr));
+    }
+
+}
+
+
+@media (max-width: 600px) {
+
+    #templateModal {
+        padding: 32px 24px;
+    }
+
+    #templateModal > div {
+        padding: 30px;
+        border-radius: 14px;
+    }
+
+    #templateModal > div > div {
+        grid-template-columns: 1fr;
+    }
+
+    #templateModal h2 {
+        font-size: 22px;
+    }
+
+}
