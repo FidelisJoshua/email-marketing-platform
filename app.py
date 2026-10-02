@@ -1,6 +1,8 @@
 import os
 import time
 from datetime import datetime, timezone
+from itsdangerous import URLSafeTimedSerializer
+
 import pandas as pd
 from itsdangerous import URLSafeSerializer
 from flask import Flask, render_template, request, session, redirect, url_for, flash
@@ -57,6 +59,22 @@ def create_unsubscribe_token(contact_id):
 bcrypt = Bcrypt(app)
 
 db.init_app(app)
+# =========================================================
+# EMAIL VERIFICATION TOKEN
+# =========================================================
+
+def create_email_verification_token(user_id):
+
+    serializer = URLSafeTimedSerializer(
+        app.secret_key
+    )
+
+    return serializer.dumps(
+        {
+            "user_id": user_id
+        },
+        salt="emailflow-email-verification"
+    )
 
 
 # =========================================================
@@ -91,7 +109,9 @@ def register():
                 "warning"
             )
 
-            return redirect(url_for("register"))
+            return redirect(
+                url_for("register")
+            )
 
         hashed_password = (
             bcrypt
@@ -102,10 +122,15 @@ def register():
         new_user = User(
             name=name,
             email=email,
-            password=hashed_password
+            password=hashed_password,
+            email_verified=False
         )
 
         try:
+
+            # =====================================================
+            # SAVE USER
+            # =====================================================
 
             db.session.add(new_user)
 
@@ -117,12 +142,258 @@ def register():
 
             print(f"Email: {email}")
 
+
+            # =====================================================
+            # CREATE EMAIL VERIFICATION TOKEN
+            # =====================================================
+
+            verification_token = create_email_verification_token(
+                new_user.id
+            )
+
+
+            # =====================================================
+            # CREATE VERIFICATION LINK
+            # =====================================================
+
+            verification_link = url_for(
+                "verify_email",
+                token=verification_token,
+                _external=True
+            )
+
+
+            # =====================================================
+            # CREATE VERIFICATION EMAIL
+            # =====================================================
+
+            verification_email = f"""
+            <!DOCTYPE html>
+
+            <html>
+
+            <head>
+
+                <meta charset="UTF-8">
+
+                <meta
+                    name="viewport"
+                    content="width=device-width, initial-scale=1.0"
+                >
+
+            </head>
+
+
+            <body
+                style="
+                    margin:0;
+                    padding:40px 20px;
+                    background:#f5f7fb;
+                    font-family:Arial, Helvetica, sans-serif;
+                "
+            >
+
+                <div
+                    style="
+                        max-width:600px;
+                        margin:0 auto;
+                        background:white;
+                        padding:40px;
+                        border-radius:12px;
+                        box-shadow:0 5px 20px rgba(0,0,0,0.08);
+                    "
+                >
+
+                    <h1
+                        style="
+                            color:#4f46e5;
+                            margin-top:0;
+                        "
+                    >
+                        EmailFlow
+                    </h1>
+
+
+                    <h2>
+                        Verify your email address
+                    </h2>
+
+
+                    <p
+                        style="
+                            color:#4b5563;
+                            line-height:1.7;
+                        "
+                    >
+                        Hi {new_user.name},
+                    </p>
+
+
+                    <p
+                        style="
+                            color:#4b5563;
+                            line-height:1.7;
+                        "
+                    >
+                        Thank you for creating an EmailFlow account.
+
+                        Please click the button below to verify
+                        your email address.
+                    </p>
+
+
+                    <p
+                        style="
+                            text-align:center;
+                            margin:35px 0;
+                        "
+                    >
+
+                        <a
+                            href="{verification_link}"
+                            style="
+                                display:inline-block;
+                                padding:14px 25px;
+                                background:#4f46e5;
+                                color:white;
+                                text-decoration:none;
+                                border-radius:8px;
+                                font-weight:bold;
+                            "
+                        >
+                            Verify My Email
+                        </a>
+
+                    </p>
+
+
+                    <p
+                        style="
+                            color:#6b7280;
+                            font-size:14px;
+                            line-height:1.6;
+                        "
+                    >
+                        If you did not create an EmailFlow account,
+                        you can safely ignore this email.
+                    </p>
+
+                </div>
+
+            </body>
+
+            </html>
+            """
+
+
+            # =====================================================
+            # SEND VERIFICATION EMAIL
+            #
+            # Uses EmailFlow's Gmail SMTP account.
+            # This does NOT use the new user's EmailSettings.
+            # =====================================================
+
+            try:
+
+                smtp_host = os.getenv(
+                    "EMAILFLOW_SMTP_HOST"
+                )
+
+                smtp_port = os.getenv(
+                    "EMAILFLOW_SMTP_PORT",
+                    "465"
+                )
+
+                smtp_username = os.getenv(
+                    "EMAILFLOW_SMTP_USERNAME"
+                )
+
+                smtp_password = os.getenv(
+                    "EMAILFLOW_SMTP_PASSWORD"
+                )
+
+                smtp_encryption = os.getenv(
+                    "EMAILFLOW_SMTP_ENCRYPTION",
+                    "SSL"
+                )
+
+                sender_name = os.getenv(
+                    "EMAILFLOW_SENDER_NAME",
+                    "EmailFlow"
+                )
+
+                sender_email = os.getenv(
+                    "EMAILFLOW_SENDER_EMAIL"
+                )
+
+
+                success, message = send_email(
+
+                    smtp_host=smtp_host,
+
+                    smtp_port=smtp_port,
+
+                    smtp_username=smtp_username,
+
+                    smtp_password=smtp_password,
+
+                    smtp_encryption=smtp_encryption,
+
+                    sender_name=sender_name,
+
+                    sender_email=sender_email,
+
+                    recipient_email=new_user.email,
+
+                    subject=(
+                        "Verify your EmailFlow email address"
+                    ),
+
+                    body=verification_email
+                )
+
+
+                if success:
+
+                    print(
+                        f"📧 Verification email sent to "
+                        f"{new_user.email}"
+                    )
+
+                else:
+
+                    print(
+                        f"❌ Verification email failed: "
+                        f"{message}"
+                    )
+
+
+            except Exception as e:
+
+                print(
+                    f"❌ Could not send verification email: "
+                    f"{e}"
+                )
+
+
+            # =====================================================
+            # REGISTRATION SUCCESS
+            # =====================================================
+
             flash(
-                "Registration successful. Please log in.",
+                "Account created! Please check your email and "
+                "click the verification link before logging in.",
                 "success"
             )
 
-            return redirect(url_for("login"))
+            return redirect(
+                url_for("login")
+            )
+
+
+        # =========================================================
+        # DUPLICATE EMAIL
+        # =========================================================
 
         except IntegrityError:
 
@@ -133,14 +404,95 @@ def register():
                 "warning"
             )
 
-            return redirect(url_for("register"))
+            return redirect(
+                url_for("register")
+            )
 
-    return render_template("register.html")
 
+    # =============================================================
+    # SHOW REGISTRATION PAGE
+    # =============================================================
 
+    return render_template(
+        "register.html"
+    )
 # =========================================================
 # LOGIN
 # =========================================================
+
+# =========================================================
+# VERIFY EMAIL
+# =========================================================
+
+@app.route(
+    "/verify-email/<token>"
+)
+def verify_email(token):
+
+    serializer = URLSafeTimedSerializer(
+        app.secret_key
+    )
+
+    try:
+
+        data = serializer.loads(
+            token,
+            salt="emailflow-email-verification",
+            max_age=3600
+        )
+
+    except Exception:
+
+        return render_template(
+            "verify_email.html",
+            error=(
+                "This verification link is invalid "
+                "or has expired."
+            )
+        )
+
+    user_id = data.get("user_id")
+
+    if not user_id:
+
+        return render_template(
+            "verify_email.html",
+            error="This verification link is invalid."
+        )
+
+    user = db.session.get(
+        User,
+        user_id
+    )
+
+    if not user:
+
+        return render_template(
+            "verify_email.html",
+            error="We could not find this account."
+        )
+
+    if user.email_verified:
+
+        return render_template(
+            "verify_email.html",
+            already_verified=True,
+            user=user
+        )
+
+    user.email_verified = True
+
+    user.email_verified_at = datetime.now(
+        timezone.utc
+    )
+
+    db.session.commit()
+
+    return render_template(
+        "verify_email.html",
+        success=True,
+        user=user
+    )
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
@@ -180,6 +532,16 @@ def login():
             )
 
             return redirect(url_for("login"))
+
+        if not user.email_verified:
+            flash(
+                "Please verify your email address before logging in.",
+                "warning"
+            )
+
+            return redirect(
+                url_for("login")
+            )
 
         session["user_id"] = user.id
 
@@ -4571,6 +4933,43 @@ with app.app_context():
 
     # Update existing database tables
     inspector = inspect(db.engine)
+
+    # =====================================================
+    # USER EMAIL VERIFICATION MIGRATION
+    # =====================================================
+
+    if "users" in inspector.get_table_names():
+
+        existing_user_columns = {
+            column["name"]
+            for column in inspector.get_columns("users")
+        }
+
+        with db.engine.connect() as connection:
+
+            # Add email_verified column
+            if "email_verified" not in existing_user_columns:
+
+                connection.execute(
+                    text(
+                        "ALTER TABLE users "
+                        "ADD COLUMN email_verified "
+                        "BOOLEAN DEFAULT 1 NOT NULL"
+                    )
+                )
+
+            # Add email_verified_at column
+            if "email_verified_at" not in existing_user_columns:
+
+                connection.execute(
+                    text(
+                        "ALTER TABLE users "
+                        "ADD COLUMN email_verified_at "
+                        "DATETIME"
+                    )
+                )
+
+            connection.commit()
 
 
     # =====================================================
