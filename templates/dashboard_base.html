@@ -5,8 +5,10 @@
 
     <meta charset="UTF-8">
 
-    <meta name="viewport"
-          content="width=device-width, initial-scale=1.0">
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
 
     <title>
         {% block title %}
@@ -16,29 +18,89 @@
 
     <link
         rel="stylesheet"
-        href="{{ url_for('static', filename='css/style.css') }}">
+        href="{{ url_for('static', filename='css/style.css') }}"
+    >
 
     <style>
 
     /* =====================================================
-       ACCOUNT MENU
+       SIDEBAR ACCOUNT AREA
        ===================================================== */
 
-.sidebar-account-area {
-    position: relative;
+    .sidebar-account-area {
 
-    margin-top: auto;
+        position: relative;
 
-    padding: 18px 20px 20px;
+        margin-top: auto;
 
-    border-top: 1px solid rgba(255, 255, 255, 0.06);
-}
+        padding: 18px 20px 20px;
+
+        border-top: 1px solid rgba(255, 255, 255, 0.06);
+
+    }
+
 
     /* =====================================================
-       ACCOUNT BUTTON
+       EMAILFLOW LOGO / BRAND
+       ===================================================== */
+
+    .sidebar-brand {
+
+        display: flex;
+
+        align-items: center;
+
+        justify-content: center;
+
+        width: 100%;
+
+        height: 90px;
+
+        padding: 5px 12px;
+
+        box-sizing: border-box;
+
+        text-decoration: none;
+
+        border-radius: 12px;
+
+        cursor: pointer;
+
+        transition:
+            background 0.18s ease,
+            transform 0.18s ease;
+
+    }
+
+
+    .sidebar-brand:hover {
+
+        background: rgba(255, 255, 255, 0.04);
+
+    }
+
+
+    .emailflow-logo {
+
+        display: block;
+
+        width: 190px;
+
+        max-width: 100%;
+
+        height: auto;
+
+        object-fit: contain;
+
+    }
+
+
+    /* =====================================================
+       SIDEBAR ACCOUNT BUTTON
        ===================================================== */
 
     .sidebar-account-button {
+
         position: relative;
 
         width: 100%;
@@ -65,10 +127,10 @@
 
         transition:
             background 0.18s ease,
-            border-color 0.18s ease,
-            transform 0.18s ease;
+            border-color 0.18s ease;
 
         font-family: inherit;
+
     }
 
 
@@ -91,12 +153,13 @@
 
 
     /* =====================================================
-       ACCOUNT AVATAR
+       SIDEBAR ACCOUNT AVATAR
        ===================================================== */
 
     .sidebar-account-avatar {
 
         width: 43px;
+
         height: 43px;
 
         min-width: 43px;
@@ -104,6 +167,7 @@
         display: flex;
 
         align-items: center;
+
         justify-content: center;
 
         border-radius: 50%;
@@ -118,6 +182,7 @@
         color: #ffffff;
 
         font-size: 17px;
+
         font-weight: 800;
 
         box-shadow:
@@ -127,7 +192,7 @@
 
 
     /* =====================================================
-       ACCOUNT INFORMATION
+       SIDEBAR ACCOUNT INFORMATION
        ===================================================== */
 
     .sidebar-account-info {
@@ -184,6 +249,7 @@
     .sidebar-account-status-dot {
 
         width: 7px;
+
         height: 7px;
 
         border-radius: 50%;
@@ -197,7 +263,7 @@
 
 
     /* =====================================================
-       THREE DOTS
+       SIDEBAR THREE DOTS
        ===================================================== */
 
     .sidebar-account-dots {
@@ -205,9 +271,11 @@
         display: flex;
 
         align-items: center;
+
         justify-content: center;
 
         width: 30px;
+
         height: 30px;
 
         border-radius: 8px;
@@ -238,7 +306,7 @@
 
 
     /* =====================================================
-       ACCOUNT DROPDOWN
+       SIDEBAR ACCOUNT DROPDOWN
        ===================================================== */
 
     .sidebar-account-menu {
@@ -246,6 +314,7 @@
         position: absolute;
 
         left: 20px;
+
         right: 20px;
 
         bottom: calc(100% - 5px);
@@ -295,7 +364,7 @@
 
 
     /* =====================================================
-       LOGOUT BUTTON
+       SIDEBAR LOGOUT BUTTON
        ===================================================== */
 
     .sidebar-logout-button {
@@ -345,11 +414,13 @@
     .sidebar-logout-icon {
 
         width: 20px;
+
         height: 20px;
 
         display: flex;
 
         align-items: center;
+
         justify-content: center;
 
         flex-shrink: 0;
@@ -360,7 +431,403 @@
     .sidebar-logout-icon svg {
 
         width: 18px;
+
         height: 18px;
+
+    }
+
+
+    /* =====================================================
+       TOP BAR
+       ===================================================== */
+
+    .topbar {
+
+        position: relative;
+
+    }
+
+
+    /* =====================================================
+       TOP RIGHT ACCOUNT WRAPPER
+       ===================================================== */
+
+    .topbar-account-wrapper {
+
+        position: relative;
+
+    }
+
+
+    /* =====================================================
+       TOP RIGHT ACCOUNT BUTTON
+       ===================================================== */
+
+    .topbar-account {
+
+        display: flex;
+
+        align-items: center;
+
+        gap: 10px;
+
+        padding: 7px 9px;
+
+        border: 1px solid transparent;
+
+        border-radius: 12px;
+
+        background: transparent;
+
+        cursor: pointer;
+
+        transition:
+            background 0.18s ease,
+            border-color 0.18s ease;
+
+        font-family: inherit;
+
+        text-align: left;
+
+    }
+
+
+    .topbar-account:hover,
+
+    .topbar-account.open {
+
+        background: #f8fafc;
+
+        border-color: #e5e7eb;
+
+    }
+
+
+    /* =====================================================
+       TOP RIGHT AVATAR
+       ===================================================== */
+
+    .topbar-avatar {
+
+        width: 43px;
+
+        height: 43px;
+
+        min-width: 43px;
+
+        display: flex;
+
+        align-items: center;
+
+        justify-content: center;
+
+        border-radius: 50%;
+
+        background:
+            linear-gradient(
+                135deg,
+                #312e81,
+                #4f46e5
+            );
+
+        color: #ffffff;
+
+        font-size: 15px;
+
+        font-weight: 800;
+
+        box-shadow:
+            0 4px 12px rgba(15, 23, 42, 0.12);
+
+    }
+
+
+    /* =====================================================
+       TOP RIGHT USER NAME
+       ===================================================== */
+
+    .topbar-account-name {
+
+        display: block;
+
+        max-width: 180px;
+
+        overflow: hidden;
+
+        text-overflow: ellipsis;
+
+        white-space: nowrap;
+
+        color: #111827;
+
+        font-size: 14px;
+
+        font-weight: 700;
+
+        line-height: 1.3;
+
+    }
+
+
+    .topbar-account-status {
+
+        display: flex;
+
+        align-items: center;
+
+        gap: 6px;
+
+        margin-top: 3px;
+
+        color: #22c55e;
+
+        font-size: 11px;
+
+        font-weight: 500;
+
+    }
+
+
+    .topbar-account-status-dot {
+
+        width: 6px;
+
+        height: 6px;
+
+        border-radius: 50%;
+
+        background: #22c55e;
+
+    }
+
+
+    /* =====================================================
+       TOP RIGHT ACCOUNT MENU
+       ===================================================== */
+
+    .topbar-account-menu {
+
+        position: absolute;
+
+        top: calc(100% + 10px);
+
+        right: 0;
+
+        width: 290px;
+
+        z-index: 2000;
+
+        padding: 8px;
+
+        background: #ffffff;
+
+        border: 1px solid #e5e7eb;
+
+        border-radius: 14px;
+
+        box-shadow:
+            0 18px 45px rgba(15, 23, 42, 0.16);
+
+        opacity: 0;
+
+        visibility: hidden;
+
+        transform:
+            translateY(-6px)
+            scale(0.98);
+
+        transform-origin: top right;
+
+        transition:
+            opacity 0.16s ease,
+            visibility 0.16s ease,
+            transform 0.16s ease;
+
+    }
+
+
+    .topbar-account-menu.show {
+
+        opacity: 1;
+
+        visibility: visible;
+
+        transform:
+            translateY(0)
+            scale(1);
+
+    }
+
+
+    /* =====================================================
+       TOP ACCOUNT MENU HEADER
+       ===================================================== */
+
+    .topbar-account-menu-header {
+
+        display: flex;
+
+        align-items: center;
+
+        gap: 11px;
+
+        padding: 12px;
+
+        border-bottom: 1px solid #f1f5f9;
+
+        margin-bottom: 5px;
+
+    }
+
+
+    .topbar-account-menu-avatar {
+
+        width: 40px;
+
+        height: 40px;
+
+        min-width: 40px;
+
+        display: flex;
+
+        align-items: center;
+
+        justify-content: center;
+
+        border-radius: 50%;
+
+        background:
+            linear-gradient(
+                135deg,
+                #312e81,
+                #4f46e5
+            );
+
+        color: #ffffff;
+
+        font-size: 14px;
+
+        font-weight: 800;
+
+    }
+
+
+    .topbar-account-menu-name {
+
+        color: #111827;
+
+        font-size: 13px;
+
+        font-weight: 700;
+
+    }
+
+
+    .topbar-account-menu-status {
+
+        display: flex;
+
+        align-items: center;
+
+        gap: 5px;
+
+        margin-top: 3px;
+
+        color: #22c55e;
+
+        font-size: 11px;
+
+    }
+
+
+    /* =====================================================
+       TOP ACCOUNT MENU ITEMS
+       ===================================================== */
+
+    .topbar-account-menu-item {
+
+        width: 100%;
+
+        display: flex;
+
+        align-items: center;
+
+        gap: 12px;
+
+        padding: 11px 12px;
+
+        border-radius: 9px;
+
+        color: #374151;
+
+        text-decoration: none;
+
+        font-size: 13px;
+
+        font-weight: 600;
+
+        transition:
+            background 0.16s ease,
+            color 0.16s ease;
+
+        box-sizing: border-box;
+
+    }
+
+
+    .topbar-account-menu-item:hover {
+
+        background: #f8fafc;
+
+        color: #111827;
+
+    }
+
+
+    .topbar-account-menu-icon {
+
+        width: 32px;
+
+        height: 32px;
+
+        min-width: 32px;
+
+        display: flex;
+
+        align-items: center;
+
+        justify-content: center;
+
+        border-radius: 8px;
+
+        background: #f3f0ff;
+
+        color: #4f46e5;
+
+        font-size: 15px;
+
+    }
+
+
+    .topbar-account-email {
+
+        display: block;
+
+        margin-top: 3px;
+
+        color: #6b7280;
+
+        font-size: 11px;
+
+        font-weight: 400;
+
+        overflow: hidden;
+
+        text-overflow: ellipsis;
+
+        white-space: nowrap;
+
+        max-width: 205px;
 
     }
 
@@ -374,24 +841,59 @@
         .sidebar-account-area {
 
             padding-left: 14px;
+
             padding-right: 14px;
 
         }
 
+
         .sidebar-account-menu {
 
             left: 14px;
+
             right: 14px;
+
+        }
+
+
+        .sidebar-brand {
+
+            height: 75px;
+
+        }
+
+
+        .emailflow-logo {
+
+            width: 165px;
+
+        }
+
+
+        .topbar-account-menu {
+
+            right: -5px;
+
+            width: 270px;
+
+        }
+
+
+        .topbar-account-name {
+
+            max-width: 120px;
 
         }
 
     }
 
-</style>
+    </style>
 
 </head>
 
+
 <body>
+
 
 {% with messages = get_flashed_messages(with_categories=true) %}
 
@@ -440,36 +942,47 @@
 
 {% endwith %}
 
+
 <div class="app-shell">
 
-    <!-- ================= SIDEBAR ================= -->
+
+    <!-- =====================================================
+         SIDEBAR
+         ===================================================== -->
 
     <aside class="sidebar">
 
-        <!-- ================= BRAND ================= -->
+        <button
+            type="button"
+            class="sidebar-collapse-button"
+            id="sidebarCollapseButton"
+            aria-label="Collapse sidebar"
+            title="Collapse sidebar"
+        >
+            ‹
+        </button>
 
-        <div class="sidebar-brand">
+        <!-- =================================================
+             EMAILFLOW LOGO
+             ================================================= -->
 
-            <div class="brand-icon">
-                ✉
-            </div>
+        <a
+            href="{{ url_for('dashboard') }}"
+            class="sidebar-brand"
+        >
 
-            <div>
+            <img
+                src="{{ url_for('static', filename='images/emailflow-logo.png') }}"
+                alt="EmailFlow"
+                class="emailflow-logo"
+            >
 
-                <div class="brand-name">
-                    EmailFlow
-                </div>
-
-                <div class="brand-subtitle">
-                    Marketing Platform
-                </div>
-
-            </div>
-
-        </div>
+        </a>
 
 
-        <!-- ================= MAIN NAVIGATION ================= -->
+        <!-- =================================================
+             MAIN NAVIGATION
+             ================================================= -->
 
         <div class="nav-section">
 
@@ -483,6 +996,7 @@
             <a
                 href="{{ url_for('dashboard') }}"
                 class="nav-item {% if request.endpoint == 'dashboard' %}active{% endif %}"
+                data-tooltip="Dashboard"
             >
 
                 <span class="nav-icon">
@@ -499,6 +1013,7 @@
             <a
                 href="{{ url_for('contacts') }}"
                 class="nav-item {% if request.endpoint == 'contacts' %}active{% endif %}"
+                data-tooltip="Contacts"
             >
 
                 <span class="nav-icon">
@@ -515,6 +1030,7 @@
             <a
                 href="{{ url_for('campaigns') }}"
                 class="nav-item {% if request.endpoint == 'campaigns' %}active{% endif %}"
+                data-tooltip="Campaigns"
             >
 
                 <span class="nav-icon">
@@ -531,6 +1047,7 @@
             <a
                 href="{{ url_for('forms') }}"
                 class="nav-item {% if request.endpoint == 'forms' %}active{% endif %}"
+                data-tooltip="forms"
             >
 
                 <span class="nav-icon">
@@ -544,7 +1061,9 @@
         </div>
 
 
-        <!-- ================= TOOLS ================= -->
+        <!-- =================================================
+             TOOLS
+             ================================================= -->
 
         <div class="nav-section">
 
@@ -558,6 +1077,7 @@
             <a
                 href="{{ url_for('templates') }}"
                 class="nav-item {% if request.endpoint == 'templates' %}active{% endif %}"
+                data-tooltip="templates"
             >
 
                 <span class="nav-icon">
@@ -574,7 +1094,9 @@
             <a
                 href="{{ url_for('analytics') }}"
                 class="nav-item {% if request.endpoint == 'analytics' %}active{% endif %}"
+                data-tooltip="analytics"
             >
+
                 <span class="nav-icon">
                     ▥
                 </span>
@@ -582,6 +1104,7 @@
                 <span>
                     Analytics
                 </span>
+
             </a>
 
 
@@ -590,7 +1113,9 @@
             <a
                 href="{{ url_for('settings') }}"
                 class="nav-item"
+                data-tooltip="settings"
             >
+
                 <span class="nav-icon">
                     ⚙️
                 </span>
@@ -598,21 +1123,20 @@
                 <span>
                     Settings
                 </span>
+
             </a>
 
         </div>
 
 
-                <!-- ================= ACCOUNT ================= -->
-
-        <!-- =====================================================
-             ACCOUNT MENU
-             ===================================================== -->
+        <!-- =================================================
+             SIDEBAR ACCOUNT
+             ================================================= -->
 
         <div class="sidebar-account-area">
 
 
-            <!-- ACCOUNT DROPDOWN -->
+            <!-- SIDEBAR ACCOUNT DROPDOWN -->
 
             <div
                 class="sidebar-account-menu"
@@ -663,8 +1187,7 @@
             </div>
 
 
-
-            <!-- ACCOUNT BUTTON -->
+            <!-- SIDEBAR ACCOUNT BUTTON -->
 
             <button
                 type="button"
@@ -673,9 +1196,6 @@
                 aria-expanded="false"
                 aria-controls="sidebarAccountMenu"
             >
-
-
-                <!-- AVATAR -->
 
                 <span class="sidebar-account-avatar">
 
@@ -691,9 +1211,6 @@
 
                 </span>
 
-
-
-                <!-- ACCOUNT DETAILS -->
 
                 <span class="sidebar-account-info">
 
@@ -717,9 +1234,6 @@
                 </span>
 
 
-
-                <!-- THREE DOTS -->
-
                 <span
                     class="sidebar-account-dots"
                     aria-hidden="true"
@@ -727,24 +1241,26 @@
                     ⋮
                 </span>
 
-
             </button>
 
         </div>
 
-
-
     </aside>
 
 
-    <!-- ================= MAIN AREA ================= -->
+    <!-- =====================================================
+         MAIN AREA
+         ===================================================== -->
 
     <main class="main-area">
 
 
-        <!-- ================= TOP BAR ================= -->
+        <!-- =================================================
+             TOP BAR
+             ================================================= -->
 
         <header class="topbar">
+
 
             <div class="topbar-title">
 
@@ -753,21 +1269,160 @@
             </div>
 
 
-            <div class="topbar-account">
+            <!-- =================================================
+                 TOP RIGHT ACCOUNT
+                 ================================================= -->
 
-                <div class="topbar-avatar">
-                    👤
-                </div>
+            <div class="topbar-account-wrapper">
 
-                <div>
 
-                    <strong>
-                        Account
-                    </strong>
+                <!-- ACCOUNT BUTTON -->
 
-                    <div class="online">
-                        Online
+                <button
+                    type="button"
+                    class="topbar-account"
+                    id="topbarAccountButton"
+                    aria-expanded="false"
+                    aria-controls="topbarAccountMenu"
+                >
+
+                    <!-- AVATAR -->
+
+                    <div class="topbar-avatar">
+
+                        {% if session.get("user_name") %}
+
+                            {{ session.get("user_name")[0]|upper }}
+
+                        {% else %}
+
+                            U
+
+                        {% endif %}
+
                     </div>
+
+
+                    <!-- NAME + STATUS -->
+
+                    <div>
+
+                        <strong class="topbar-account-name">
+
+                            {{ session.get("user_name", "Account") }}
+
+                        </strong>
+
+
+                        <div class="topbar-account-status">
+
+                            <span class="topbar-account-status-dot"></span>
+
+                            Online
+
+                        </div>
+
+                    </div>
+
+                </button>
+
+
+                <!-- =================================================
+                     TOP ACCOUNT DROPDOWN
+                     ================================================= -->
+
+                <div
+                    class="topbar-account-menu"
+                    id="topbarAccountMenu"
+                >
+
+
+                    <!-- ACCOUNT HEADER -->
+
+                    <div class="topbar-account-menu-header">
+
+                        <div class="topbar-account-menu-avatar">
+
+                            {% if session.get("user_name") %}
+
+                                {{ session.get("user_name")[0]|upper }}
+
+                            {% else %}
+
+                                U
+
+                            {% endif %}
+
+                        </div>
+
+
+                        <div>
+
+                            <div class="topbar-account-menu-name">
+
+                                {{ session.get("user_name", "Account") }}
+
+                            </div>
+
+
+                            <div class="topbar-account-menu-status">
+
+                                <span class="topbar-account-status-dot"></span>
+
+                                Online
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- PROFILE -->
+
+                    <a
+                        href="{{ url_for('settings_profile') }}"
+                        class="topbar-account-menu-item"
+                    >
+
+                        <span class="topbar-account-menu-icon">
+                            👤
+                        </span>
+
+                        <span>
+                            Profile
+                        </span>
+
+                    </a>
+
+
+                    <!-- EMAIL ADDRESS -->
+
+                    <div
+                        class="topbar-account-menu-item"
+                        style="cursor: default;"
+                    >
+
+                        <span class="topbar-account-menu-icon">
+                            ✉
+                        </span>
+
+                        <span style="min-width:0;">
+
+                            <span>
+                                Email address
+                            </span>
+
+                            <span class="topbar-account-email">
+
+                                {{ session.get("user_email", "") }}
+
+                            </span>
+
+                        </span>
+
+                    </div>
+
 
                 </div>
 
@@ -776,12 +1431,12 @@
         </header>
 
 
-        <!-- ================= PAGE CONTENT ================= -->
+        <!-- =====================================================
+             PAGE CONTENT
+             ===================================================== -->
 
         <section class="page-content">
 
-
-            <!-- FLASH MESSAGES -->
 
             {% with messages = get_flashed_messages(with_categories=true) %}
 
@@ -802,8 +1457,6 @@
             {% endwith %}
 
 
-            <!-- PAGE-SPECIFIC CONTENT -->
-
             {% block content %}
 
             {% endblock %}
@@ -815,115 +1468,285 @@
 
 </div>
 
+
+<!-- =========================================================
+     JAVASCRIPT
+     ========================================================= -->
+
 <script>
 
-    document.addEventListener(
-        "DOMContentLoaded",
-        function () {
-
-            const accountButton =
-                document.getElementById(
-                    "sidebarAccountButton"
-                );
-
-            const accountMenu =
-                document.getElementById(
-                    "sidebarAccountMenu"
-                );
+document.addEventListener(
+    "DOMContentLoaded",
+    function () {
 
 
-            if (!accountButton || !accountMenu) {
+        /* =================================================
+           SIDEBAR ACCOUNT
+           ================================================= */
+
+        const sidebarAccountButton =
+            document.getElementById(
+                "sidebarAccountButton"
+            );
+
+        const sidebarAccountMenu =
+            document.getElementById(
+                "sidebarAccountMenu"
+            );
+
+
+        /* =================================================
+           TOPBAR ACCOUNT
+           ================================================= */
+
+        const topbarAccountButton =
+            document.getElementById(
+                "topbarAccountButton"
+            );
+
+        const topbarAccountMenu =
+            document.getElementById(
+                "topbarAccountMenu"
+            );
+
+
+        /* =================================================
+           SIDEBAR FUNCTIONS
+           ================================================= */
+
+        function openSidebarAccountMenu() {
+
+            if (
+                !sidebarAccountButton ||
+                !sidebarAccountMenu
+            ) {
+
                 return;
+
             }
 
+            sidebarAccountMenu.classList.add("show");
 
-            accountButton.addEventListener(
+            sidebarAccountButton.classList.add("open");
+
+            sidebarAccountButton.setAttribute(
+                "aria-expanded",
+                "true"
+            );
+
+        }
+
+
+        function closeSidebarAccountMenu() {
+
+            if (
+                !sidebarAccountButton ||
+                !sidebarAccountMenu
+            ) {
+
+                return;
+
+            }
+
+            sidebarAccountMenu.classList.remove("show");
+
+            sidebarAccountButton.classList.remove("open");
+
+            sidebarAccountButton.setAttribute(
+                "aria-expanded",
+                "false"
+            );
+
+        }
+
+
+        /* =================================================
+           TOPBAR FUNCTIONS
+           ================================================= */
+
+        function openTopbarAccountMenu() {
+
+            if (
+                !topbarAccountButton ||
+                !topbarAccountMenu
+            ) {
+
+                return;
+
+            }
+
+            topbarAccountMenu.classList.add("show");
+
+            topbarAccountButton.classList.add("open");
+
+            topbarAccountButton.setAttribute(
+                "aria-expanded",
+                "true"
+            );
+
+        }
+
+
+        function closeTopbarAccountMenu() {
+
+            if (
+                !topbarAccountButton ||
+                !topbarAccountMenu
+            ) {
+
+                return;
+
+            }
+
+            topbarAccountMenu.classList.remove("show");
+
+            topbarAccountButton.classList.remove("open");
+
+            topbarAccountButton.setAttribute(
+                "aria-expanded",
+                "false"
+            );
+
+        }
+
+
+        /* =================================================
+           SIDEBAR CLICK
+           ================================================= */
+
+        if (
+            sidebarAccountButton &&
+            sidebarAccountMenu
+        ) {
+
+            sidebarAccountButton.addEventListener(
                 "click",
                 function (event) {
 
                     event.stopPropagation();
 
                     const isOpen =
-                        accountMenu.classList.contains(
+                        sidebarAccountMenu.classList.contains(
                             "show"
                         );
 
                     if (isOpen) {
 
-                        closeAccountMenu();
+                        closeSidebarAccountMenu();
 
                     } else {
 
-                        openAccountMenu();
+                        closeTopbarAccountMenu();
+
+                        openSidebarAccountMenu();
 
                     }
 
                 }
             );
 
+        }
 
-            document.addEventListener(
+
+        /* =================================================
+           TOPBAR CLICK
+           ================================================= */
+
+        if (
+            topbarAccountButton &&
+            topbarAccountMenu
+        ) {
+
+            topbarAccountButton.addEventListener(
                 "click",
                 function (event) {
 
-                    if (
-                        !accountMenu.contains(event.target) &&
-                        !accountButton.contains(event.target)
-                    ) {
+                    event.stopPropagation();
 
-                        closeAccountMenu();
+                    const isOpen =
+                        topbarAccountMenu.classList.contains(
+                            "show"
+                        );
 
-                    }
+                    if (isOpen) {
 
-                }
-            );
+                        closeTopbarAccountMenu();
 
+                    } else {
 
-            document.addEventListener(
-                "keydown",
-                function (event) {
+                        closeSidebarAccountMenu();
 
-                    if (event.key === "Escape") {
-
-                        closeAccountMenu();
+                        openTopbarAccountMenu();
 
                     }
 
                 }
             );
-
-
-            function openAccountMenu() {
-
-                accountMenu.classList.add("show");
-
-                accountButton.classList.add("open");
-
-                accountButton.setAttribute(
-                    "aria-expanded",
-                    "true"
-                );
-
-            }
-
-
-            function closeAccountMenu() {
-
-                accountMenu.classList.remove("show");
-
-                accountButton.classList.remove("open");
-
-                accountButton.setAttribute(
-                    "aria-expanded",
-                    "false"
-                );
-
-            }
 
         }
-    );
+
+
+        /* =================================================
+           CLOSE WHEN CLICKING OUTSIDE
+           ================================================= */
+
+        document.addEventListener(
+            "click",
+            function (event) {
+
+
+
+                if (
+                    sidebarAccountMenu &&
+                    sidebarAccountButton &&
+                    !sidebarAccountMenu.contains(event.target) &&
+                    !sidebarAccountButton.contains(event.target)
+                ) {
+
+                    closeSidebarAccountMenu();
+
+                }
+
+
+                if (
+                    topbarAccountMenu &&
+                    topbarAccountButton &&
+                    !topbarAccountMenu.contains(event.target) &&
+                    !topbarAccountButton.contains(event.target)
+                ) {
+
+                    closeTopbarAccountMenu();
+
+                }
+
+            }
+        );
+
+
+        /* =================================================
+           ESCAPE KEY
+           ================================================= */
+
+        document.addEventListener(
+            "keydown",
+            function (event) {
+
+                if (event.key === "Escape") {
+
+                    closeSidebarAccountMenu();
+
+                    closeTopbarAccountMenu();
+
+                }
+
+            }
+        );
+
+    }
+);
 
 </script>
+
 
 </body>
 

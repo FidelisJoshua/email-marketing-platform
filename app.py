@@ -6,6 +6,7 @@ from itsdangerous import URLSafeTimedSerializer
 import pandas as pd
 from itsdangerous import URLSafeSerializer
 from flask import Flask, render_template, request, session, redirect, url_for, flash
+from apscheduler.schedulers.background import BackgroundScheduler
 from sqlalchemy import text, inspect
 from flask_bcrypt import Bcrypt
 from sqlalchemy.exc import IntegrityError
@@ -76,6 +77,34 @@ def create_email_verification_token(user_id):
         salt="emailflow-email-verification"
     )
 
+def create_password_reset_token(user_id):
+
+    serializer = URLSafeTimedSerializer(
+        app.secret_key
+    )
+
+    return serializer.dumps(
+        {
+            "user_id": user_id
+        },
+        salt="emailflow-password-reset"
+    )
+
+@app.context_processor
+def inject_current_user():
+
+    user = None
+
+    if "user_id" in session:
+
+        user = db.session.get(
+            User,
+            session["user_id"]
+        )
+
+    return {
+        "current_user": user
+    }
 
 # =========================================================
 # HOME
@@ -544,13 +573,397 @@ def login():
             )
 
         session["user_id"] = user.id
-
         session["user_name"] = user.name
+        session["user_email"] = user.email
 
         return redirect(url_for("dashboard"))
 
     return render_template("login.html")
 
+# =========================================================
+# FORGOT PASSWORD
+# =========================================================
+
+@app.route(
+    "/forgot-password",
+    methods=["GET", "POST"]
+)
+def forgot_password():
+
+    if request.method == "POST":
+
+        email = (
+            request.form
+            .get("email", "")
+            .strip()
+            .lower()
+        )
+
+        if not email:
+
+            flash(
+                "Please enter your email address.",
+                "warning"
+            )
+
+            return redirect(
+                url_for("forgot_password")
+            )
+
+        user = User.query.filter_by(
+            email=email
+        ).first()
+
+        # -----------------------------------------------------
+        # SECURITY:
+        # Do not reveal whether an email exists.
+        # -----------------------------------------------------
+
+        if user:
+
+            reset_token = create_password_reset_token(
+                user.id
+            )
+
+            reset_link = url_for(
+                "reset_password",
+                token=reset_token,
+                _external=True
+            )
+
+            reset_email = f"""
+            <!DOCTYPE html>
+
+            <html>
+
+            <head>
+
+                <meta charset="UTF-8">
+
+                <meta
+                    name="viewport"
+                    content="width=device-width, initial-scale=1.0"
+                >
+
+            </head>
+
+            <body
+                style="
+                    margin:0;
+                    padding:40px 20px;
+                    background:#f5f7fb;
+                    font-family:Arial, Helvetica, sans-serif;
+                "
+            >
+
+                <div
+                    style="
+                        max-width:600px;
+                        margin:0 auto;
+                        background:white;
+                        padding:40px;
+                        border-radius:12px;
+                        box-shadow:0 5px 20px rgba(0,0,0,0.08);
+                    "
+                >
+
+                    <h1
+                        style="
+                            color:#4f46e5;
+                            margin-top:0;
+                        "
+                    >
+                        EmailFlow
+                    </h1>
+
+                    <h2>
+                        Reset your password
+                    </h2>
+
+                    <p
+                        style="
+                            color:#4b5563;
+                            line-height:1.7;
+                        "
+                    >
+                        Hi {user.name},
+                    </p>
+
+                    <p
+                        style="
+                            color:#4b5563;
+                            line-height:1.7;
+                        "
+                    >
+                        We received a request to reset the password
+                        for your EmailFlow account.
+                    </p>
+
+                    <p
+                        style="
+                            text-align:center;
+                            margin:35px 0;
+                        "
+                    >
+
+                        <a
+                            href="{reset_link}"
+                            style="
+                                display:inline-block;
+                                padding:14px 25px;
+                                background:#4f46e5;
+                                color:white;
+                                text-decoration:none;
+                                border-radius:8px;
+                                font-weight:bold;
+                            "
+                        >
+                            Reset My Password
+                        </a>
+
+                    </p>
+
+                    <p
+                        style="
+                            color:#6b7280;
+                            font-size:14px;
+                            line-height:1.6;
+                        "
+                    >
+                        This password reset link will expire in
+                        1 hour.
+                    </p>
+
+                    <p
+                        style="
+                            color:#6b7280;
+                            font-size:14px;
+                            line-height:1.6;
+                        "
+                    >
+                        If you did not request a password reset,
+                        you can safely ignore this email.
+                    </p>
+
+                </div>
+
+            </body>
+
+            </html>
+            """
+
+            # =================================================
+            # EMAILFLOW SYSTEM SMTP
+            # =================================================
+
+            try:
+
+                smtp_host = os.getenv(
+                    "EMAILFLOW_SMTP_HOST"
+                )
+
+                smtp_port = os.getenv(
+                    "EMAILFLOW_SMTP_PORT",
+                    "465"
+                )
+
+                smtp_username = os.getenv(
+                    "EMAILFLOW_SMTP_USERNAME"
+                )
+
+                smtp_password = os.getenv(
+                    "EMAILFLOW_SMTP_PASSWORD"
+                )
+
+                smtp_encryption = os.getenv(
+                    "EMAILFLOW_SMTP_ENCRYPTION",
+                    "SSL"
+                )
+
+                sender_name = os.getenv(
+                    "EMAILFLOW_SENDER_NAME",
+                    "EmailFlow"
+                )
+
+                sender_email = os.getenv(
+                    "EMAILFLOW_SENDER_EMAIL"
+                )
+
+                success, message = send_email(
+
+                    smtp_host=smtp_host,
+
+                    smtp_port=smtp_port,
+
+                    smtp_username=smtp_username,
+
+                    smtp_password=smtp_password,
+
+                    smtp_encryption=smtp_encryption,
+
+                    sender_name=sender_name,
+
+                    sender_email=sender_email,
+
+                    recipient_email=user.email,
+
+                    subject="Reset your EmailFlow password",
+
+                    body=reset_email
+                )
+
+                if success:
+
+                    print(
+                        f"📧 Password reset email sent to "
+                        f"{user.email}"
+                    )
+
+                else:
+
+                    print(
+                        f"❌ Password reset email failed: "
+                        f"{message}"
+                    )
+
+            except Exception as e:
+
+                print(
+                    f"❌ Could not send password reset email: "
+                    f"{e}"
+                )
+
+        # -----------------------------------------------------
+        # Always show the same message
+        # -----------------------------------------------------
+
+        flash(
+            "If an account exists for that email address, "
+            "we have sent a password reset link.",
+            "success"
+        )
+
+        return redirect(
+            url_for("login")
+        )
+
+    return render_template(
+        "forgot_password.html"
+    )
+
+# =========================================================
+# RESET PASSWORD
+# =========================================================
+
+@app.route(
+    "/reset-password/<token>",
+    methods=["GET", "POST"]
+)
+def reset_password(token):
+
+    serializer = URLSafeTimedSerializer(
+        app.secret_key
+    )
+
+    try:
+
+        data = serializer.loads(
+            token,
+            salt="emailflow-password-reset",
+            max_age=3600
+        )
+
+    except Exception:
+
+        return render_template(
+            "reset_password.html",
+            error=(
+                "This password reset link is invalid "
+                "or has expired."
+            )
+        )
+
+    user_id = data.get("user_id")
+
+    if not user_id:
+
+        return render_template(
+            "reset_password.html",
+            error="This password reset link is invalid."
+        )
+
+    user = db.session.get(
+        User,
+        user_id
+    )
+
+    if not user:
+
+        return render_template(
+            "reset_password.html",
+            error="We could not find this account."
+        )
+
+    if request.method == "POST":
+
+        password = request.form.get(
+            "password",
+            ""
+        )
+
+        confirm_password = request.form.get(
+            "confirm_password",
+            ""
+        )
+
+        if not password or not confirm_password:
+
+            return render_template(
+                "reset_password.html",
+                error="Both password fields are required.",
+                token=token
+            )
+
+        if password != confirm_password:
+
+            return render_template(
+                "reset_password.html",
+                error="The passwords do not match.",
+                token=token
+            )
+
+        if len(password) < 8:
+
+            return render_template(
+                "reset_password.html",
+                error=(
+                    "Your password must be at least "
+                    "8 characters long."
+                ),
+                token=token
+            )
+
+        # =====================================================
+        # HASH NEW PASSWORD
+        # =====================================================
+
+        user.password = (
+            bcrypt
+            .generate_password_hash(password)
+            .decode("utf-8")
+        )
+
+        db.session.commit()
+
+        return render_template(
+            "reset_password.html",
+            success=True
+        )
+
+    return render_template(
+        "reset_password.html",
+        token=token
+    )
 
 # =========================================================
 # DASHBOARD
@@ -584,7 +997,6 @@ def dashboard():
         total_campaigns=total_campaigns,
         total_forms=total_forms
     )
-
 
 # =========================================================
 # CONTACTS
@@ -1599,7 +2011,13 @@ def preview_campaign(campaign_id):
 
     if "user_id" not in session:
 
-        return redirect(url_for("login"))
+        return redirect(
+            url_for("login")
+        )
+
+    user = User.query.get_or_404(
+        session["user_id"]
+    )
 
     campaign = Campaign.query.filter_by(
         id=campaign_id,
@@ -1608,40 +2026,220 @@ def preview_campaign(campaign_id):
 
     return render_template(
         "preview_campaign.html",
-        campaign=campaign
+        campaign=campaign,
+        user=user
     )
-
 
 # =========================================================
 # SEND TEST EMAIL
 # =========================================================
 
 @app.route(
-    "/campaign/<int:campaign_id>/test"
+    "/campaign/<int:campaign_id>/test",
+    methods=["POST"]
 )
 def send_test_email(campaign_id):
 
     if "user_id" not in session:
 
-        return redirect(url_for("login"))
+        return redirect(
+            url_for("login")
+        )
+
+    user_id = session["user_id"]
+
+
+    # =====================================================
+    # GET CAMPAIGN
+    # =====================================================
 
     campaign = Campaign.query.filter_by(
         id=campaign_id,
-        created_by=session["user_id"]
+        created_by=user_id
     ).first_or_404()
+
+
+    # =====================================================
+    # GET CURRENT USER
+    # =====================================================
+
+    user = User.query.get_or_404(
+        user_id
+    )
+
+
+    # =====================================================
+    # GET TEST EMAIL ADDRESS
+    # =====================================================
+
+    test_email = request.form.get(
+        "test_email",
+        ""
+    ).strip().lower()
+
+
+    # =====================================================
+    # DEFAULT TO REGISTERED EMAIL
+    # =====================================================
+
+    if not test_email:
+
+        test_email = user.email
+
+
+    # =====================================================
+    # BASIC EMAIL VALIDATION
+    # =====================================================
+
+    if "@" not in test_email:
+
+        flash(
+            "Please enter a valid email address.",
+            "warning"
+        )
+
+        return redirect(
+            url_for(
+                "preview_campaign",
+                campaign_id=campaign.id
+            )
+        )
+
+
+    # =====================================================
+    # GET EMAIL SETTINGS
+    # =====================================================
+
+    email_settings = EmailSettings.query.filter_by(
+        user_id=user_id
+    ).first()
+
+
+    if not email_settings:
+
+        flash(
+            "Please configure your Email & Sending settings first.",
+            "warning"
+        )
+
+        return redirect(
+            url_for(
+                "preview_campaign",
+                campaign_id=campaign.id
+            )
+        )
+
+
+    # =====================================================
+    # CHECK SMTP SETTINGS
+    # =====================================================
+
+    if not email_settings.smtp_host:
+
+        flash(
+            "Please configure your SMTP host before sending a test email.",
+            "warning"
+        )
+
+        return redirect(
+            url_for(
+                "preview_campaign",
+                campaign_id=campaign.id
+            )
+        )
+
+
+    if not email_settings.smtp_username:
+
+        flash(
+            "Please configure your SMTP username before sending a test email.",
+            "warning"
+        )
+
+        return redirect(
+            url_for(
+                "preview_campaign",
+                campaign_id=campaign.id
+            )
+        )
+
+
+    if not email_settings.smtp_password:
+
+        flash(
+            "Please configure your SMTP password before sending a test email.",
+            "warning"
+        )
+
+        return redirect(
+            url_for(
+                "preview_campaign",
+                campaign_id=campaign.id
+            )
+        )
+
+
+    if not email_settings.sender_email:
+
+        flash(
+            "Please configure your sender email before sending a test email.",
+            "warning"
+        )
+
+        return redirect(
+            url_for(
+                "preview_campaign",
+                campaign_id=campaign.id
+            )
+        )
+
+
+    # =====================================================
+    # SEND TEST EMAIL
+    # =====================================================
 
     try:
 
-        send_email(
+        success, message = send_email(
+
+            smtp_host=email_settings.smtp_host,
+
+            smtp_port=email_settings.smtp_port,
+
+            smtp_username=email_settings.smtp_username,
+
+            smtp_password=email_settings.smtp_password,
+
+            smtp_encryption=email_settings.smtp_encryption,
+
+            sender_name=email_settings.sender_name,
+
+            sender_email=email_settings.sender_email,
+
+            recipient_email=test_email,
+
             subject=campaign.subject,
+
             body=campaign.message,
-            recipient="officialfizzlefit@gmail.com"
+
+            reply_to_email=email_settings.reply_to_email
         )
 
+
+        # =================================================
+        # CHECK RESULT
+        # =================================================
+
+        if not success:
+
+            raise Exception(message)
+
+
         flash(
-            "Test email sent successfully!",
+            f"Test email sent successfully to {test_email}.",
             "success"
         )
+
 
     except Exception as e:
 
@@ -1650,10 +2248,118 @@ def send_test_email(campaign_id):
             "danger"
         )
 
+
     return redirect(
-        url_for("preview_campaign", campaign_id=campaign.id)
+        url_for(
+            "preview_campaign",
+            campaign_id=campaign.id
+        )
     )
 
+@app.route(
+    "/campaign/<int:campaign_id>/schedule",
+    methods=["POST"]
+)
+def schedule_campaign(campaign_id):
+
+    if "user_id" not in session:
+        return redirect(
+            url_for("login")
+        )
+
+    user_id = session["user_id"]
+
+    campaign = Campaign.query.filter_by(
+        id=campaign_id,
+        created_by=user_id
+    ).first_or_404()
+
+    if campaign.status != "Draft":
+
+        flash(
+            "Only draft campaigns can be scheduled.",
+            "warning"
+        )
+
+        return redirect(
+            url_for(
+                "preview_campaign",
+                campaign_id=campaign.id
+            )
+        )
+
+    scheduled_at_string = request.form.get(
+        "scheduled_at",
+        ""
+    ).strip()
+
+    if not scheduled_at_string:
+
+        flash(
+            "Please select a date and time.",
+            "warning"
+        )
+
+        return redirect(
+            url_for(
+                "preview_campaign",
+                campaign_id=campaign.id
+            )
+        )
+
+    try:
+
+        scheduled_at = datetime.strptime(
+            scheduled_at_string,
+            "%Y-%m-%dT%H:%M"
+        )
+
+    except ValueError:
+
+        flash(
+            "The selected date and time is invalid.",
+            "danger"
+        )
+
+        return redirect(
+            url_for(
+                "preview_campaign",
+                campaign_id=campaign.id
+            )
+        )
+
+    now = datetime.now()
+
+    if scheduled_at <= now:
+
+        flash(
+            "Please select a future date and time.",
+            "warning"
+        )
+
+        return redirect(
+            url_for(
+                "preview_campaign",
+                campaign_id=campaign.id
+            )
+        )
+
+    campaign.scheduled_at = scheduled_at
+    campaign.status = "Scheduled"
+
+    db.session.commit()
+
+    flash(
+        "Campaign scheduled successfully.",
+        "success"
+    )
+
+    return redirect(
+        url_for(
+            "preview_campaign",
+            campaign_id=campaign.id
+        )
+    )
 
 # =========================================================
 # SEND CAMPAIGN
@@ -2094,6 +2800,318 @@ def send_campaign(campaign_id):
     return redirect(
         url_for("campaigns")
     )
+
+def process_scheduled_campaigns():
+    """
+    Find scheduled campaigns whose scheduled time has arrived
+    and send them automatically.
+    """
+
+    with app.app_context():
+
+        now = datetime.now()
+
+        scheduled_campaigns = Campaign.query.filter(
+            Campaign.status == "Scheduled",
+            Campaign.scheduled_at <= now
+        ).all()
+
+        if not scheduled_campaigns:
+            return
+
+        print("")
+        print("=" * 60)
+        print("🕐 CHECKING SCHEDULED CAMPAIGNS")
+        print(
+            f"📧 Campaigns ready to send: "
+            f"{len(scheduled_campaigns)}"
+        )
+        print("=" * 60)
+
+        for campaign in scheduled_campaigns:
+
+            print("")
+            print(
+                f"🚀 Starting scheduled campaign "
+                f"{campaign.id}: {campaign.subject}"
+            )
+
+            try:
+
+                # Change the status first so the same campaign
+                # cannot be picked up again by another scheduler run.
+                campaign.status = "Sending"
+                db.session.commit()
+
+                user_id = campaign.created_by
+
+                email_settings = EmailSettings.query.filter_by(
+                    user_id=user_id
+                ).first()
+
+                if not email_settings:
+
+                    print(
+                        f"❌ No email settings found "
+                        f"for campaign {campaign.id}"
+                    )
+
+                    campaign.status = "Draft"
+                    campaign.scheduled_at = None
+
+                    db.session.commit()
+
+                    continue
+
+                if not email_settings.smtp_host:
+                    print(
+                        f"❌ SMTP host missing "
+                        f"for campaign {campaign.id}"
+                    )
+
+                    campaign.status = "Draft"
+                    campaign.scheduled_at = None
+
+                    db.session.commit()
+
+                    continue
+
+                if not email_settings.smtp_username:
+                    print(
+                        f"❌ SMTP username missing "
+                        f"for campaign {campaign.id}"
+                    )
+
+                    campaign.status = "Draft"
+                    campaign.scheduled_at = None
+
+                    db.session.commit()
+
+                    continue
+
+                if not email_settings.smtp_password:
+                    print(
+                        f"❌ SMTP password missing "
+                        f"for campaign {campaign.id}"
+                    )
+
+                    campaign.status = "Draft"
+                    campaign.scheduled_at = None
+
+                    db.session.commit()
+
+                    continue
+
+                if not email_settings.sender_email:
+                    print(
+                        f"❌ Sender email missing "
+                        f"for campaign {campaign.id}"
+                    )
+
+                    campaign.status = "Draft"
+                    campaign.scheduled_at = None
+
+                    db.session.commit()
+
+                    continue
+
+                recipients = CampaignRecipient.query.filter_by(
+                    campaign_id=campaign.id,
+                    status="Pending"
+                ).all()
+
+                if not recipients:
+
+                    campaign.status = "Sent"
+                    campaign.scheduled_at = None
+
+                    db.session.commit()
+
+                    print(
+                        f"⚠️ Campaign {campaign.id} "
+                        f"has no pending recipients."
+                    )
+
+                    continue
+
+                sent = 0
+                failed = 0
+
+                for recipient in recipients:
+
+                    contact = db.session.get(
+                        Contact,
+                        recipient.contact_id
+                    )
+
+                    if not contact:
+
+                        recipient.status = "Failed"
+
+                        db.session.commit()
+
+                        failed += 1
+
+                        print(
+                            f"❌ Contact not found: "
+                            f"{recipient.contact_id}"
+                        )
+
+                        continue
+
+                    attempts = 0
+                    success = False
+
+                    while attempts < 3:
+
+                        attempts += 1
+
+                        try:
+
+                            print(
+                                f"📧 Attempt "
+                                f"{attempts}/3 "
+                                f"for {contact.email}"
+                            )
+
+                            success, message = send_email(
+
+                                smtp_host=email_settings.smtp_host,
+
+                                smtp_port=email_settings.smtp_port,
+
+                                smtp_username=email_settings.smtp_username,
+
+                                smtp_password=email_settings.smtp_password,
+
+                                smtp_encryption=email_settings.smtp_encryption,
+
+                                sender_name=email_settings.sender_name,
+
+                                sender_email=email_settings.sender_email,
+
+                                recipient_email=contact.email,
+
+                                subject=campaign.subject,
+
+                                body=campaign.message,
+
+                                reply_to_email=email_settings.reply_to_email
+                            )
+
+                            if not success:
+                                raise Exception(message)
+
+                            recipient.status = "Sent"
+
+                            recipient.sent_at = datetime.now(
+                                timezone.utc
+                            )
+
+                            db.session.commit()
+
+                            sent += 1
+
+                            print(
+                                f"✅ Sent to: "
+                                f"{contact.email}"
+                            )
+
+                            time.sleep(2)
+
+                            break
+
+                        except Exception as e:
+
+                            print(
+                                f"❌ Attempt "
+                                f"{attempts}/3 failed "
+                                f"for {contact.email}"
+                            )
+
+                            print(
+                                f"Error: {e}"
+                            )
+
+                            if attempts < 3:
+
+                                print(
+                                    "⏳ Retrying in "
+                                    "5 seconds..."
+                                )
+
+                                time.sleep(5)
+
+                    if not success:
+
+                        recipient.status = "Pending"
+
+                        db.session.commit()
+
+                        failed += 1
+
+                campaign.sent_count += sent
+                campaign.failed_count += failed
+
+                remaining = CampaignRecipient.query.filter_by(
+                    campaign_id=campaign.id,
+                    status="Pending"
+                ).count()
+
+                if remaining == 0:
+
+                    campaign.status = "Sent"
+                    campaign.scheduled_at = None
+
+                else:
+
+                    campaign.status = "Draft"
+
+                db.session.commit()
+
+                print("")
+                print(
+                    f"🏁 Scheduled campaign "
+                    f"{campaign.id} finished."
+                )
+
+                print(
+                    f"✅ Sent: {sent}"
+                )
+
+                print(
+                    f"❌ Failed: {failed}"
+                )
+
+                print(
+                    f"⏳ Remaining: {remaining}"
+                )
+
+            except Exception as e:
+
+                db.session.rollback()
+
+                print("")
+                print(
+                    f"❌ Scheduled campaign "
+                    f"{campaign.id} failed."
+                )
+
+                print(
+                    f"Error: {e}"
+                )
+
+                campaign = db.session.get(
+                    Campaign,
+                    campaign.id
+                )
+
+                if campaign:
+
+                    campaign.status = "Draft"
+                    campaign.scheduled_at = None
+
+                    db.session.commit()
 
 # =========================================================
 # FORMS
@@ -4468,6 +5486,7 @@ def settings_email():
 
         email_settings = EmailSettings(
             user_id=user_id,
+            provider="SMTP",
             sender_name=user.name,
             sender_email=user.email,
             reply_to_email=user.email,
@@ -4475,6 +5494,7 @@ def settings_email():
             smtp_port=587,
             smtp_username="",
             smtp_password="",
+            smtp_security="TLS",
             smtp_encryption="TLS"
         )
 
@@ -4487,10 +5507,6 @@ def settings_email():
         user=user
     )
 
-@app.route(
-    "/settings/email/sender",
-    methods=["POST"]
-)
 def save_sender_settings():
 
     if "user_id" not in session:
@@ -5169,6 +6185,25 @@ with app.app_context():
                     )
                 )
 
+            # Add scheduled_at column to campaigns table
+            if "campaigns" in inspector.get_table_names():
+
+                campaign_columns = {
+                    column["name"]
+                    for column in inspector.get_columns("campaigns")
+                }
+
+                if "scheduled_at" not in campaign_columns:
+                    with db.engine.connect() as connection:
+                        connection.execute(
+                            text(
+                                "ALTER TABLE campaigns "
+                                "ADD COLUMN scheduled_at DATETIME"
+                            )
+                        )
+
+                        connection.commit()
+
         db.session.commit()
 
 @app.route(
@@ -5257,6 +6292,18 @@ def test_unsubscribe(contact_id):
             token=token
         )
     )
+
+scheduler = BackgroundScheduler()
+
+scheduler.add_job(
+    process_scheduled_campaigns,
+    "interval",
+    minutes=1,
+    id="emailflow_scheduled_campaigns",
+    replace_existing=True
+)
+
+scheduler.start()
 
 if __name__ == "__main__":
     app.run(debug=True)

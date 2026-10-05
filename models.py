@@ -90,29 +90,50 @@ class Contact(db.Model):
 class Campaign(db.Model):
     __tablename__ = "campaigns"
 
-    id = db.Column(db.Integer, primary_key=True)
-    subject = db.Column(db.String(255), nullable=False)
-    message = db.Column(db.Text, nullable=False)
+    id = db.Column(
+        db.Integer,
+        primary_key=True
+    )
+
+    subject = db.Column(
+        db.String(255),
+        nullable=False
+    )
+
+    message = db.Column(
+        db.Text,
+        nullable=False
+    )
+
     status = db.Column(
         db.String(20),
         default="Draft",
         nullable=False
     )
+
     sent_count = db.Column(
         db.Integer,
         default=0,
         nullable=False
     )
+
     failed_count = db.Column(
         db.Integer,
         default=0,
         nullable=False
     )
+
+    scheduled_at = db.Column(
+        db.DateTime,
+        nullable=True
+    )
+
     created_at = db.Column(
         db.DateTime,
         default=datetime.now(UTC),
         nullable=False
     )
+
     created_by = db.Column(
         db.Integer,
         db.ForeignKey("users.id"),
@@ -121,7 +142,6 @@ class Campaign(db.Model):
 
     def __repr__(self):
         return f"<Campaign {self.subject}>"
-
 
 class CampaignRecipient(db.Model):
     __tablename__ = "campaign_recipients"
@@ -352,6 +372,12 @@ class EmailSettings(db.Model):
         unique=True
     )
 
+    provider = db.Column(
+        db.String(50),
+        nullable=False,
+        default="SMTP"
+    )
+
     sender_name = db.Column(
         db.String(150),
         nullable=True
@@ -385,6 +411,12 @@ class EmailSettings(db.Model):
     smtp_password = db.Column(
         db.String(255),
         nullable=True
+    )
+
+    smtp_security = db.Column(
+        db.String(20),
+        nullable=False,
+        default="TLS"
     )
 
     smtp_encryption = db.Column(

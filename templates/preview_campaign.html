@@ -63,7 +63,6 @@ Campaign Preview - EmailFlow
             Message
         </div>
 
-
         <div
             style="
                 background:#ffffff;
@@ -108,6 +107,23 @@ Campaign Preview - EmailFlow
                 "
             >
                 Draft
+            </span>
+
+        {% elif campaign.status == "Scheduled" %}
+
+            <span
+                style="
+                    display:inline-block;
+                    margin-left:8px;
+                    padding:5px 10px;
+                    border-radius:20px;
+                    background:#ede9fe;
+                    color:#6d28d9;
+                    font-size:13px;
+                    font-weight:600;
+                "
+            >
+                Scheduled
             </span>
 
         {% elif campaign.status == "Sending" %}
@@ -159,12 +175,42 @@ Campaign Preview - EmailFlow
                 "
             >
                 {{ campaign.status }}
-
             </span>
 
         {% endif %}
 
     </div>
+
+
+    <!-- =========================================
+         SCHEDULED TIME
+         ========================================= -->
+
+    {% if campaign.status == "Scheduled" and campaign.scheduled_at %}
+
+        <div
+            style="
+                margin-top:15px;
+                padding:14px 16px;
+                background:#f5f3ff;
+                border:1px solid #ddd6fe;
+                border-radius:10px;
+                color:#5b21b6;
+                font-size:13px;
+            "
+        >
+
+            🕐
+
+            <strong>
+                Scheduled for:
+            </strong>
+
+            {{ campaign.scheduled_at.strftime("%B %d, %Y at %I:%M %p") }}
+
+        </div>
+
+    {% endif %}
 
 
     <!-- =========================================
@@ -207,6 +253,472 @@ Campaign Preview - EmailFlow
 
 
     <!-- =========================================
+         SEND TEST EMAIL
+         ========================================= -->
+
+    <div
+        style="
+            margin-top:30px;
+            padding:24px;
+            background:#f8fafc;
+            border:1px solid #e5e7eb;
+            border-radius:14px;
+        "
+    >
+
+        <div
+            style="
+                display:flex;
+                align-items:flex-start;
+                gap:14px;
+                margin-bottom:20px;
+            "
+        >
+
+            <div
+                style="
+                    width:44px;
+                    height:44px;
+                    display:flex;
+                    align-items:center;
+                    justify-content:center;
+                    flex-shrink:0;
+                    background:#ffffff;
+                    border:1px solid #e5e7eb;
+                    border-radius:10px;
+                    font-size:20px;
+                "
+            >
+                ✉️
+            </div>
+
+
+            <div>
+
+                <h3
+                    style="
+                        margin:0;
+                        font-size:16px;
+                        font-weight:700;
+                        color:#111827;
+                    "
+                >
+                    Send a test email
+                </h3>
+
+                <p
+                    style="
+                        margin:5px 0 0;
+                        color:#6b7280;
+                        font-size:13px;
+                        line-height:1.6;
+                        max-width:650px;
+                    "
+                >
+                    Send a copy of this campaign to yourself or another
+                    email address to make sure everything looks right
+                    before sending it to your contacts.
+                </p>
+
+            </div>
+
+        </div>
+
+
+        <form
+            method="POST"
+            action="{{ url_for(
+                'send_test_email',
+                campaign_id=campaign.id
+            ) }}"
+        >
+
+            <div
+                style="
+                    background:#ffffff;
+                    border:1px solid #e5e7eb;
+                    border-radius:12px;
+                    padding:18px;
+                "
+            >
+
+                <label
+                    for="test_email"
+                    style="
+                        display:block;
+                        margin-bottom:7px;
+                        color:#374151;
+                        font-size:13px;
+                        font-weight:600;
+                    "
+                >
+                    Test email address
+                </label>
+
+
+                <div
+                    style="
+                        display:flex;
+                        gap:10px;
+                        align-items:stretch;
+                    "
+                >
+
+                    <div
+                        style="
+                            flex:1;
+                            min-width:0;
+                        "
+                    >
+
+                        <input
+                            type="email"
+                            id="test_email"
+                            name="test_email"
+                            value="{{ user.email }}"
+                            required
+                            placeholder="Enter an email address"
+                            style="
+                                width:100%;
+                                height:44px;
+                                padding:0 13px;
+                                border:1px solid #d1d5db;
+                                border-radius:9px;
+                                background:#ffffff;
+                                color:#111827;
+                                font-size:14px;
+                                outline:none;
+                                box-sizing:border-box;
+                            "
+                        >
+
+                    </div>
+
+
+                    <button
+                        type="submit"
+                        style="
+                            height:44px;
+                            padding:0 18px;
+                            border:none;
+                            border-radius:9px;
+                            background:#111827;
+                            color:#ffffff;
+                            font-size:13px;
+                            font-weight:600;
+                            cursor:pointer;
+                            white-space:nowrap;
+                        "
+                    >
+                        📨 Send Test Email
+                    </button>
+
+                </div>
+
+
+                <div
+                    style="
+                        display:flex;
+                        align-items:center;
+                        gap:7px;
+                        margin-top:11px;
+                        color:#6b7280;
+                        font-size:12px;
+                    "
+                >
+
+                    <span>
+                        ✓
+                    </span>
+
+                    <span>
+                        Your registered email is used by default.
+                        You can change it before sending.
+                    </span>
+
+                </div>
+
+            </div>
+
+        </form>
+
+
+        <div
+            style="
+                display:flex;
+                align-items:flex-start;
+                gap:9px;
+                margin-top:14px;
+                padding:12px 14px;
+                background:#ffffff;
+                border:1px solid #e5e7eb;
+                border-radius:9px;
+            "
+        >
+
+            <span
+                style="
+                    font-size:14px;
+                    line-height:1.4;
+                "
+            >
+                ℹ️
+            </span>
+
+            <p
+                style="
+                    margin:0;
+                    color:#6b7280;
+                    font-size:12px;
+                    line-height:1.6;
+                "
+            >
+                Test emails are sent using your configured SMTP settings.
+                Sending a test does not send the campaign to your contacts
+                and does not change the campaign status.
+            </p>
+
+        </div>
+
+    </div>
+
+
+    <!-- =========================================
+         SCHEDULE MAIL
+         ========================================= -->
+
+    {% if campaign.status == "Draft" %}
+
+        <div
+            style="
+                margin-top:30px;
+                padding:24px;
+                background:#f8fafc;
+                border:1px solid #e5e7eb;
+                border-radius:14px;
+            "
+        >
+
+            <!-- HEADER -->
+
+            <div
+                style="
+                    display:flex;
+                    align-items:flex-start;
+                    gap:14px;
+                    margin-bottom:20px;
+                "
+            >
+
+                <div
+                    style="
+                        width:44px;
+                        height:44px;
+                        display:flex;
+                        align-items:center;
+                        justify-content:center;
+                        flex-shrink:0;
+                        background:#ffffff;
+                        border:1px solid #e5e7eb;
+                        border-radius:10px;
+                        font-size:20px;
+                    "
+                >
+                    🕐
+                </div>
+
+
+                <div>
+
+                    <h3
+                        style="
+                            margin:0;
+                            font-size:16px;
+                            font-weight:700;
+                            color:#111827;
+                        "
+                    >
+                        Schedule mail
+                    </h3>
+
+                    <p
+                        style="
+                            margin:5px 0 0;
+                            color:#6b7280;
+                            font-size:13px;
+                            line-height:1.6;
+                            max-width:650px;
+                        "
+                    >
+                        Choose when you want EmailFlow to automatically
+                        send this campaign to your contacts.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <!-- SCHEDULE FORM -->
+
+            <form
+                method="POST"
+                action="{{ url_for(
+                    'schedule_campaign',
+                    campaign_id=campaign.id
+                ) }}"
+            >
+
+                <div
+                    style="
+                        background:#ffffff;
+                        border:1px solid #e5e7eb;
+                        border-radius:12px;
+                        padding:18px;
+                    "
+                >
+
+                    <label
+                        for="scheduled_at"
+                        style="
+                            display:block;
+                            margin-bottom:7px;
+                            color:#374151;
+                            font-size:13px;
+                            font-weight:600;
+                        "
+                    >
+                        Date and time
+                    </label>
+
+
+                    <div
+                        style="
+                            display:flex;
+                            gap:10px;
+                            align-items:stretch;
+                        "
+                    >
+
+                        <div
+                            style="
+                                flex:1;
+                                min-width:0;
+                            "
+                        >
+
+                            <input
+                                type="datetime-local"
+                                id="scheduled_at"
+                                name="scheduled_at"
+                                required
+                                style="
+                                    width:100%;
+                                    height:44px;
+                                    padding:0 13px;
+                                    border:1px solid #d1d5db;
+                                    border-radius:9px;
+                                    background:#ffffff;
+                                    color:#111827;
+                                    font-size:14px;
+                                    outline:none;
+                                    box-sizing:border-box;
+                                "
+                            >
+
+                        </div>
+
+
+                        <button
+                            type="submit"
+                            style="
+                                height:44px;
+                                padding:0 18px;
+                                border:none;
+                                border-radius:9px;
+                                background:#111827;
+                                color:#ffffff;
+                                font-size:13px;
+                                font-weight:600;
+                                cursor:pointer;
+                                white-space:nowrap;
+                            "
+                        >
+                            🕐 Schedule Mail
+                        </button>
+
+                    </div>
+
+
+                    <div
+                        style="
+                            display:flex;
+                            align-items:center;
+                            gap:7px;
+                            margin-top:11px;
+                            color:#6b7280;
+                            font-size:12px;
+                        "
+                    >
+
+                        <span>
+                            ✓
+                        </span>
+
+                        <span>
+                            The campaign will remain scheduled until
+                            EmailFlow automatically sends it.
+                        </span>
+
+                    </div>
+
+                </div>
+
+
+                <div
+                    style="
+                        display:flex;
+                        align-items:flex-start;
+                        gap:9px;
+                        margin-top:14px;
+                        padding:12px 14px;
+                        background:#ffffff;
+                        border:1px solid #e5e7eb;
+                        border-radius:9px;
+                    "
+                >
+
+                    <span
+                        style="
+                            font-size:14px;
+                            line-height:1.4;
+                        "
+                    >
+                        ℹ️
+                    </span>
+
+                    <p
+                        style="
+                            margin:0;
+                            color:#6b7280;
+                            font-size:12px;
+                            line-height:1.6;
+                        "
+                    >
+                        Make sure your Email & Sending settings are
+                        configured before scheduling the campaign.
+                    </p>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    {% endif %}
+
+
+    <!-- =========================================
          ACTIONS
          ========================================= -->
 
@@ -237,7 +749,10 @@ Campaign Preview - EmailFlow
 
             <form
                 method="POST"
-                action="{{ url_for('send_campaign', campaign_id=campaign.id) }}"
+                action="{{ url_for(
+                    'send_campaign',
+                    campaign_id=campaign.id
+                ) }}"
                 style="margin:0;"
                 onsubmit="
                     return confirm(
@@ -254,6 +769,16 @@ Campaign Preview - EmailFlow
                 </button>
 
             </form>
+
+        {% elif campaign.status == "Scheduled" %}
+
+            <button
+                type="button"
+                class="btn-secondary-custom"
+                disabled
+            >
+                🕐 Campaign Scheduled
+            </button>
 
         {% elif campaign.status == "Sending" %}
 
