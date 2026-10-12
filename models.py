@@ -1,5 +1,5 @@
-from datetime import datetime, UTC
-
+from datetime import datetime, timezone, UTC
+import secrets
 from extension import db
 
 
@@ -38,6 +38,31 @@ class User(db.Model):
         nullable=True
     )
 
+    address = db.Column(
+        db.String(255),
+        nullable=True
+    )
+
+    city = db.Column(
+        db.String(100),
+        nullable=True
+    )
+
+    state = db.Column(
+        db.String(100),
+        nullable=True
+    )
+
+    postal_code = db.Column(
+        db.String(30),
+        nullable=True
+    )
+
+    country = db.Column(
+        db.String(100),
+        nullable=True
+    )
+
     def __repr__(self):
         return f"<User {self.email}>"
 
@@ -59,6 +84,12 @@ class Contact(db.Model):
         nullable=False
     )
 
+    created_at = db.Column(
+        db.DateTime,
+        nullable=True,
+        default=lambda: datetime.now(timezone.utc)
+    )
+
     created_by = db.Column(
         db.Integer,
         db.ForeignKey("users.id"),
@@ -75,6 +106,12 @@ class Contact(db.Model):
         db.DateTime,
         nullable=True
     )
+    unsubscribe_token = db.Column(
+        db.String(128),
+        unique=True,
+        nullable=True,
+        default=lambda: secrets.token_urlsafe(32)
+    )
 
     __table_args__ = (
         db.UniqueConstraint(
@@ -86,6 +123,69 @@ class Contact(db.Model):
 
     def __repr__(self):
         return f"<Contact {self.email}>"
+
+
+class Segment(db.Model):
+
+    __tablename__ = "segments"
+
+    id = db.Column(
+        db.Integer,
+        primary_key=True
+    )
+
+    name = db.Column(
+        db.String(100),
+        nullable=False
+    )
+
+    description = db.Column(
+        db.String(255),
+        nullable=True
+    )
+
+    created_by = db.Column(
+        db.Integer,
+        db.ForeignKey("users.id"),
+        nullable=False
+    )
+
+    created_at = db.Column(
+        db.DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        nullable=False
+    )
+
+
+class SegmentContact(db.Model):
+
+    __tablename__ = "segment_contacts"
+
+    id = db.Column(
+        db.Integer,
+        primary_key=True
+    )
+
+    segment_id = db.Column(
+        db.Integer,
+        db.ForeignKey("segments.id"),
+        nullable=False
+    )
+
+    contact_id = db.Column(
+        db.Integer,
+        db.ForeignKey("contacts.id"),
+        nullable=False
+    )
+
+    __table_args__ = (
+        db.UniqueConstraint(
+            "segment_id",
+            "contact_id",
+            name="unique_segment_contact"
+        ),
+    )
+
 
 class Campaign(db.Model):
     __tablename__ = "campaigns"

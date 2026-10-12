@@ -6,722 +6,877 @@ Campaigns - EmailFlow
 
 {% block content %}
 
-<div class="campaign-starting-page">
+<div class="campaign-page">
 
-    <!-- PAGE HEADER -->
-    <div class="campaign-starting-header">
+<!-- =================================================
+     PAGE HEADER
+     ================================================= -->
 
-        <div>
-            <div class="page-eyebrow">
-                EMAIL MARKETING
-            </div>
+<div class="campaign-page-header">
 
-            <h1 class="page-title">
-                Choose a template for your campaign
-            </h1>
+    <h1>
+        Campaigns
+    </h1>
 
-            <p class="page-subtitle">
-                Start with a professionally designed template or create your campaign from scratch.
-            </p>
-        </div>
+    <a
+        href="{{ url_for('new_campaign') }}"
+        class="new-campaign-button"
+    >
+        <span>+</span>
+        New campaign
+    </a>
+
+</div>
+
+
+<!-- =================================================
+     CAMPAIGN TABLE
+     ================================================= -->
+
+<div class="campaign-table-card">
+
+    {% if campaigns %}
+
+    <div class="campaign-table-wrapper">
+
+        <table class="campaign-table">
+
+            <thead>
+
+                <tr>
+
+                    <th>
+                        Subject
+                    </th>
+
+                    <th>
+                        Date
+                    </th>
+
+                    <th>
+                        Recipients
+                    </th>
+
+                    <th>
+                        Unsubscribed
+                    </th>
+
+                    <th class="actions-column">
+                    </th>
+
+                </tr>
+
+            </thead>
+
+
+            <tbody>
+
+                {% for campaign in campaigns %}
+
+                <tr>
+
+                    <!-- SUBJECT -->
+
+                    <td>
+
+                        <a
+                            href="{{ url_for(
+                                'preview_campaign',
+                                campaign_id=campaign.id
+                            ) }}"
+                            class="campaign-subject"
+                        >
+                            {{ campaign.subject }}
+                        </a>
+
+                    </td>
+
+
+                    <!-- DATE -->
+
+                    <td>
+
+                        <span class="campaign-date">
+
+                        {% if campaign.created_at %}
+
+                            {{ campaign.created_at.strftime(
+                                '%b %d, %Y'
+                            ) }}
+
+                        {% else %}
+
+                            —
+
+                        {% endif %}
+
+                        </span>
+
+                    </td>
+
+
+                    <!-- RECIPIENTS -->
+
+                    <td>
+
+                        <span class="campaign-number">
+
+                            {% if campaign.sent_count %}
+
+                                {{ campaign.sent_count }}
+
+                            {% else %}
+
+                                0
+
+                            {% endif %}
+
+                        </span>
+
+                    </td>
+
+
+                    <!-- UNSUBSCRIBED -->
+
+                    <td>
+
+                        {% set unsubscribed_count = 0 %}
+
+                        {% for recipient in campaign.recipients %}
+
+                            {% if recipient.contact
+                                  and recipient.contact.unsubscribed %}
+
+                                {% set unsubscribed_count =
+                                    unsubscribed_count + 1
+                                %}
+
+                            {% endif %}
+
+                        {% endfor %}
+
+
+                        {% if unsubscribed_count > 0 %}
+
+                            <span class="unsubscribe-count">
+                                {{ unsubscribed_count }}
+                            </span>
+
+                        {% else %}
+
+                            <span class="empty-count">
+                                —
+                            </span>
+
+                        {% endif %}
+
+                    </td>
+
+
+                    <!-- ACTIONS -->
+
+                    <td class="actions-column">
+
+                        <div class="campaign-menu">
+
+                            <button
+                                type="button"
+                                class="campaign-menu-button"
+                                onclick="toggleCampaignMenu(
+                                    {{ campaign.id }}
+                                )"
+                                aria-label="Campaign actions"
+                            >
+                                ⋯
+                            </button>
+
+
+                            <div
+                                id="campaign-menu-{{ campaign.id }}"
+                                class="campaign-menu-dropdown"
+                            >
+
+                                <button
+                                    type="button"
+                                    onclick="duplicateCampaign(
+                                        {{ campaign.id }}
+                                    )"
+                                >
+                                    Duplicate
+                                </button>
+
+
+                                <button
+                                    type="button"
+                                    onclick="resendCampaign(
+                                        {{ campaign.id }}
+                                    )"
+                                >
+                                    Resend
+                                </button>
+
+
+                                <button
+                                    type="button"
+                                    class="delete-menu-item"
+                                    onclick="deleteCampaign(
+                                        {{ campaign.id }}
+                                    )"
+                                >
+                                    Delete
+                                </button>
+
+                            </div>
+
+                        </div>
+
+                    </td>
+
+                </tr>
+
+                {% endfor %}
+
+            </tbody>
+
+        </table>
 
     </div>
 
 
-    <!-- ================================================= -->
-    <!-- YOUR TEMPLATES -->
-    <!-- ================================================= -->
+    {% else %}
 
-    {% set user_templates = templates
-        |selectattr("is_system_template", "equalto", false)
-        |list
-    %}
+    <!-- =================================================
+         EMPTY STATE
+         ================================================= -->
 
-    {% if user_templates %}
+    <div class="campaign-empty-state">
 
-    <section class="campaign-template-section">
-
-        <div class="campaign-section-heading">
-            <div>
-                <h2>Your Templates</h2>
-
-                <p>
-                    Templates you have created and saved.
-                </p>
-            </div>
+        <div class="campaign-empty-icon">
+            ✉
         </div>
 
-
-        <div class="campaign-template-grid">
-
-            {% for template in user_templates %}
-
-            <a
-                href="{{ url_for(
-                    'create_campaign',
-                    template_id=template.id
-                ) }}"
-                class="campaign-starting-card"
-            >
-
-                <div class="campaign-card-preview">
-
-                    {% if template.html_content %}
-
-                        <iframe
-                            srcdoc="{{ template.html_content|e }}"
-                            title="{{ template.name }}"
-                            sandbox="allow-same-origin"
-                            scrolling="no"
-                        ></iframe>
-
-                    {% else %}
-
-                        <div class="campaign-text-preview">
-                            <strong>
-                                {{ template.subject }}
-                            </strong>
-
-                            <p>
-                                {{ template.content[:180] }}
-                                {% if template.content|length > 180 %}
-                                    ...
-                                {% endif %}
-                            </p>
-                        </div>
-
-                    {% endif %}
-
-                </div>
-
-
-                <div class="campaign-card-details">
-
-                    <h3>
-                        {{ template.name }}
-                    </h3>
-
-                    <span>
-                        {{ template.category }}
-                    </span>
-
-                </div>
-
-            </a>
-
-            {% endfor %}
-
-        </div>
-
-    </section>
-
-    {% endif %}
-
-
-    <!-- ================================================= -->
-    <!-- STARTING POINTS -->
-    <!-- ================================================= -->
-
-    <section class="campaign-template-section">
-
-        <div class="campaign-section-heading">
-
-            <div>
-                <h2>
-                    Starting Points
-                </h2>
-
-                <p>
-                    Choose a starting point for your new campaign.
-                </p>
-            </div>
-
-        </div>
-
-
-        <div class="campaign-template-grid">
-
-            {% for template in templates
-                if template.is_system_template
-            %}
-
-            <a
-                href="{{ url_for(
-                    'create_campaign',
-                    template_id=template.id
-                ) }}"
-                class="campaign-starting-card"
-            >
-
-                <div class="campaign-card-preview">
-
-                    {% if template.html_content %}
-
-                        <iframe
-                            srcdoc="{{ template.html_content|e }}"
-                            title="{{ template.name }}"
-                            sandbox="allow-same-origin"
-                            scrolling="no"
-                        ></iframe>
-
-                    {% else %}
-
-                        <div class="campaign-text-preview">
-
-                            <strong>
-                                {{ template.subject }}
-                            </strong>
-
-                            <p>
-                                {{ template.content[:180] }}
-
-                                {% if template.content|length > 180 %}
-                                    ...
-                                {% endif %}
-                            </p>
-
-                        </div>
-
-                    {% endif %}
-
-                </div>
-
-
-                <div class="campaign-card-details">
-
-                    <h3>
-                        {{ template.name }}
-                    </h3>
-
-                    <span>
-                        {{ template.category }}
-                    </span>
-
-                </div>
-
-            </a>
-
-            {% endfor %}
-
-
-            <!-- START FROM SCRATCH -->
-
-            <a
-                href="{{ url_for('create_campaign') }}"
-                class="campaign-starting-card scratch-card"
-            >
-
-                <div class="campaign-card-preview scratch-preview">
-
-                    <div class="scratch-icon">
-                        ✎
-                    </div>
-
-                    <strong>
-                        Start from scratch
-                    </strong>
-
-                    <span>
-                        Create your own campaign
-                    </span>
-
-                </div>
-
-
-                <div class="campaign-card-details">
-
-                    <h3>
-                        Start from scratch
-                    </h3>
-
-                    <span>
-                        Blank campaign
-                    </span>
-
-                </div>
-
-            </a>
-
-        </div>
-
-    </section>
-
-
-    <!-- ================================================= -->
-    <!-- EXISTING CAMPAIGNS -->
-    <!-- ================================================= -->
-
-    {% if campaigns %}
-
-    <section class="campaign-existing-section">
-
-        <div class="campaign-section-heading">
-
-            <div>
-                <h2>
-                    Your Campaigns
-                </h2>
-
-                <p>
-                    Continue working with campaigns you have already created.
-                </p>
-            </div>
-
-        </div>
-
-
-        <div class="campaign-existing-list">
-
-            {% for campaign in campaigns %}
-
-            <div class="campaign-existing-item">
-
-                <div class="campaign-existing-info">
-
-                    <h3>
-                        {{ campaign.subject }}
-                    </h3>
-
-                    <p>
-                        {{ campaign.message[:120] }}
-
-                        {% if campaign.message|length > 120 %}
-                            ...
-                        {% endif %}
-                    </p>
-
-                </div>
-
-
-                <div class="campaign-existing-meta">
-
-                    <span class="campaign-status">
-                        {{ campaign.status }}
-                    </span>
-
-                    <a
-                        href="{{ url_for(
-                            'preview_campaign',
-                            campaign_id=campaign.id
-                        ) }}"
-                        class="campaign-view-button"
-                    >
-                        View
-                    </a>
-
-                </div>
-
-            </div>
-
-            {% endfor %}
-
-        </div>
-
-    </section>
+        <h2>
+            No campaigns yet
+        </h2>
+
+        <p>
+            Create your first email campaign to get started.
+        </p>
+
+        <a
+            href="{{ url_for('new_campaign') }}"
+            class="empty-new-campaign-button"
+        >
+            + New campaign
+        </a>
+
+    </div>
 
     {% endif %}
 
 </div>
 
+</div>
+
+<!-- =========================================================
+     STYLES
+     ========================================================= -->
 
 <style>
-
-/* =========================================================
-   CAMPAIGN STARTING POINTS
-   ========================================================= */
-
-.campaign-starting-page {
-    width: 100%;
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 10px 0 60px;
-}
-
-
-/* HEADER */
-
-.campaign-starting-header {
-    margin-bottom: 42px;
-}
-
-.campaign-starting-header .page-title {
-    margin-bottom: 8px;
-}
-
-.campaign-starting-header .page-subtitle {
-    max-width: 720px;
-}
-
-
-/* SECTION */
-
-.campaign-template-section {
-    margin-bottom: 48px;
-}
-
-.campaign-section-heading {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-end;
-    margin-bottom: 20px;
-}
-
-.campaign-section-heading h2 {
-    margin: 0;
-    font-size: 20px;
-    font-weight: 700;
-    color: #111827;
-}
-
-.campaign-section-heading p {
-    margin: 6px 0 0;
-    color: #6b7280;
-    font-size: 13px;
-}
-
-
-/* TEMPLATE GRID */
-
-.campaign-template-grid {
-    display: grid;
-    grid-template-columns:
-        repeat(4, minmax(0, 1fr));
-
-    gap: 18px;
-}
-
-
-/* TEMPLATE CARD */
-
-.campaign-starting-card {
-    display: block;
-    text-decoration: none;
-    color: inherit;
-
-    background: #ffffff;
-
-    border: 1px solid #e5e7eb;
-    border-radius: 12px;
-
-    overflow: hidden;
-
-    transition:
-        transform 0.2s ease,
-        box-shadow 0.2s ease,
-        border-color 0.2s ease;
-}
-
-.campaign-starting-card:hover {
-    transform: translateY(-4px);
-
-    border-color: #d1d5db;
-
-    box-shadow:
-        0 12px 30px rgba(15, 23, 42, 0.10);
-
-    text-decoration: none;
-}
-
-
-/* PREVIEW */
-
-.campaign-card-preview {
-    height: 250px;
-
-    background: #f8fafc;
-
-    overflow: hidden;
-
-    position: relative;
-
-    border-bottom: 1px solid #e5e7eb;
-}
-
-.campaign-card-preview iframe {
-    width: 200%;
-    height: 500px;
-
-    border: none;
-
-    transform: scale(0.5);
-
-    transform-origin: top left;
-
-    pointer-events: none;
-
-    display: block;
-
-    background: #ffffff;
-}
-
-
-/* TEXT PREVIEW */
-
-.campaign-text-preview {
-    padding: 24px;
-}
-
-.campaign-text-preview strong {
-    display: block;
-
-    font-size: 15px;
-
-    color: #111827;
-
-    margin-bottom: 12px;
-}
-
-.campaign-text-preview p {
-    margin: 0;
-
-    color: #6b7280;
-
-    font-size: 13px;
-
-    line-height: 1.6;
-}
-
-
-/* CARD DETAILS */
-
-.campaign-card-details {
-    padding: 14px 16px 16px;
-}
-
-.campaign-card-details h3 {
-    margin: 0;
-
-    color: #111827;
-
-    font-size: 14px;
-
-    font-weight: 700;
-}
-
-.campaign-card-details span {
-    display: block;
-
-    margin-top: 5px;
-
-    color: #6b7280;
-
-    font-size: 12px;
-}
-
-
-/* START FROM SCRATCH */
-
-.scratch-preview {
-    display: flex;
-
-    flex-direction: column;
-
-    align-items: center;
-
-    justify-content: center;
-
-    text-align: center;
-
-    padding: 30px;
-
-    background: #f8fafc;
-}
-
-.scratch-icon {
-    width: 58px;
-    height: 58px;
-
-    display: flex;
-
-    align-items: center;
-    justify-content: center;
-
-    margin-bottom: 15px;
-
-    border-radius: 12px;
-
-    background: #ffffff;
-
-    border: 1px solid #e5e7eb;
-
-    font-size: 27px;
-}
-
-.scratch-preview strong {
-    font-size: 15px;
-
-    color: #111827;
-}
-
-.scratch-preview > span {
-    margin-top: 7px;
-
-    color: #6b7280;
-
-    font-size: 12px;
-}
-
-
-/* EXISTING CAMPAIGNS */
-
-.campaign-existing-section {
-    margin-top: 20px;
-}
-
-.campaign-existing-list {
-    background: #ffffff;
-
-    border: 1px solid #e5e7eb;
-
-    border-radius: 14px;
-
-    overflow: hidden;
-}
-
-.campaign-existing-item {
-    display: flex;
-
-    align-items: center;
-
-    justify-content: space-between;
-
-    gap: 20px;
-
-    padding: 18px 20px;
-
-    border-bottom: 1px solid #f0f1f3;
-}
-
-.campaign-existing-item:last-child {
-    border-bottom: none;
-}
-
-.campaign-existing-info {
-    min-width: 0;
-}
-
-.campaign-existing-info h3 {
-    margin: 0 0 5px;
-
-    font-size: 14px;
-
-    color: #111827;
-}
-
-.campaign-existing-info p {
-    margin: 0;
-
-    color: #6b7280;
-
-    font-size: 13px;
-
-    white-space: nowrap;
-
-    overflow: hidden;
-
-    text-overflow: ellipsis;
-
-    max-width: 650px;
-}
-
-.campaign-existing-meta {
-    display: flex;
-
-    align-items: center;
-
-    gap: 12px;
-
-    flex-shrink: 0;
-}
-
-.campaign-status {
-    padding: 5px 9px;
-
-    border-radius: 999px;
-
-    background: #f3f4f6;
-
-    color: #4b5563;
-
-    font-size: 11px;
-
-    font-weight: 600;
-}
-
-.campaign-view-button {
-    display: inline-flex;
-
-    align-items: center;
-
-    justify-content: center;
-
-    padding: 8px 14px;
-
-    border-radius: 8px;
-
-    background: #111827;
-
-    color: #ffffff;
-
-    font-size: 12px;
-
-    font-weight: 600;
-
-    text-decoration: none;
-}
-
-.campaign-view-button:hover {
-    background: #1f2937;
-
-    color: #ffffff;
-
-    text-decoration: none;
-}
-
-
-/* RESPONSIVE */
-
-@media (max-width: 1100px) {
-
-    .campaign-template-grid {
-        grid-template-columns:
-            repeat(3, minmax(0, 1fr));
-    }
-
-}
-
-
-@media (max-width: 800px) {
-
-    .campaign-template-grid {
-        grid-template-columns:
-            repeat(2, minmax(0, 1fr));
-    }
-
-}
-
-
-@media (max-width: 560px) {
-
-    .campaign-template-grid {
-        grid-template-columns:
-            1fr;
-    }
-
-    .campaign-existing-item {
-        flex-direction: column;
-
-        align-items: flex-start;
-    }
-
-    .campaign-existing-meta {
+    /* =========================================================
+       CAMPAIGNS PAGE
+       ========================================================= */
+
+    .campaign-page {
         width: 100%;
-
-        justify-content: space-between;
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 12px 0 70px;
     }
 
+    /* =========================================================
+       PAGE HEADER
+       ========================================================= */
+
+    .campaign-page-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 30px;
+    }
+
+    .campaign-page-header h1 {
+        margin: 0;
+        color: #111827;
+        font-size: 28px;
+        font-weight: 700;
+        letter-spacing: -0.6px;
+    }
+
+    /* =========================================================
+       NEW CAMPAIGN BUTTON
+       ========================================================= */
+
+    .new-campaign-button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 7px;
+        min-height: 40px;
+        padding: 0 16px;
+        border: 1px solid #111827;
+        border-radius: 8px;
+        background: #111827;
+        color: #ffffff;
+        font-size: 13px;
+        font-weight: 600;
+        text-decoration: none;
+
+        box-shadow:
+            0 1px 2px rgba(15, 23, 42, 0.08);
+
+        transition:
+            background 0.18s ease,
+            box-shadow 0.18s ease,
+            transform 0.18s ease;
+    }
+
+    .new-campaign-button span {
+        font-size: 17px;
+        font-weight: 400;
+        line-height: 1;
+    }
+
+    .new-campaign-button:hover {
+        background: #1f2937;
+        color: #ffffff;
+        text-decoration: none;
+        transform: translateY(-1px);
+
+        box-shadow:
+            0 4px 10px rgba(15, 23, 42, 0.12);
+    }
+
+    /* =========================================================
+       TABLE CONTAINER
+       ========================================================= */
+
+    .campaign-table-card {
+        width: 100%;
+        background: #ffffff;
+        border: 1px solid #e6e8ec;
+        border-radius: 12px;
+        overflow: visible;
+
+        box-shadow:
+            0 1px 2px rgba(15, 23, 42, 0.025);
+    }
+
+    .campaign-table-wrapper {
+        width: 100%;
+        overflow-x: auto;
+        border-radius: 12px;
+    }
+
+    /* =========================================================
+       TABLE
+       ========================================================= */
+
+    .campaign-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        table-layout: fixed;
+    }
+
+    /* =========================================================
+       TABLE HEADER
+       ========================================================= */
+
+    .campaign-table thead {
+        background: #fafafa;
+    }
+
+    .campaign-table th {
+        height: 48px;
+        padding: 0 20px;
+        border-bottom: 1px solid #e8eaee;
+        color: #737b87;
+        font-size: 10px;
+        font-weight: 700;
+        text-align: left;
+        text-transform: uppercase;
+        letter-spacing: 0.07em;
+        white-space: nowrap;
+    }
+
+    /* =========================================================
+       COLUMN WIDTHS
+       ========================================================= */
+
+    .campaign-table th:nth-child(1) {
+        width: 39%;
+    }
+
+    .campaign-table th:nth-child(2) {
+        width: 19%;
+    }
+
+    .campaign-table th:nth-child(3) {
+        width: 17%;
+    }
+
+    .campaign-table th:nth-child(4) {
+        width: 17%;
+    }
+
+    .campaign-table th:nth-child(5) {
+        width: 8%;
+    }
+
+    /* =========================================================
+       TABLE BODY
+       ========================================================= */
+
+    .campaign-table td {
+        height: 68px;
+        padding: 0 20px;
+        border-bottom: 1px solid #f0f1f3;
+        color: #374151;
+        font-size: 13px;
+        vertical-align: middle;
+    }
+
+    .campaign-table tbody tr:last-child td {
+        border-bottom: none;
+    }
+
+    .campaign-table tbody tr {
+        background: #ffffff;
+        transition: background 0.15s ease;
+    }
+
+    .campaign-table tbody tr:hover {
+        background: #fafbfc;
+    }
+
+    /* =========================================================
+       SUBJECT
+       ========================================================= */
+
+    .campaign-subject {
+        display: block;
+        max-width: 100%;
+        overflow: hidden;
+        color: #1f2937;
+        font-size: 14px;
+        font-weight: 600;
+        line-height: 1.4;
+        text-decoration: none;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        transition: color 0.15s ease;
+    }
+
+    .campaign-subject:hover {
+        color: #111827;
+        text-decoration: none;
+    }
+
+    /* =========================================================
+       DATE
+       ========================================================= */
+
+    .campaign-date {
+        color: #6b7280;
+        font-size: 13px;
+        white-space: nowrap;
+    }
+
+    /* =========================================================
+       RECIPIENT NUMBER
+       ========================================================= */
+
+    .campaign-number {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 30px;
+        height: 28px;
+        padding: 0 9px;
+        border: 1px solid #e5e7eb;
+        border-radius: 7px;
+        background: #f9fafb;
+        color: #374151;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    /* =========================================================
+       UNSUBSCRIBED
+       ========================================================= */
+
+    .unsubscribe-count {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 30px;
+        height: 28px;
+        padding: 0 9px;
+        border-radius: 7px;
+        background: #fff1f2;
+        color: #be123c;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    .empty-count {
+        color: #b0b6bf;
+        font-size: 15px;
+        font-weight: 500;
+    }
+
+    /* =========================================================
+       ACTION COLUMN
+       ========================================================= */
+
+    .actions-column {
+        width: 60px;
+        padding-left: 10px !important;
+        padding-right: 12px !important;
+        text-align: center !important;
+    }
+
+    .campaign-table td.actions-column {
+        position: relative;
+        text-align: center;
+    }
+
+    /* =========================================================
+       THREE DOT MENU
+       ========================================================= */
+
+    .campaign-menu {
+        position: relative;
+        display: inline-flex;
+    }
+
+    .campaign-menu-button {
+        width: 34px;
+        height: 34px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+        border: 1px solid transparent;
+        border-radius: 7px;
+        background: transparent;
+        color: #737b87;
+        font-size: 20px;
+        font-weight: 600;
+        line-height: 1;
+        cursor: pointer;
+
+        transition:
+            background 0.15s ease,
+            border-color 0.15s ease,
+            color 0.15s ease;
+    }
+
+    .campaign-menu-button:hover {
+        border-color: #e5e7eb;
+        background: #f8fafc;
+        color: #111827;
+    }
+
+    /* =========================================================
+       DROPDOWN
+       ========================================================= */
+
+    .campaign-menu-dropdown {
+        display: none;
+        position: absolute;
+        z-index: 1000;
+        top: 39px;
+        right: 0;
+        width: 156px;
+        padding: 5px;
+        border: 1px solid #e5e7eb;
+        border-radius: 9px;
+        background: #ffffff;
+
+        box-shadow:
+            0 12px 30px rgba(15, 23, 42, 0.13);
+
+        text-align: left;
+    }
+
+    .campaign-menu-dropdown.show {
+        display: block;
+    }
+
+    .campaign-menu-dropdown button {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        padding: 9px 10px;
+        border: none;
+        border-radius: 6px;
+        background: transparent;
+        color: #374151;
+        font-size: 12px;
+        font-weight: 500;
+        text-align: left;
+        cursor: pointer;
+
+        transition:
+            background 0.12s ease,
+            color 0.12s ease;
+    }
+
+    .campaign-menu-dropdown button:hover {
+        background: #f3f4f6;
+        color: #111827;
+    }
+
+    .campaign-menu-dropdown .delete-menu-item {
+        color: #dc2626;
+    }
+
+    .campaign-menu-dropdown .delete-menu-item:hover {
+        background: #fef2f2;
+        color: #b91c1c;
+    }
+
+    /* =========================================================
+       EMPTY STATE
+       ========================================================= */
+
+    .campaign-empty-state {
+        padding: 90px 30px;
+        text-align: center;
+    }
+
+    .campaign-empty-icon {
+        width: 58px;
+        height: 58px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 18px;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        background: #f8fafc;
+        color: #4b5563;
+        font-size: 24px;
+    }
+
+    .campaign-empty-state h2 {
+        margin: 0 0 7px;
+        color: #111827;
+        font-size: 18px;
+        font-weight: 700;
+    }
+
+    .campaign-empty-state p {
+        margin: 0 0 22px;
+        color: #737b87;
+        font-size: 13px;
+    }
+
+    .empty-new-campaign-button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 38px;
+        padding: 0 15px;
+        border-radius: 8px;
+        background: #111827;
+        color: #ffffff;
+        font-size: 12px;
+        font-weight: 600;
+        text-decoration: none;
+    }
+
+    .empty-new-campaign-button:hover {
+        background: #1f2937;
+        color: #ffffff;
+        text-decoration: none;
+    }
+
+    /* =========================================================
+       RESPONSIVE
+       ========================================================= */
+
+    @media (max-width: 800px) {
+        .campaign-page-header h1 {
+            font-size: 25px;
+        }
+
+        .campaign-table {
+            min-width: 760px;
+        }
+    }
+
+    @media (max-width: 560px) {
+        .campaign-page {
+            padding-top: 5px;
+        }
+
+        .campaign-page-header {
+            gap: 15px;
+        }
+
+        .campaign-page-header h1 {
+            font-size: 23px;
+        }
+
+        .new-campaign-button {
+            min-height: 38px;
+            padding: 0 12px;
+            font-size: 12px;
+        }
+    }
+</style>
+
+<!-- =========================================================
+     JAVASCRIPT
+     ========================================================= -->
+
+<script>
+
+/*
+ * Open / close the three-dot campaign menu.
+ */
+
+function toggleCampaignMenu(campaignId) {
+
+    const menu =
+        document.getElementById(
+            "campaign-menu-" + campaignId
+        );
+
+
+    /*
+     * Close all other open menus first.
+     */
+
+    document
+        .querySelectorAll(".campaign-menu-dropdown")
+        .forEach(function (item) {
+
+            if (item !== menu) {
+
+                item.classList.remove("show");
+
+            }
+
+        });
+
+
+    /*
+     * Toggle this menu.
+     */
+
+    menu.classList.toggle("show");
 }
 
-</style>
+
+/*
+ * Close menus when clicking outside.
+ */
+
+document.addEventListener(
+    "click",
+    function (event) {
+
+        if (
+            !event.target.closest(
+                ".campaign-menu"
+            )
+        ) {
+
+            document
+                .querySelectorAll(
+                    ".campaign-menu-dropdown"
+                )
+                .forEach(function (menu) {
+
+                    menu.classList.remove(
+                        "show"
+                    );
+
+                });
+
+        }
+
+    }
+);
+
+
+/*
+ * These three actions are intentionally
+ * placeholders for now.
+ *
+ * We will connect them to Flask routes
+ * after the new layout is confirmed.
+ */
+
+
+function submitCampaignAction(campaignId, action) {
+
+    const messages = {
+        duplicate: {
+            url: "/campaign/" + campaignId + "/duplicate",
+            confirm: "Create a new draft from this campaign?"
+        },
+        resend: {
+            url: "/campaign/" + campaignId + "/resend",
+            confirm: "Prepare a new draft for resending? No email will be sent until you confirm sending it."
+        },
+        delete: {
+            url: "/campaign/" + campaignId + "/delete",
+            confirm: "Are you sure you want to delete this campaign? This cannot be undone."
+        }
+    };
+
+    const selectedAction = messages[action];
+
+    if (!selectedAction) {
+        return;
+    }
+
+    if (!window.confirm(selectedAction.confirm)) {
+        return;
+    }
+
+    const form = document.createElement("form");
+
+    form.method = "POST";
+    form.action = selectedAction.url;
+    form.style.display = "none";
+
+    document.body.appendChild(form);
+
+    form.submit();
+}
+
+
+function duplicateCampaign(campaignId) {
+    submitCampaignAction(campaignId, "duplicate");
+}
+
+
+function resendCampaign(campaignId) {
+    submitCampaignAction(campaignId, "resend");
+}
+
+
+function deleteCampaign(campaignId) {
+    submitCampaignAction(campaignId, "delete");
+}
+
+
+</script>
 
 {% endblock %}

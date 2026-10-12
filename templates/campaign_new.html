@@ -1,0 +1,788 @@
+
+{% extends "dashboard_base.html" %}
+
+{% block title %}New Campaign - EmailFlow{% endblock %}
+
+{% block content %}
+
+<div class="new-campaign-page">
+
+    <!-- PAGE HEADER -->
+    <div class="new-campaign-header">
+        <div>
+            <h1>New Campaign</h1>
+            <p>Choose a template to get started.</p>
+        </div>
+
+        <a href="{{ url_for('campaigns') }}" class="back-button">
+            ← Back to campaigns
+        </a>
+    </div>
+
+
+    <!-- START FROM SCRATCH -->
+    <section class="template-section scratch-section">
+
+        <div class="section-heading">
+            <h2>Start from scratch</h2>
+            <p>Create your own email from a blank page.</p>
+        </div>
+
+        <div class="scratch-grid">
+            <a
+                href="{{ url_for('create_campaign') }}"
+                class="template-card scratch-card"
+            >
+                <div class="template-preview scratch-preview">
+                    <div class="blank-email">
+                        <div class="blank-logo"></div>
+                        <div class="blank-line line-large"></div>
+                        <div class="blank-line line-medium"></div>
+                        <div class="blank-line line-small"></div>
+                        <div class="blank-gap"></div>
+                        <div class="blank-line line-large"></div>
+                        <div class="blank-line line-medium"></div>
+                        <div class="blank-line line-small"></div>
+                    </div>
+                </div>
+
+                <div class="template-card-footer">
+                    <div class="template-information">
+                        <h3>Plain page</h3>
+                        <p>Start with a blank campaign</p>
+                    </div>
+                    <span class="template-arrow">→</span>
+                </div>
+            </a>
+        </div>
+
+    </section>
+
+
+    <!-- TEMPLATE LIBRARY -->
+    <section class="template-section templates-section">
+
+        {% set user_templates = templates
+            |selectattr("is_system_template", "equalto", false)
+            |list
+        %}
+
+        {% set system_templates = templates
+            |selectattr("is_system_template", "equalto", true)
+            |list
+        %}
+
+        {% set all_templates = user_templates + system_templates %}
+
+        <div class="section-heading template-heading">
+            <div>
+                <h2>Email Templates</h2>
+                <p>Choose a professionally designed template for your next campaign.</p>
+            </div>
+
+            <span class="template-count">
+                {{ all_templates|length }} templates
+            </span>
+        </div>
+
+
+        <!-- CATEGORY FILTERS -->
+        <div class="category-filters">
+            <button type="button" class="category-button active" data-filter="all">
+                All
+            </button>
+
+            <button type="button" class="category-button" data-filter="newsletter">
+                Newsletter
+            </button>
+
+            <button type="button" class="category-button" data-filter="welcome">
+                Welcome
+            </button>
+
+            <button type="button" class="category-button" data-filter="promotion">
+                Promotion
+            </button>
+
+            <button type="button" class="category-button" data-filter="announcement">
+                Announcement
+            </button>
+
+            <button type="button" class="category-button" data-filter="event">
+                Event
+            </button>
+        </div>
+
+
+        {% if all_templates %}
+
+            <div class="template-grid" id="templateGrid">
+
+                {% for template in all_templates %}
+
+                    {% set template_name = template.name|lower %}
+
+                    {% if 'newsletter' in template_name %}
+                        {% set card_category = 'newsletter' %}
+                    {% elif 'welcome' in template_name %}
+                        {% set card_category = 'welcome' %}
+                    {% elif 'promotion' in template_name or 'product' in template_name or 'launch' in template_name or 'sale' in template_name %}
+                        {% set card_category = 'promotion' %}
+                    {% elif 'event' in template_name or 'webinar' in template_name or 'invitation' in template_name %}
+                        {% set card_category = 'event' %}
+                    {% elif 'announcement' in template_name or 'release' in template_name or 'update' in template_name %}
+                        {% set card_category = 'announcement' %}
+                    {% else %}
+                        {% set card_category = 'other' %}
+                    {% endif %}
+
+                    <a
+                        href="{{ url_for('create_campaign', template_id=template.id) }}"
+                        class="template-card library-card"
+                        data-category="{{ card_category }}"
+                        data-template-name="{{ template.name|lower }}"
+                    >
+
+                        <!-- EMAIL PREVIEW -->
+                        <div class="template-preview email-preview">
+
+                            {% if template.html_content %}
+
+                                <iframe
+                                    class="preview-frame"
+                                    title="Preview of {{ template.name }}"
+                                    srcdoc="{{ template.html_content|e }}"
+                                    sandbox
+                                    loading="lazy"
+                                    tabindex="-1"
+                                ></iframe>
+
+                            {% elif template.content %}
+
+                                <div class="preview-text">
+                                    {{ template.content|striptags|truncate(350, true, '...') }}
+                                </div>
+
+                            {% else %}
+
+                                <div class="preview-empty">
+                                    <span class="empty-icon">✉</span>
+                                    <p>No preview available</p>
+                                </div>
+
+                            {% endif %}
+
+                        </div>
+
+
+                        <!-- TEMPLATE DETAILS -->
+                        <div class="template-card-footer">
+
+                            <div class="template-information">
+                                <h3>{{ template.name }}</h3>
+
+                                {% if card_category == 'newsletter' %}
+                                    <p>A clean and professional newsletter email.</p>
+                                {% elif card_category == 'welcome' %}
+                                    <p>A friendly welcome email for new subscribers.</p>
+                                {% elif card_category == 'promotion' %}
+                                    <p>A bold promotional email for your audience.</p>
+                                {% elif card_category == 'event' %}
+                                    <p>An email designed to promote your event.</p>
+                                {% elif card_category == 'announcement' %}
+                                    <p>Share important news and updates with your audience.</p>
+                                {% elif template.is_system_template %}
+                                    <p>Professionally designed EmailFlow template.</p>
+                                {% else %}
+                                    <p>Your saved email template.</p>
+                                {% endif %}
+                            </div>
+
+                            <span class="category-badge">
+                                {% if card_category == 'other' %}
+                                    {% if template.is_system_template %}
+                                        EmailFlow
+                                    {% else %}
+                                        My template
+                                    {% endif %}
+                                {% else %}
+                                    {{ card_category|title }}
+                                {% endif %}
+                            </span>
+
+                        </div>
+
+                    </a>
+
+                {% endfor %}
+
+            </div>
+
+            <div class="no-filter-results" id="noFilterResults" hidden>
+                <div class="no-results-icon">✉</div>
+                <h3>No templates in this category</h3>
+                <p>Try another category to see more templates.</p>
+            </div>
+
+        {% else %}
+
+            <div class="empty-templates">
+                <div class="empty-templates-icon">✉</div>
+                <h3>No email templates yet</h3>
+                <p>Your available templates will appear here.</p>
+            </div>
+
+        {% endif %}
+
+    </section>
+
+</div>
+
+
+<style>
+
+/* PAGE */
+
+.new-campaign-page {
+    width: 100%;
+    max-width: 1450px;
+    margin: 0 auto;
+    padding: 24px 0 65px;
+    color: #111827;
+    box-sizing: border-box;
+}
+
+.new-campaign-page *,
+.new-campaign-page *::before,
+.new-campaign-page *::after {
+    box-sizing: border-box;
+}
+
+
+/* HEADER */
+
+.new-campaign-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 24px;
+    margin-bottom: 38px;
+}
+
+.new-campaign-header h1 {
+    margin: 0 0 7px;
+    font-size: 29px;
+    line-height: 1.25;
+    font-weight: 750;
+    letter-spacing: -0.7px;
+    color: #111827;
+}
+
+.new-campaign-header p {
+    margin: 0;
+    font-size: 15px;
+    line-height: 1.6;
+    color: #64748b;
+}
+
+.back-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    min-height: 42px;
+    padding: 0 16px;
+    border: 1px solid #e5e7eb;
+    border-radius: 9px;
+    background: #ffffff;
+    color: #374151;
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 600;
+    transition: 0.18s ease;
+}
+
+.back-button:hover {
+    background: #f9fafb;
+    border-color: #d1d5db;
+    color: #111827;
+}
+
+
+/* SECTIONS */
+
+.template-section {
+    margin-bottom: 42px;
+    width: 100%;
+}
+
+.section-heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 18px;
+    margin-bottom: 19px;
+}
+
+.section-heading h2 {
+    margin: 0 0 5px;
+    font-size: 21px;
+    line-height: 1.4;
+    font-weight: 700;
+    letter-spacing: -0.35px;
+    color: #111827;
+}
+
+.section-heading p {
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.6;
+    color: #64748b;
+}
+
+.template-count {
+    flex-shrink: 0;
+    padding: 7px 11px;
+    border-radius: 8px;
+    background: #f3f4f6;
+    color: #64748b;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+
+/* SCRATCH CARD */
+
+.scratch-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    max-width: 390px;
+}
+
+.template-card {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    overflow: hidden;
+    border: 1px solid #e5e7eb;
+    border-radius: 13px;
+    background: #ffffff;
+    color: inherit;
+    text-decoration: none;
+    box-shadow: 0 2px 5px rgba(15, 23, 42, 0.035);
+    transition:
+        transform 0.18s ease,
+        border-color 0.18s ease,
+        box-shadow 0.18s ease;
+}
+
+.template-card:hover {
+    transform: translateY(-3px);
+    border-color: #d7d9e2;
+    color: inherit;
+    text-decoration: none;
+    box-shadow: 0 10px 26px rgba(15, 23, 42, 0.09);
+}
+
+
+/* PREVIEW AREA */
+
+.template-preview {
+    position: relative;
+    width: 100%;
+    height: 300px;
+    overflow: hidden;
+    border-bottom: 1px solid #eef0f3;
+    background: #f3f4f6;
+}
+
+.scratch-preview {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: #f0f2f7;
+}
+
+.blank-email {
+    width: 78%;
+    height: 225px;
+    padding: 25px;
+    overflow: hidden;
+    border: 1px solid #e5e7eb;
+    border-radius: 3px;
+    background: #ffffff;
+    box-shadow: 0 3px 12px rgba(15, 23, 42, 0.05);
+}
+
+.blank-logo {
+    width: 38px;
+    height: 8px;
+    margin-bottom: 23px;
+    border-radius: 2px;
+    background: #dbeafe;
+}
+
+.blank-line {
+    height: 6px;
+    margin-bottom: 10px;
+    border-radius: 3px;
+    background: #e5e7eb;
+}
+
+.line-large {
+    width: 85%;
+}
+
+.line-medium {
+    width: 65%;
+}
+
+.line-small {
+    width: 42%;
+}
+
+.blank-gap {
+    height: 30px;
+}
+
+
+/* HTML EMAIL PREVIEWS */
+
+.email-preview {
+    background: #f0f2f7;
+}
+
+.preview-frame {
+    display: block;
+    width: 200%;
+    height: 600px;
+    max-width: none;
+    border: 0;
+    background: #ffffff;
+    transform: scale(0.5);
+    transform-origin: top left;
+    pointer-events: none;
+}
+
+.preview-text {
+    height: 100%;
+    padding: 24px;
+    overflow: hidden;
+    background: #ffffff;
+    color: #475569;
+    font-size: 13px;
+    line-height: 1.7;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+.preview-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    background: #ffffff;
+    color: #9ca3af;
+}
+
+.empty-icon {
+    font-size: 32px;
+    margin-bottom: 8px;
+}
+
+.preview-empty p {
+    margin: 0;
+    font-size: 13px;
+}
+
+
+/* CARD FOOTER */
+
+.template-card-footer {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    min-height: 91px;
+    padding: 17px 18px;
+    background: #ffffff;
+}
+
+.template-information {
+    min-width: 0;
+    flex: 1;
+}
+
+.template-information h3 {
+    margin: 0 0 8px;
+    overflow-wrap: anywhere;
+    color: #111827;
+    font-size: 16px;
+    line-height: 1.4;
+    font-weight: 700;
+}
+
+.template-information p {
+    margin: 0;
+    color: #64748b;
+    font-size: 13px;
+    line-height: 1.6;
+}
+
+.template-arrow {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    width: 31px;
+    height: 31px;
+    border: 1px solid #e5e7eb;
+    border-radius: 7px;
+    background: #ffffff;
+    color: #475569;
+    font-size: 17px;
+    transition: 0.18s ease;
+}
+
+.template-card:hover .template-arrow {
+    border-color: #6254f4;
+    background: #6254f4;
+    color: #ffffff;
+}
+
+
+/* CATEGORY FILTERS */
+
+.category-filters {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    margin: 25px 0 27px;
+}
+
+.category-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 38px;
+    padding: 0 17px;
+    border: 1px solid #e5e7eb;
+    border-radius: 22px;
+    background: #ffffff;
+    color: #475569;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: 0.18s ease;
+}
+
+.category-button:hover {
+    border-color: #cbd5e1;
+    background: #f8fafc;
+}
+
+.category-button.active {
+    border-color: #111827;
+    background: #111827;
+    color: #ffffff;
+}
+
+
+/* TEMPLATE GRID */
+
+.template-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 25px;
+    align-items: stretch;
+}
+
+.library-card {
+    height: 100%;
+}
+
+.category-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    max-width: 110px;
+    padding: 6px 10px;
+    overflow: hidden;
+    border-radius: 20px;
+    background: #f3f4f6;
+    color: #64748b;
+    font-size: 11px;
+    line-height: 1.3;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+
+/* EMPTY STATES */
+
+.empty-templates,
+.no-filter-results {
+    padding: 55px 20px;
+    border: 1px dashed #d8dee8;
+    border-radius: 12px;
+    background: #ffffff;
+    text-align: center;
+}
+
+.empty-templates-icon,
+.no-results-icon {
+    margin-bottom: 12px;
+    color: #9ca3af;
+    font-size: 34px;
+}
+
+.empty-templates h3,
+.no-filter-results h3 {
+    margin: 0 0 8px;
+    color: #111827;
+    font-size: 17px;
+}
+
+.empty-templates p,
+.no-filter-results p {
+    margin: 0;
+    color: #64748b;
+    font-size: 13px;
+}
+
+
+/* RESPONSIVE LAYOUT */
+
+@media (min-width: 1500px) {
+    .template-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 27px;
+    }
+
+    .template-preview {
+        height: 330px;
+    }
+}
+
+@media (max-width: 1100px) {
+    .template-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 20px;
+    }
+
+    .template-preview {
+        height: 270px;
+    }
+}
+
+@media (max-width: 650px) {
+    .new-campaign-page {
+        padding-top: 12px;
+    }
+
+    .new-campaign-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 17px;
+        margin-bottom: 32px;
+    }
+
+    .new-campaign-header h1 {
+        font-size: 25px;
+    }
+
+    .section-heading h2 {
+        font-size: 19px;
+    }
+
+    .template-heading {
+        align-items: flex-start;
+    }
+
+    .template-grid {
+        grid-template-columns: 1fr;
+        gap: 19px;
+    }
+
+    .template-preview {
+        height: 300px;
+    }
+
+    .scratch-grid {
+        max-width: 100%;
+    }
+
+    .category-filters {
+        gap: 8px;
+        margin: 20px 0 22px;
+    }
+
+    .category-button {
+        min-height: 35px;
+        padding: 0 13px;
+        font-size: 12px;
+    }
+
+    .template-card-footer {
+        padding: 15px;
+    }
+
+    .template-count {
+        font-size: 11px;
+    }
+}
+
+</style>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+    const filterButtons = document.querySelectorAll(".category-button");
+    const templateCards = document.querySelectorAll(".library-card");
+    const noResults = document.getElementById("noFilterResults");
+
+    filterButtons.forEach(function (button) {
+
+        button.addEventListener("click", function () {
+
+            const selectedCategory = button.dataset.filter;
+            let visibleCount = 0;
+
+            filterButtons.forEach(function (item) {
+                item.classList.remove("active");
+            });
+
+            button.classList.add("active");
+
+            templateCards.forEach(function (card) {
+
+                const cardCategory = card.dataset.category;
+
+                const shouldShow =
+                    selectedCategory === "all" ||
+                    cardCategory === selectedCategory;
+
+                card.hidden = !shouldShow;
+
+                if (shouldShow) {
+                    visibleCount++;
+                }
+            });
+
+            if (noResults) {
+                noResults.hidden = visibleCount !== 0;
+            }
+
+        });
+
+    });
+
+});
+</script>
+
+{% endblock %}

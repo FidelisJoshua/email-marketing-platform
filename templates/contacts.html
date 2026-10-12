@@ -1,673 +1,1955 @@
 {% extends "dashboard_base.html" %}
 
-{% block title %}
-Contacts - EmailFlow
-{% endblock %}
+{% block title %}Contacts - EmailFlow{% endblock %}
 
 {% block content %}
 
-<!-- =====================================================
-     CONTACTS PAGE HEADER
-     ===================================================== -->
+<div class="subscribers-page">
 
-<div class="page-header">
+    <!-- PAGE HEADER -->
+    <div class="subscribers-header">
+        <div>
+            <div class="page-eyebrow">AUDIENCE</div>
+            <h1 class="page-title">Contacts</h1>
+            <p class="page-subtitle">
+                Manage and organize the people in your audience.
+            </p>
+        </div>
+    </div>
 
-    <div>
+    <!-- SUMMARY CARDS -->
+    <div class="subscriber-stats">
 
-        <div class="page-eyebrow">
-            AUDIENCE
+        <div class="subscriber-stat-card">
+            <div class="stat-card-top">
+                <span>Total Subscribers</span>
+                <span class="stat-card-icon">♙</span>
+            </div>
+            <div class="stat-card-number">{{ total_subscribers }}</div>
+            <div class="stat-card-caption">People in your audience</div>
         </div>
 
-        <h1 class="page-title">
-            Contacts
-        </h1>
+        <div class="subscriber-stat-card">
+            <div class="stat-card-top">
+                <span>New Subscribers Today</span>
+                <span class="stat-card-icon">↗</span>
+            </div>
+            <div class="stat-card-number">{{ new_today }}</div>
+            <div class="stat-card-caption">Added today</div>
+        </div>
 
-        <p class="page-subtitle">
-            Manage and organize the people who receive your campaigns.
-        </p>
+        <div class="subscriber-stat-card">
+            <div class="stat-card-top">
+                <span>Emails Sent</span>
+                <span class="stat-card-icon">✉</span>
+            </div>
+            <div class="stat-card-number">—</div>
+            <div class="stat-card-caption">Last 90 days</div>
+        </div>
+
+        <!-- ADD SUBSCRIBER DROPDOWN -->
+        <div class="subscriber-stat-card add-subscriber-card">
+            <div class="add-subscriber-menu-wrapper">
+                <button
+                    type="button"
+                    class="add-subscriber-button"
+                    id="addSubscriberButton"
+                    aria-expanded="false"
+                >
+                    + Add Subscriber
+                    <span>⌄</span>
+                </button>
+
+                <div
+                    class="add-subscriber-dropdown"
+                    id="addSubscriberDropdown"
+                    hidden
+                >
+                    <button
+                        type="button"
+                        class="dropdown-option"
+                        id="openSingleSubscriber"
+                    >
+                        <span>＋</span>
+                        <span>
+                            <strong>One subscriber</strong>
+                            <small>Add a single email address</small>
+                        </span>
+                    </button>
+
+                    <button
+                        type="button"
+                        class="dropdown-option"
+                        id="openCsvImport"
+                    >
+                        <span>↑</span>
+                        <span>
+                            <strong>Import CSV</strong>
+                            <small>Import multiple subscribers</small>
+                        </span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="stat-card-caption">Grow your audience</div>
+        </div>
 
     </div>
 
+    <!-- SINGLE SUBSCRIBER MODAL -->
+    <div class="modal-backdrop" id="singleSubscriberModal" hidden>
+        <div class="subscriber-modal">
 
-    <!-- PAGE ACTIONS -->
+            <div class="modal-header">
+                <div>
+                    <h2>Add one subscriber</h2>
+                    <p>Enter the subscriber's details below.</p>
+                </div>
 
-    <div class="page-actions">
+                <button
+                    type="button"
+                    class="modal-close"
+                    data-close-modal="singleSubscriberModal"
+                    aria-label="Close"
+                >×</button>
+            </div>
 
-        <!-- ADD CONTACT -->
+            <form method="POST" action="{{ url_for('contacts') }}">
 
-        <a
-            href="{{ url_for('add_contact') }}"
-            class="primary-button"
-        >
-            + Add Contact
-        </a>
+                <label for="subscriberName">Name</label>
+                <input
+                    type="text"
+                    id="subscriberName"
+                    name="name"
+                    placeholder="Subscriber name"
+                    required
+                >
 
+                <label for="subscriberEmail">Email address</label>
+                <input
+                    type="email"
+                    id="subscriberEmail"
+                    name="email"
+                    placeholder="name@example.com"
+                    required
+                >
 
-        <!-- IMPORT CSV -->
+                <div class="modal-footer">
+                    <button
+                        type="button"
+                        class="modal-cancel"
+                        data-close-modal="singleSubscriberModal"
+                    >Cancel</button>
 
+                    <button type="submit" class="primary-button">
+                        Add subscriber
+                    </button>
+                </div>
+
+            </form>
+        </div>
+    </div>
+
+    <!-- CSV IMPORT MODAL -->
+    <div class="modal-backdrop" id="csvImportModal" hidden>
+        <div class="subscriber-modal">
+
+            <div class="modal-header">
+                <div>
+                    <h2>Import subscribers</h2>
+                    <p>Choose a CSV file to map its columns.</p>
+                </div>
+
+                <button
+                    type="button"
+                    class="modal-close"
+                    data-close-modal="csvImportModal"
+                    aria-label="Close"
+                >×</button>
+            </div>
+
+            <form
+                method="POST"
+                action="{{ url_for('import_csv') }}"
+                enctype="multipart/form-data"
+            >
+                <label for="subscriberCsvFile">CSV file</label>
+                <input
+                    type="file"
+                    id="subscriberCsvFile"
+                    name="csv_file"
+                    accept=".csv"
+                    required
+                >
+
+                <p class="modal-help">
+                    You'll choose which columns contain names and email
+                    addresses on the next step.
+                </p>
+
+                <div class="modal-footer">
+                    <button
+                        type="button"
+                        class="modal-cancel"
+                        data-close-modal="csvImportModal"
+                    >Cancel</button>
+
+                    <button type="submit" class="primary-button">
+                        Continue
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- SUBSCRIBERS CONTENT -->
+    <div class="content-card subscribers-card">
+
+        <div class="subscriber-list-header">
+            <div>
+                <h2 class="dashboard-card-title">Subscribers</h2>
+                <p class="dashboard-card-subtitle">
+                    View and manage your audience.
+                </p>
+            </div>
+
+            <div class="subscriber-total">
+                {{ total_filtered }} subscribers
+            </div>
+        </div>
+
+        <!-- SEARCH AND FILTERS -->
         <form
-            action="{{ url_for('import_csv') }}"
-            method="POST"
-            enctype="multipart/form-data"
-            class="csv-import-form"
+            method="GET"
+            action="{{ url_for('contacts') }}"
+            class="subscriber-filters"
+            id="subscriberFilters"
         >
 
-            <label
-                for="csv_file"
-                class="secondary-button csv-label"
-            >
-                ↑ Import CSV
-            </label>
+            <div class="subscriber-search">
+                <span>⌕</span>
+                <input
+                    type="search"
+                    name="search"
+                    value="{{ search }}"
+                    placeholder="Search subscribers..."
+                    aria-label="Search subscribers by name or email"
+                >
+            </div>
 
-            <input
-                type="file"
-                id="csv_file"
-                name="csv_file"
-                accept=".csv"
-                class="csv-input"
-                onchange="this.form.submit()"
+
+            <div class="segments-dropdown">
+                <button
+                    type="button"
+                    class="filter-select segments-dropdown-button"
+                    id="segmentsDropdownButton"
+                    aria-expanded="false"
+                >
+                    {% if selected_segment %}
+                        {{ selected_segment.name }}
+                    {% else %}
+                        Segments
+                    {% endif %}
+                    <span>⌄</span>
+                </button>
+
+                <div
+                    class="segments-dropdown-menu"
+                    id="segmentsDropdownMenu"
+                    hidden
+                >
+                    <a
+                        href="{{ url_for('create_segment_page') }}"
+                        class="segment-create-option"
+                    >
+                        <span>＋</span> Create new segment
+                    </a>
+
+                    <div class="segments-dropdown-divider"></div>
+
+                    <a
+                        href="{{ url_for('contacts') }}"
+                        class="segment-option"
+                    >
+                        All segments
+                    </a>
+
+                    {% for segment in segments %}
+                        <a
+                            href="{{ url_for('contacts', segment_id=segment.id) }}"
+                            class="segment-option"
+                        >
+                            {{ segment.name }}
+                        </a>
+                    {% else %}
+                        <div class="segments-empty">
+                            No segments created yet
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <select
+                name="status"
+                onchange="this.form.requestSubmit()"
+                aria-label="Filter by status"
+                class="filter-select"
             >
+
+                <option value="all"
+                    {% if status =="all" %}selected{% endif %}>
+                    All statuses
+                </option>
+
+                <option value="confirmed"
+                    {% if status =="confirmed" %}selected{% endif %}>
+                    Confirmed
+                </option>
+
+                <option value="unconfirmed"
+                    {% if status =="unconfirmed" %}selected{% endif %}>
+                    Unconfirmed
+                </option>
+
+                <option value="unsubscribed"
+                    {% if status =="unsubscribed" %}selected{% endif %}>
+                    Unsubscribed
+                </option>
+            </select
+                    >
+
+            <input type="hidden" name="per_page" value="{{ per_page }}">
+
+            {% if search or status != "all" %}
+                <a href="{{ url_for('contacts') }}" class="clear-filters">
+                    Clear
+                </a>
+            {% endif %}
 
         </form>
 
-    </div>
+        <!-- SELECTION TOOLBAR -->
+        <div class="selection-toolbar" id="selectionToolbar" hidden>
 
-</div>
+            <div class="selection-toolbar-left">
+                <strong>
+                    <span id="selectedCount">0</span> selected
+                </strong>
 
-
-<!-- =====================================================
-     CONTACT STATISTICS
-     ===================================================== -->
-
-<div class="stats-grid">
-
-    <div class="stat-card">
-
-        <div class="stat-top">
-
-            <div class="stat-label">
-                Total Contacts
+                <button
+                    type="button"
+                    id="selectAllMatching"
+                    class="select-all-button"
+                >
+                    Select all
+                </button>
             </div>
 
-            <div class="stat-icon">
-                👥
+            <div class="selection-menu-wrapper">
+
+                <button
+                    type="button"
+                    id="bulkMenuButton"
+                    class="bulk-menu-button"
+                    aria-label="Subscriber actions"
+                    aria-expanded="false"
+                >⋯</button>
+
+                <div class="bulk-menu" id="bulkMenu" hidden>
+
+                    <button type="button" data-bulk-action="edit">
+                        Edit
+                    </button>
+
+                    <button type="button" data-bulk-action="unsubscribe">
+                        Unsubscribe
+                    </button>
+
+                    <button type="button" data-bulk-action="segment">
+                        Add to segment
+                    </button>
+
+                    <div class="bulk-menu-divider"></div>
+
+                    <button
+                        type="button"
+                        class="danger-action"
+                        data-bulk-action="delete"
+                    >
+                        Delete
+                    </button>
+
+                </div>
             </div>
-
         </div>
 
-        <div class="stat-number">
-            {{ contacts|length }}
-        </div>
-
-        <div class="stat-footer">
-            People in your audience
-        </div>
-
-    </div>
-
-</div>
-
-
-<!-- =====================================================
-     CONTACTS CARD
-     ===================================================== -->
-
-<div class="content-card">
-
-    <!-- TOOLBAR -->
-
-    <div class="card-toolbar">
-
-        <div>
-
-            <div class="dashboard-card-title">
-                All Contacts
-            </div>
-
-            <div class="dashboard-card-subtitle">
-                View and manage your audience
-            </div>
-
-        </div>
-
-
-        <!-- SEARCH -->
-
-        <input
-            type="text"
-            id="contactSearch"
-            class="search-input"
-            placeholder="Search contacts..."
-            onkeyup="searchContacts()"
+        <!-- SUBSCRIBER TABLE -->
+        <form
+            method="POST"
+            action="{{ url_for('bulk_delete_contacts') }}"
+            id="bulkDeleteForm"
         >
 
-    </div>
-
-
-    <!-- =================================================
-         BULK DELETE FORM
-         ================================================= -->
-
-    <form
-        method="POST"
-        action="{{ url_for('bulk_delete_contacts') }}"
-        onsubmit="return confirmBulkDelete();"
-    >
-
-        <div class="table-wrapper">
-
-            <table
-                class="custom-table"
-                id="contactsTable"
+            <input
+                type="hidden"
+                name="select_all_matching"
+                id="selectAllMatchingInput"
+                value="false"
             >
 
-                <!-- TABLE HEADER -->
+            <input type="hidden" name="search" value="{{ search }}">
+            <input type="hidden" name="status" value="{{ status }}">
 
-                <thead>
+            <div class="table-wrapper">
 
-                    <tr>
+                <table class="custom-table subscriber-table">
 
-                        <th style="width: 45px;">
+                    <thead>
+                        <tr>
+                            <th class="checkbox-column">
+                                <input
+                                    type="checkbox"
+                                    id="selectPage"
+                                    aria-label="Select subscribers on this page"
+                                >
+                            </th>
+                            <th>Subscriber</th>
+                            <th>Date added</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
 
-                            <input
-                                type="checkbox"
-                                id="selectAll"
-                                onclick="toggleAllContacts()"
-                            >
-
-                        </th>
-
-
-                        <th>
-                            ID
-                        </th>
-
-                        <th>
-                            Name
-                        </th>
-
-                        <th>
-                            Email
-                        </th>
-
-                        <th>
-                            Date Added
-                        </th>
-
-                    </tr>
-
-                </thead>
-
-
-                <!-- TABLE BODY -->
-
-                <tbody>
-
-                {% if contacts %}
+                    <tbody>
 
                     {% for contact in contacts %}
-
                         <tr>
-
-                            <!-- SELECT CONTACT -->
-
-                            <td>
-
+                            <td class="checkbox-column">
                                 <input
                                     type="checkbox"
                                     name="contact_ids"
                                     value="{{ contact.id }}"
-                                    class="contact-checkbox"
+                                    class="subscriber-checkbox"
+                                    aria-label="Select {{ contact.name }}"
                                 >
-
                             </td>
 
-
-                            <!-- CONTACT ID -->
-
                             <td>
+                                <div class="subscriber-identity">
+                                    <div class="subscriber-avatar">
+                                        {{ contact.name[:1]|upper }}
+                                    </div>
 
-                                {{ contact.id }}
-
-                            </td>
-
-
-                            <!-- NAME -->
-
-                            <td>
-
-                                <div class="contact-name">
-
-                                    {{ contact.name }}
-
+                                    <div class="subscriber-identity-text">
+                                        <div class="subscriber-name">
+                                            {{ contact.name }}
+                                        </div>
+                                        <div class="subscriber-email">
+                                            {{ contact.email }}
+                                        </div>
+                                    </div>
                                 </div>
-
                             </td>
 
-
-                            <!-- EMAIL -->
-
-                            <td>
-
-                                <div class="contact-email">
-
-                                    {{ contact.email }}
-
-                                </div>
-
-                            </td>
-
-
-                            <!-- DATE -->
-
-                            <td>
-
+                            <td class="date-cell">
                                 {% if contact.created_at %}
-
-                                    {{ contact.created_at }}
-
+                                    {{ contact.created_at.strftime("%b %d, %Y") }}
                                 {% else %}
-
-                                    -
-
+                                    —
                                 {% endif %}
-
                             </td>
-
-
-                            <!-- ACTIONS -->
 
                             <td>
-
-                                <div class="contact-actions">
-
-                                    <a
-                                        href="{{ url_for(
-                                            'edit_contact',
-                                            contact_id=contact.id
-                                        ) }}"
-                                        class="btn-secondary-custom"
-                                    >
-                                        Edit
-                                    </a>
-
-
-                                    <a
-                                        href="{{ url_for(
-                                            'delete_contact',
-                                            contact_id=contact.id
-                                        ) }}"
-                                        class="btn-secondary-custom delete-button"
-                                        onclick="return confirm(
-                                            'Are you sure you want to delete this contact?'
-                                        );"
-                                    >
-                                        Delete
-                                    </a>
-
-                                </div>
-
+                                {% if contact.unsubscribed %}
+                                    <span class="status-badge status-unsubscribed">
+                                        Unsubscribed
+                                    </span>
+                                {% else %}
+                                    <span class="status-badge status-confirmed">
+                                        Confirmed
+                                    </span>
+                                {% endif %}
                             </td>
-
                         </tr>
 
+                    {% else %}
+                        <tr>
+                            <td colspan="4">
+                                <div class="subscriber-empty-state">
+                                    <div class="empty-state-icon">♙</div>
+                                    <h3>
+                                        {% if search %}
+                                            No subscribers found
+                                        {% else %}
+                                            No subscribers yet
+                                        {% endif %}
+                                    </h3>
+                                    <p>
+                                        {% if search %}
+                                            Try another name or email address.
+                                        {% else %}
+                                            Add a subscriber or import a CSV
+                                            file to get started.
+                                        {% endif %}
+                                    </p>
+                                </div>
+                            </td>
+                        </tr>
                     {% endfor %}
 
+                    </tbody>
+                </table>
+            </div>
 
-                {% else %}
-
-                    <!-- =================================================
-                         EMPTY STATE
-                         ================================================= -->
-
-                    <tr>
-
-                        <td colspan="6">
-
-                            <div class="empty-state">
-
-                                <div class="empty-icon">
-                                    👥
-                                </div>
-
-                                <div class="empty-title">
-                                    No contacts yet
-                                </div>
-
-                                <div class="empty-text">
-                                    Add your first contact or import a CSV
-                                    file to start building your audience.
-                                </div>
+        </form>
 
 
-                                <div class="empty-actions">
+        <form
+            id="bulkUnsubscribeForm"
+            method="POST"
+            action="{{ url_for('bulk_unsubscribe_contacts') }}"
+            style="display: none;"
+        >
+            <input
+                type="hidden"
+                name="select_all_matching"
+                id="unsubscribeSelectAllMatching"
+                value="false"
+            >
 
-                                    <!-- ADD CONTACT -->
+            <input
+                type="hidden"
+                name="search"
+                value="{{ search or '' }}"
+            >
 
-                                    <a
-                                        href="{{ url_for('add_contact') }}"
-                                        class="primary-button"
-                                    >
-                                        + Add Contact
-                                    </a>
+            <input
+                type="hidden"
+                name="status"
+                value="{{ status or 'all' }}"
+            >
+        </form>
 
+        <!-- ADD CONTACTS TO SEGMENT FORM -->
+        <form
+            id="bulkAddToSegmentForm"
+            method="POST"
+            action="{{ url_for('bulk_add_contacts_to_segment') }}"
+            style="display: none;"
+        >
+            <input
+                type="hidden"
+                name="select_all_matching"
+                id="segmentSelectAllMatching"
+                value="false"
+            >
 
-                                    <!-- IMPORT CSV -->
+            <input
+                type="hidden"
+                name="search"
+                value="{{ search or '' }}"
+            >
 
-                                    <form
-                                        action="{{ url_for('import_csv') }}"
-                                        method="POST"
-                                        enctype="multipart/form-data"
-                                        class="csv-import-form"
-                                    >
+            <input
+                type="hidden"
+                name="status"
+                value="{{ status or 'all' }}"
+            >
 
-                                        <label
-                                            for="empty_csv_file"
-                                            class="secondary-button csv-label"
-                                        >
-                                            ↑ Import CSV
-                                        </label>
+            <input
+                type="hidden"
+                name="segment_id"
+                id="bulkSegmentId"
+            >
+        </form>
 
-                                        <input
-                                            type="file"
-                                            id="empty_csv_file"
-                                            name="csv_file"
-                                            accept=".csv"
-                                            class="csv-input"
-                                            onchange="this.form.submit()"
-                                        >
+        <!-- CHOOSE SEGMENT DIALOG -->
+        <div
+            id="addToSegmentDialog"
+            class="segment-dialog-overlay"
+            hidden
+        >
+            <div
+                class="segment-dialog"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="addToSegmentTitle"
+            >
+                <div class="segment-dialog-header">
+                    <h2 id="addToSegmentTitle">Add to segment</h2>
 
-                                    </form>
+                    <button
+                        type="button"
+                        id="closeSegmentDialog"
+                        aria-label="Close dialog"
+                    >
+                        &times;
+                    </button>
+                </div>
 
-                                </div>
+                <p class="segment-dialog-description">
+                    Choose which segment should contain the selected subscribers.
+                </p>
 
-                            </div>
+                <label for="segmentChoice">Select a segment</label>
 
-                        </td>
+                <select id="segmentChoice">
+                    <option value="">Choose a segment</option>
 
-                    </tr>
+                    {% for segment in segments %}
+                        <option value="{{ segment.id }}">
+                            {{ segment.name }}
+                        </option>
+                    {% endfor %}
+                </select>
 
-                {% endif %}
+                <div class="segment-dialog-actions">
+                    <button type="button" id="cancelSegmentDialog">
+                        Cancel
+                    </button>
 
-                </tbody>
+                    <button type="button" id="confirmAddToSegment">
+                        Add subscribers
+                    </button>
+                </div>
+            </div>
+        </div>
 
-            </table>
+        <!-- PAGINATION -->
+        <div class="subscriber-pagination">
+
+            <div class="pagination-page-size">
+                <label for="perPageSelect">Rows per page</label>
+
+                <select id="perPageSelect">
+                    <option value="10"
+                        {% if per_page == 10 %}selected{% endif %}>10</option>
+                    <option value="25"
+                        {% if per_page == 25 %}selected{% endif %}>25</option>
+                    <option value="50"
+                        {% if per_page == 50 %}selected{% endif %}>50</option>
+                </select>
+            </div>
+
+            <div class="pagination-navigation">
+                <a
+                    class="pagination-button {% if not pagination.has_prev %}disabled{% endif %}"
+                    href="{% if pagination.has_prev %}{{ url_for('contacts', page=pagination.prev_num, per_page=per_page, search=search, status=status) }}{% else %}#{% endif %}"
+                    {% if not pagination.has_prev %}aria-disabled="true"{% endif %}
+                >‹ Previous</a>
+
+                <a
+                    class="pagination-button {% if not pagination.has_next %}disabled{% endif %}"
+                    href="{% if pagination.has_next %}{{ url_for('contacts', page=pagination.next_num, per_page=per_page, search=search, status=status) }}{% else %}#{% endif %}"
+                    {% if not pagination.has_next %}aria-disabled="true"{% endif %}
+                >Next ›</a>
+            </div>
 
         </div>
 
-
-        <!-- =================================================
-             BULK DELETE BUTTON
-             ================================================= -->
-
-        {% if contacts %}
-
-            <div class="bulk-actions">
-
-                <button
-                    type="submit"
-                    class="secondary-button delete-selected-button"
-                >
-                    Delete Selected
-                </button>
-
-            </div>
-
-        {% endif %}
-
-    </form>
+    </div>
 
 </div>
 
+<style>
+.subscribers-page {
+    color: #202338;
+    padding-bottom: 30px;
+}
 
-<!-- =====================================================
-     JAVASCRIPT
-     ===================================================== -->
+.subscribers-header {
+    margin-bottom: 26px;
+}
+
+.subscribers-header .page-title {
+    margin-bottom: 8px;
+}
+
+.subscribers-header .page-subtitle {
+    margin-top: 0;
+    color: #777b90;
+}
+
+.subscriber-stats {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 18px;
+    margin-bottom: 26px;
+}
+
+.subscriber-stat-card {
+    position: relative;
+    min-width: 0;
+    background: #fff;
+    border: 1px solid #e9eaf2;
+    border-radius: 14px;
+    padding: 21px;
+    box-shadow: 0 3px 12px rgba(27, 31, 59, .035);
+}
+
+.stat-card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    color: #686d82;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.stat-card-icon {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    width: 35px;
+    height: 35px;
+    flex-shrink: 0;
+    border-radius: 10px;
+    background: #f0efff;
+    color: #6254f4;
+    font-size: 21px;
+}
+
+.stat-card-number {
+    margin-top: 15px;
+    font-size: 30px;
+    line-height: 1.2;
+    font-weight: 750;
+    letter-spacing: -.7px;
+}
+
+.stat-card-caption {
+    margin-top: 9px;
+    color: #8a8da0;
+    font-size: 12px;
+}
+
+.add-subscriber-card {
+    z-index: 5;
+}
+
+.add-subscriber-menu-wrapper,
+.selection-menu-wrapper {
+    position: relative;
+}
+
+.add-subscriber-button {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    width: 100%;
+    margin-top: 10px;
+    padding: 15px 16px;
+    border: 0;
+    border-radius: 8px;
+    background: #6254f4;
+    color: white;
+    font-size: 14px;
+    font-weight: 650;
+    cursor: pointer;
+    box-shadow: 0 3px 8px rgba(98, 84, 244, 0.16);
+}
+
+.add-subscriber-button:hover {
+    background: #5144dd;
+}
+
+
+.add-subscriber-button:hover,
+.primary-button:hover {
+    background: #5144dd;
+}
+
+.add-subscriber-dropdown,
+.bulk-menu {
+    position: absolute;
+    z-index: 20;
+    top: calc(100% + 8px);
+    right: 0;
+    min-width: 230px;
+    padding: 7px;
+    background: white;
+    border: 1px solid #e7e8f0;
+    border-radius: 10px;
+    box-shadow: 0 12px 35px rgba(25, 28, 55, .14);
+}
+
+.add-subscriber-dropdown[hidden],
+.bulk-menu[hidden],
+.modal-backdrop[hidden],
+.selection-toolbar[hidden] {
+    display: none !important;
+}
+
+.dropdown-option {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    width: 100%;
+    padding: 12px 10px;
+    text-align: left;
+    border: 0;
+    border-radius: 7px;
+    background: white;
+    color: #282b40;
+    cursor: pointer;
+}
+
+.dropdown-option:hover,
+.bulk-menu button:hover {
+    background: #f6f5ff;
+}
+
+.dropdown-option > span:first-child {
+    color: #6254f4;
+    font-size: 19px;
+}
+
+.dropdown-option strong,
+.dropdown-option small {
+    display: block;
+}
+
+.dropdown-option strong {
+    font-size: 13px;
+}
+
+.dropdown-option small {
+    margin-top: 4px;
+    color: #85899b;
+    font-size: 11px;
+}
+
+.subscribers-card {
+    padding: 24px;
+}
+
+.subscriber-list-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 15px;
+    margin-bottom: 22px;
+}
+
+.dashboard-card-title {
+    margin: 0;
+    font-size: 19px;
+    font-weight: 700;
+}
+
+.dashboard-card-subtitle {
+    margin: 7px 0 0;
+    color: #85899b;
+    font-size: 13px;
+}
+
+.subscriber-total {
+    color: #85899b;
+    font-size: 13px;
+}
+
+.subscriber-filters {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 11px;
+    margin-bottom: 20px;
+}
+
+.subscriber-search {
+    display: flex;
+    align-items: center;
+    flex: 1 1 240px;
+    gap: 8px;
+    min-width: 170px;
+    height: 42px;
+    padding: 0 12px;
+    border: 1px solid #e4e6ef;
+    border-radius: 8px;
+    background: #fff;
+}
+
+.subscriber-search span {
+    color: #85899b;
+    font-size: 23px;
+}
+
+.subscriber-search input {
+    width: 100%;
+    min-width: 0;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    color: #292c41;
+    font: inherit;
+    font-size: 13px;
+}
+
+.filter-select {
+    min-width: 140px;
+    height: 42px;
+    padding: 0 12px;
+    border: 1px solid #e4e6ef;
+    border-radius: 8px;
+    background: #fff;
+    color: #50546a;
+    font: inherit;
+    font-size: 13px;
+}
+
+.filter-apply-button,
+.select-all-button {
+    padding: 10px 13px;
+    border: 1px solid #e1e2ed;
+    border-radius: 8px;
+    background: #fff;
+    color: #6254f4;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.clear-filters {
+    color: #6254f4;
+    text-decoration: none;
+    font-size: 13px;
+}
+
+.selection-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    min-height: 57px;
+    margin-bottom: 14px;
+    padding: 9px 14px;
+    border: 1px solid #dcd9ff;
+    border-radius: 9px;
+    background: #f6f5ff;
+}
+
+.selection-toolbar-left {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 15px;
+    color: #36394e;
+    font-size: 13px;
+}
+
+.select-all-button {
+    border-color: #d9d5ff;
+    background: white;
+}
+
+.bulk-menu-button {
+    width: 38px;
+    height: 36px;
+    border: 1px solid #dedff0;
+    border-radius: 8px;
+    background: white;
+    color: #34374c;
+    font-size: 25px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.bulk-menu {
+    top: calc(100% + 6px);
+    min-width: 175px;
+}
+
+.bulk-menu button {
+    display: block;
+    width: 100%;
+    padding: 10px 11px;
+    border: 0;
+    border-radius: 6px;
+    background: white;
+    text-align: left;
+    color: #33364b;
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.bulk-menu-divider {
+    height: 1px;
+    margin: 5px 0;
+    background: #ececf3;
+}
+
+.bulk-menu .danger-action {
+    color: #dc3545;
+}
+
+.table-wrapper {
+    width: 100%;
+    overflow-x: auto;
+}
+
+.subscriber-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.subscriber-table thead th {
+    padding: 14px 13px;
+    border-top: 1px solid #eeeef4;
+    border-bottom: 1px solid #eeeef4;
+    background: #fafaff;
+    color: #777b90;
+    text-align: left;
+    white-space: nowrap;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .45px;
+}
+
+.subscriber-table tbody td {
+    padding: 15px 13px;
+    border-bottom: 1px solid #f0f0f5;
+    vertical-align: middle;
+}
+
+.subscriber-table tbody tr:hover {
+    background: #fcfcff;
+}
+
+.checkbox-column {
+    width: 42px;
+    padding-right: 5px !important;
+}
+
+.checkbox-column input {
+    width: 15px;
+    height: 15px;
+    accent-color: #6254f4;
+    cursor: pointer;
+}
+
+.subscriber-identity {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 190px;
+}
+
+.subscriber-avatar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 39px;
+    height: 39px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    background: #efeeff;
+    color: #6254f4;
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.subscriber-name {
+    color: #292c41;
+    font-size: 13px;
+    font-weight: 650;
+}
+
+.subscriber-email {
+    margin-top: 5px;
+    color: #85899b;
+    font-size: 12px;
+    overflow-wrap: anywhere;
+}
+
+.date-cell {
+    color: #62667b;
+    white-space: nowrap;
+    font-size: 12px;
+}
+
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 10px;
+    border-radius: 20px;
+    white-space: nowrap;
+    font-size: 11px;
+    font-weight: 650;
+}
+
+.status-confirmed {
+    background: #e9f2ff;
+    color: #2563eb;
+}
+
+.status-unsubscribed {
+    background: #fff0f0;
+    color: #c63838;
+}
+
+.subscriber-empty-state {
+    padding: 55px 15px;
+    text-align: center;
+}
+
+.empty-state-icon {
+    color: #6254f4;
+    font-size: 38px;
+}
+
+.subscriber-empty-state h3 {
+    margin: 13px 0 8px;
+    font-size: 17px;
+}
+
+.subscriber-empty-state p {
+    color: #85899b;
+    font-size: 13px;
+}
+
+.subscriber-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 15px;
+    padding-top: 21px;
+}
+
+.pagination-page-size {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #777b90;
+    font-size: 12px;
+}
+
+.pagination-page-size select {
+    min-width: 66px;
+    height: 35px;
+    padding: 0 9px;
+    border: 1px solid #e2e3ed;
+    border-radius: 7px;
+    background: white;
+    color: #383b50;
+}
+
+.pagination-navigation {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.pagination-button {
+    padding: 9px 13px;
+    border: 1px solid #e2e3ed;
+    border-radius: 7px;
+    background: white;
+    color: #4f5368;
+    text-decoration: none;
+    font-size: 12px;
+}
+
+.pagination-button:not(.disabled):hover {
+    border-color: #6254f4;
+    color: #6254f4;
+}
+
+.pagination-button.disabled {
+    color: #b8bac7;
+    background: #fafafa;
+    pointer-events: none;
+}
+
+.primary-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 11px 15px;
+    border: 0;
+    border-radius: 8px;
+    background: #6254f4;
+    color: white;
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 650;
+    cursor: pointer;
+}
+
+.modal-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    background: rgba(24, 26, 45, .48);
+}
+
+.subscriber-modal {
+    width: 100%;
+    max-width: 470px;
+    max-height: 90vh;
+    overflow-y: auto;
+    padding: 25px;
+    border-radius: 15px;
+    background: white;
+    box-shadow: 0 20px 60px rgba(15, 18, 45, .22);
+}
+
+.modal-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 15px;
+    margin-bottom: 22px;
+}
+
+.modal-header h2 {
+    margin: 0;
+    color: #292c41;
+    font-size: 20px;
+}
+
+.modal-header p,
+.modal-help {
+    color: #85899b;
+    font-size: 12px;
+    line-height: 1.6;
+}
+
+.modal-header p {
+    margin: 7px 0 0;
+}
+
+.modal-close {
+    border: 0;
+    background: transparent;
+    color: #777b90;
+    font-size: 27px;
+    cursor: pointer;
+}
+
+.subscriber-modal form > label {
+    display: block;
+    margin: 16px 0 7px;
+    color: #484c61;
+    font-size: 12px;
+    font-weight: 650;
+}
+
+.subscriber-modal form > input {
+    box-sizing: border-box;
+    width: 100%;
+    min-height: 43px;
+    padding: 11px 12px;
+    border: 1px solid #dedfea;
+    border-radius: 8px;
+    background: white;
+    color: #292c41;
+    font: inherit;
+    font-size: 13px;
+}
+
+.modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 25px;
+}
+
+.modal-cancel {
+    padding: 10px 14px;
+    border: 1px solid #e1e2eb;
+    border-radius: 8px;
+    background: white;
+    color: #55596d;
+    cursor: pointer;
+}
+
+@media (max-width: 1100px) {
+    .subscriber-stats {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 650px) {
+    .subscriber-stats {
+        grid-template-columns: 1fr;
+    }
+
+    .subscribers-card {
+        padding: 15px;
+    }
+
+    .subscriber-list-header {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .subscriber-filters {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .subscriber-search,
+    .filter-select,
+    .filter-apply-button {
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    .subscriber-pagination {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+}
+
+/* SEGMENTS DROPDOWN */
+.segments-dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+.segments-dropdown-button {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+    min-width: 150px;
+    cursor: pointer;
+    background: #fff;
+}
+
+.segments-dropdown-menu {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    min-width: 220px;
+    padding: 7px;
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    box-shadow: 0 10px 28px rgba(15, 23, 42, 0.12);
+    z-index: 1000;
+}
+
+.segments-dropdown-menu[hidden] {
+    display: none;
+}
+
+.segment-create-option,
+.segment-option {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 11px 12px;
+    border-radius: 7px;
+    color: #374151;
+    text-decoration: none;
+    font-size: 13px;
+}
+
+.segment-create-option {
+    color: #6254f4;
+    font-weight: 650;
+}
+
+.segment-create-option:hover,
+.segment-option:hover {
+    background: #f5f3ff;
+}
+
+.segments-dropdown-divider {
+    height: 1px;
+    margin: 5px 3px;
+    background: #e5e7eb;
+}
+
+.segments-empty {
+    padding: 11px 12px;
+    color: #9ca3af;
+    font-size: 12px;
+}
+
+/* ADD TO SEGMENT DIALOG */
+
+.segment-dialog-overlay[hidden] {
+    display: none !important;
+}
+
+.segment-dialog-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    background: rgba(15, 23, 42, 0.45);
+}
+
+.segment-dialog {
+    width: 100%;
+    max-width: 460px;
+    padding: 26px;
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    box-shadow: 0 20px 60px rgba(15, 23, 42, 0.18);
+}
+
+.segment-dialog-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 12px;
+}
+
+.segment-dialog-header h2 {
+    margin: 0;
+    color: #1f2937;
+    font-size: 21px;
+    font-weight: 700;
+}
+
+#closeSegmentDialog {
+    border: none;
+    background: transparent;
+    color: #6b7280;
+    font-size: 27px;
+    cursor: pointer;
+}
+
+.segment-dialog-description {
+    margin: 0 0 22px;
+    color: #6b7280;
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+.segment-dialog label {
+    display: block;
+    margin-bottom: 8px;
+    color: #374151;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.segment-dialog select {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    background: #fff;
+    color: #374151;
+    font-size: 14px;
+    outline: none;
+}
+
+.segment-dialog select:focus {
+    border-color: #6254f4;
+    box-shadow: 0 0 0 3px rgba(98, 84, 244, 0.12);
+}
+
+.segment-dialog-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 26px;
+}
+
+.segment-dialog-actions button {
+    padding: 11px 16px;
+    border: none;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+#cancelSegmentDialog {
+    background: #f3f4f6;
+    color: #4b5563;
+}
+
+#confirmAddToSegment {
+    background: #6254f4;
+    color: #fff;
+}
+
+#confirmAddToSegment:hover {
+    background: #5042e8;
+}
+
+@media (max-width: 480px) {
+    .segment-dialog {
+        padding: 20px;
+    }
+
+    .segment-dialog-actions {
+        flex-direction: column-reverse;
+    }
+
+    .segment-dialog-actions button {
+        width: 100%;
+    }
+}
+
+</style>
 
 <script>
+document.addEventListener("DOMContentLoaded", function () {
 
-    /*
-     * SELECT / UNSELECT ALL CONTACTS
-     */
+    // ADD SUBSCRIBER DROPDOWN
+    const addButton = document.getElementById("addSubscriberButton");
+    const addDropdown = document.getElementById("addSubscriberDropdown");
 
-    function toggleAllContacts() {
+    addButton.addEventListener("click", function (event) {
+        event.stopPropagation();
 
-        const selectAll =
-            document.getElementById("selectAll");
+        const isOpen = !addDropdown.hidden;
+        addDropdown.hidden = isOpen;
+        addButton.setAttribute("aria-expanded", String(!isOpen));
+    });
 
-        const checkboxes =
-            document.querySelectorAll(".contact-checkbox");
+    document.getElementById("openSingleSubscriber").addEventListener(
+        "click",
+        function () {
+            addDropdown.hidden = true;
+            addButton.setAttribute("aria-expanded", "false");
 
-        checkboxes.forEach(function(checkbox) {
+            document.getElementById(
+                "singleSubscriberModal"
+            ).hidden = false;
 
-            checkbox.checked = selectAll.checked;
+            document.getElementById("subscriberName").focus();
+        }
+    );
 
+    document.getElementById("openCsvImport").addEventListener(
+        "click",
+        function () {
+            addDropdown.hidden = true;
+            addButton.setAttribute("aria-expanded", "false");
+
+            document.getElementById("csvImportModal").hidden = false;
+        }
+    );
+
+    // CLOSE MODALS
+    document.querySelectorAll("[data-close-modal]").forEach(
+        function (button) {
+            button.addEventListener("click", function () {
+                document.getElementById(
+                    button.dataset.closeModal
+                ).hidden = true;
+            });
+        }
+    );
+
+    document.querySelectorAll(".modal-backdrop").forEach(
+        function (backdrop) {
+            backdrop.addEventListener("click", function (event) {
+                if (event.target === backdrop) {
+                    backdrop.hidden = true;
+                }
+            });
+        }
+    );
+
+    // CLOSE DROPDOWNS WHEN CLICKING OUTSIDE
+    document.addEventListener("click", function (event) {
+
+        if (!event.target.closest(".add-subscriber-menu-wrapper")) {
+            addDropdown.hidden = true;
+            addButton.setAttribute("aria-expanded", "false");
+        }
+
+        if (!event.target.closest(".selection-menu-wrapper")) {
+            const menu = document.getElementById("bulkMenu");
+            const menuButton = document.getElementById("bulkMenuButton");
+
+            menu.hidden = true;
+            menuButton.setAttribute("aria-expanded", "false");
+        }
+    });
+
+    // CHANGE PAGE SIZE
+    document.getElementById("perPageSelect").addEventListener(
+        "change",
+        function () {
+            const params = new URLSearchParams(window.location.search);
+
+            params.set("per_page", this.value);
+            params.set("page", "1");
+
+            window.location.href =
+                "{{ url_for('contacts') }}" + "?" + params.toString();
+        }
+    );
+
+    // SELECTION TOOLBAR
+    const checkboxes = Array.from(
+        document.querySelectorAll(".subscriber-checkbox")
+    );
+
+    const selectPage = document.getElementById("selectPage");
+    const toolbar = document.getElementById("selectionToolbar");
+    const selectedCount = document.getElementById("selectedCount");
+    const selectAllMatching = document.getElementById("selectAllMatching");
+
+    const selectAllMatchingInput = document.getElementById(
+        "selectAllMatchingInput"
+    );
+
+    const bulkMenuButton = document.getElementById("bulkMenuButton");
+    const bulkMenu = document.getElementById("bulkMenu");
+    const deleteForm = document.getElementById("bulkDeleteForm");
+
+    const totalMatchingSubscribers = {{ total_filtered|int }};
+
+    let selectAllAcrossPages = false;
+
+    function selectedCheckboxes() {
+        return checkboxes.filter(function (checkbox) {
+            return checkbox.checked;
+        });
+    }
+
+    function updateSelection() {
+        const selected = selectedCheckboxes();
+        const count = selected.length;
+
+        // Show the toolbar whenever at least one subscriber is selected.
+        toolbar.hidden = count === 0;
+
+        // Display the matching total when across-page selection is active.
+        selectedCount.textContent = selectAllAcrossPages
+            ? totalMatchingSubscribers
+            : count;
+
+        // Keep the page checkbox in sync with the individual checkboxes.
+        selectPage.checked =
+            checkboxes.length > 0 &&
+            checkboxes.every(function (checkbox) {
+                return checkbox.checked;
+            });
+
+        selectPage.indeterminate =
+            count > 0 && count < checkboxes.length;
+
+        selectAllMatching.textContent = selectAllAcrossPages
+            ? "Clear all selection"
+            : "Select all";
+
+        selectAllMatchingInput.value =
+            selectAllAcrossPages ? "true" : "false";
+    }
+
+    // INDIVIDUAL SUBSCRIBER SELECTION
+    checkboxes.forEach(function (checkbox) {
+        checkbox.addEventListener("change", function () {
+            selectAllAcrossPages = false;
+            updateSelection();
+        });
+    });
+
+    // SELECT OR DESELECT THE CURRENT PAGE
+    selectPage.addEventListener("change", function () {
+        checkboxes.forEach(function (checkbox) {
+            checkbox.checked = selectPage.checked;
         });
 
-    }
+        selectAllAcrossPages = false;
+        updateSelection();
+    });
 
+    // SELECT ALL MATCHING SUBSCRIBERS OR CLEAR THE SELECTION
+    selectAllMatching.addEventListener("click", function () {
 
-    /*
-     * CONFIRM BULK DELETE
-     */
+        if (!selectAllAcrossPages) {
+            selectAllAcrossPages = true;
 
-    function confirmBulkDelete() {
+            checkboxes.forEach(function (checkbox) {
+                checkbox.checked = true;
+            });
+        } else {
+            selectAllAcrossPages = false;
 
-        const selected =
-            document.querySelectorAll(
-                ".contact-checkbox:checked"
-            );
-
-        if (selected.length === 0) {
-
-            alert("Please select at least one contact.");
-
-            return false;
-
+            checkboxes.forEach(function (checkbox) {
+                checkbox.checked = false;
+            });
         }
 
-        return confirm(
-            "Are you sure you want to delete " +
-            selected.length +
-            " contact(s)?"
+        updateSelection();
+    });
+
+    // OPEN AND CLOSE THE THREE-DOT MENU
+    bulkMenuButton.addEventListener("click", function (event) {
+        event.stopPropagation();
+
+        bulkMenu.hidden = !bulkMenu.hidden;
+
+        bulkMenuButton.setAttribute(
+            "aria-expanded",
+            String(!bulkMenu.hidden)
         );
+    });
 
-    }
+    // BULK ACTIONS
+    document.querySelectorAll("[data-bulk-action]").forEach(
+        function (button) {
+
+            button.addEventListener("click", function () {
+
+                const action = button.dataset.bulkAction;
+                const selected = selectedCheckboxes();
+
+                const ids = selected.map(function (checkbox) {
+                    return checkbox.value;
+                });
+
+                const selectionCount = selectAllAcrossPages
+                    ? totalMatchingSubscribers
+                    : ids.length;
+
+                if (selectionCount === 0) {
+                    alert("Please select at least one subscriber.");
+                    return;
+                }
+
+                bulkMenu.hidden = true;
+
+                bulkMenuButton.setAttribute(
+                    "aria-expanded",
+                    "false"
+                );
+
+                // DELETE SELECTED SUBSCRIBERS
+                if (action === "delete") {
+
+                    if (!confirm(
+                        "Delete " + selectionCount +
+                        " selected subscriber(s)? This cannot be undone."
+                    )) {
+                        return;
+                    }
+
+                    deleteForm.submit();
+                    return;
+                }
+
+                // EDIT IS AVAILABLE FOR ONE SUBSCRIBER AT A TIME
+                if (action === "edit") {
+
+                    if (selectAllAcrossPages || ids.length !== 1) {
+                        alert(
+                            "Please select exactly one subscriber on " +
+                            "this page to edit."
+                        );
+                        return;
+                    }
+
+                    window.location.href =
+                        "{{ url_for('edit_contact', contact_id=0) }}"
+                        .replace("/0", "/" + ids[0]);
+
+                    return;
+                }
+
+                // OTHER BULK ACTIONS WILL BE CONNECTED TO THEIR ROUTES
+
+                if (action === "unsubscribe") {
+
+                    if (ids.length === 0) {
+                        alert("Please select at least one subscriber.");
+                        return;
+                    }
+
+                    const message = selectAllAcrossPages
+                        ? "Unsubscribe all subscribers matching your current filters?"
+                        : "Unsubscribe " + ids.length + " selected subscriber(s)?";
+
+                    if (!confirm(message)) {
+                        return;
+                    }
+
+                    const unsubscribeForm = document.getElementById(
+                        "bulkUnsubscribeForm"
+                    );
+
+                    const selectAllInput = document.getElementById(
+                        "unsubscribeSelectAllMatching"
+                    );
+
+                    // Clear IDs left over from a previous submission.
+                    unsubscribeForm.querySelectorAll(
+                        'input[name="contact_ids"]'
+                    ).forEach(input => input.remove());
+
+                    selectAllInput.value = selectAllAcrossPages
+                        ? "true"
+                        : "false";
+
+                    // For a normal selection, submit each selected contact ID.
+                    if (!selectAllAcrossPages) {
+                        ids.forEach(id => {
+                            const input = document.createElement("input");
+
+                            input.type = "hidden";
+                            input.name = "contact_ids";
+                            input.value = id;
+
+                            unsubscribeForm.appendChild(input);
+                        });
+                    }
+
+                    unsubscribeForm.submit();
+
+                    return;
+                }
 
 
-    /*
-     * SEARCH CONTACTS
-     */
+                if (action === "segment") {
 
-    function searchContacts() {
+                    if (selectAllAcrossPages) {
+                        alert(
+                            "Please select subscribers on the current page " +
+                            "to add them to a segment for now."
+                        );
+                        return;
+                    }
 
-        const input =
-            document.getElementById("contactSearch");
+                    if (ids.length === 0) {
+                        alert("Please select at least one subscriber.");
+                        return;
+                    }
 
-        const filter =
-            input.value.toLowerCase();
+                    const dialog = document.getElementById(
+                        "addToSegmentDialog"
+                    );
 
-        const table =
-            document.getElementById("contactsTable");
+                    const segmentChoice = document.getElementById(
+                        "segmentChoice"
+                    );
 
-        const rows =
-            table.getElementsByTagName("tr");
+                    const confirmButton = document.getElementById(
+                        "confirmAddToSegment"
+                    );
 
+                    const closeButton = document.getElementById(
+                        "closeSegmentDialog"
+                    );
 
-        /*
-         * Start at 1 because row 0
-         * is the table header.
-         */
+                    const cancelButton = document.getElementById(
+                        "cancelSegmentDialog"
+                    );
 
-        for (let i = 1; i < rows.length; i++) {
+                    const openDialog = function () {
+                        dialog.hidden = false;
+                        segmentChoice.value = "";
+                        segmentChoice.focus();
+                    };
 
-            const row = rows[i];
+                    const closeDialog = function () {
+                        dialog.hidden = true;
+                    };
 
-            const text =
-                row.textContent.toLowerCase();
+                    openDialog();
 
-            if (text.includes(filter)) {
+                    closeButton.onclick = closeDialog;
+                    cancelButton.onclick = closeDialog;
 
-                row.style.display = "";
+                    dialog.onclick = function (event) {
+                        if (event.target === dialog) {
+                            closeDialog();
+                        }
+                    };
 
-            } else {
+                    confirmButton.onclick = function () {
 
-                row.style.display = "none";
+                        if (!segmentChoice.value) {
+                            alert("Please choose a segment.");
+                            segmentChoice.focus();
+                            return;
+                        }
 
-            }
+                        const form = document.getElementById(
+                            "bulkAddToSegmentForm"
+                        );
 
+                        document.getElementById(
+                            "bulkSegmentId"
+                        ).value = segmentChoice.value;
+
+                        form.querySelectorAll(
+                            'input[name="contact_ids"]'
+                        ).forEach(input => input.remove());
+
+                        ids.forEach(id => {
+                            const input = document.createElement("input");
+
+                            input.type = "hidden";
+                            input.name = "contact_ids";
+                            input.value = id;
+
+                            form.appendChild(input);
+                        });
+
+                        closeDialog();
+                        form.submit();
+                    };
+
+                    return;
+                }
+
+            });
         }
+    );
 
-    }
+    // INITIALIZE SELECTION STATE
+    updateSelection();
 
+}); // Close DOMContentLoaded
 </script>
 
 
-<!-- =====================================================
-     CONTACT PAGE EXTRA STYLING
-     ===================================================== -->
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const button = document.getElementById("segmentsDropdownButton");
+    const menu = document.getElementById("segmentsDropdownMenu");
 
-<style>
+    if (!button || !menu) return;
 
-    /*
-     * Header layout
-     */
+    button.addEventListener("click", function (event) {
+        event.stopPropagation();
 
-    .page-header {
-        display: flex;
-        align-items: flex-end;
-        justify-content: space-between;
-        gap: 30px;
-        margin-bottom: 30px;
-    }
+        const isOpening = menu.hidden;
+        menu.hidden = !isOpening;
 
+        button.setAttribute("aria-expanded", String(isOpening));
+    });
 
-    /*
-     * Buttons beside page title
-     */
-
-    .page-actions {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        flex-wrap: wrap;
-    }
-
-
-    /*
-     * CSV import form
-     */
-
-    .csv-import-form {
-        display: inline-flex;
-        margin: 0;
-    }
-
-
-    /*
-     * Hide the actual file input
-     */
-
-    .csv-input {
-        display: none;
-    }
-
-
-    /*
-     * Make the label behave like a button
-     */
-
-    .csv-label {
-        cursor: pointer;
-    }
-
-
-    /*
-     * Contact action buttons
-     */
-
-    .contact-actions {
-        display: flex;
-        gap: 8px;
-        flex-wrap: wrap;
-    }
-
-
-    /*
-     * Delete button
-     */
-
-    .delete-button {
-        color: #dc2626;
-    }
-
-
-    /*
-     * Bulk action area
-     */
-
-    .bulk-actions {
-        display: flex;
-        justify-content: flex-end;
-        margin-top: 20px;
-    }
-
-
-    /*
-     * Delete selected
-     */
-
-    .delete-selected-button {
-        color: #dc2626;
-    }
-
-
-    /*
-     * Empty state buttons
-     */
-
-    .empty-actions {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        gap: 10px;
-        margin-top: 25px;
-        flex-wrap: wrap;
-    }
-
-
-    /*
-     * Mobile layout
-     */
-
-    @media (max-width: 700px) {
-
-        .page-header {
-            flex-direction: column;
-            align-items: flex-start;
+    document.addEventListener("click", function (event) {
+        if (!menu.contains(event.target) && !button.contains(event.target)) {
+            menu.hidden = true;
+            button.setAttribute("aria-expanded", "false");
         }
+    });
 
-        .page-actions {
-            width: 100%;
+    document.addEventListener("keydown", function (event) {
+        if (event.key === "Escape") {
+            menu.hidden = true;
+            button.setAttribute("aria-expanded", "false");
         }
-
-        .page-actions .primary-button,
-        .page-actions .secondary-button {
-            width: 100%;
-            text-align: center;
-        }
-
-        .csv-import-form {
-            width: 100%;
-        }
-
-        .csv-label {
-            width: 100%;
-            text-align: center;
-        }
-
-    }
-
-</style>
+    });
+});
+</script>
 
 {% endblock %}

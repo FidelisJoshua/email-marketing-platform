@@ -1,0 +1,379 @@
+
+{% extends "dashboard_base.html" %}
+
+{% block title %}Segments - EmailFlow{% endblock %}
+
+{% block content %}
+
+<div class="segments-page">
+
+    <div class="segments-header">
+        <div>
+            <h1>Segments</h1>
+            <p>Organize your subscribers into targeted groups.</p>
+        </div>
+
+        <button
+            type="button"
+            class="create-segment-btn"
+            onclick="document.getElementById('createSegmentModal').style.display='flex'"
+        >
+            + Create segment
+        </button>
+    </div>
+
+    <div class="segments-card">
+
+        <div class="segments-card-header">
+            <h2>Your segments</h2>
+            <span>{{ segments|length }} total</span>
+        </div>
+
+        {% if segments %}
+
+        <div class="segments-table-wrapper">
+            <table class="segments-table">
+                <thead>
+                    <tr>
+                        <th>Segment name</th>
+                        <th>Description</th>
+                        <th>Created</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {% for segment in segments %}
+                    <tr>
+                        <td>
+                            <strong>{{ segment.name }}</strong>
+                        </td>
+
+                        <td>
+                            {{ segment.description or "—" }}
+                        </td>
+
+                        <td>
+                            {{ segment.created_at.strftime("%b %d, %Y") if segment.created_at else "—" }}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% else %}
+
+        <div class="segments-empty">
+            <div class="segments-empty-icon">◎</div>
+            <h3>No segments yet</h3>
+            <p>Create your first segment to organize subscribers for targeted campaigns.</p>
+
+            <button
+                type="button"
+                class="create-segment-btn"
+                onclick="document.getElementById('createSegmentModal').style.display='flex'"
+            >
+                Create your first segment
+            </button>
+        </div>
+
+        {% endif %}
+
+    </div>
+
+</div>
+
+<div
+    id="createSegmentModal"
+    class="segment-modal-overlay"
+    onclick="if(event.target === this) this.style.display='none'"
+>
+    <div class="segment-modal">
+
+        <div class="segment-modal-header">
+            <div>
+                <h2>Create a segment</h2>
+                <p>Give your subscriber group a name.</p>
+            </div>
+
+            <button
+                type="button"
+                class="segment-modal-close"
+                onclick="document.getElementById('createSegmentModal').style.display='none'"
+            >
+                &times;
+            </button>
+        </div>
+
+        <form method="POST" action="{{ url_for('create_segment') }}">
+
+            <label for="segment_name">Segment name</label>
+            <input
+                type="text"
+                id="segment_name"
+                name="name"
+                placeholder="e.g. Weekly Newsletter"
+                maxlength="100"
+                required
+            >
+
+            <label for="segment_description">Description (optional)</label>
+            <textarea
+                id="segment_description"
+                name="description"
+                placeholder="What is this segment for?"
+                maxlength="255"
+                rows="3"
+            ></textarea>
+
+            <div class="segment-modal-actions">
+                <button
+                    type="button"
+                    class="segment-cancel-btn"
+                    onclick="document.getElementById('createSegmentModal').style.display='none'"
+                >
+                    Cancel
+                </button>
+
+                <button
+                    type="submit"
+                    class="create-segment-btn"
+                >
+                    Create segment
+                </button>
+            </div>
+
+        </form>
+
+    </div>
+</div>
+
+<style>
+.segments-page {
+    padding: 8px 0 30px;
+    color: #25263a;
+}
+
+.segments-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+    margin-bottom: 28px;
+}
+
+.segments-header h1 {
+    margin: 0 0 8px;
+    font-size: 28px;
+    font-weight: 700;
+}
+
+.segments-header p,
+.segment-modal-header p {
+    margin: 0;
+    color: #777b8c;
+    font-size: 14px;
+}
+
+.create-segment-btn {
+    background: #6254f4;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 12px 18px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.create-segment-btn:hover {
+    background: #5143df;
+}
+
+.segments-card {
+    background: white;
+    border: 1px solid #e9eaf1;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.segments-card-header {
+    padding: 20px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid #eeeef4;
+}
+
+.segments-card-header h2 {
+    margin: 0;
+    font-size: 17px;
+}
+
+.segments-card-header span {
+    color: #777b8c;
+    font-size: 13px;
+}
+
+.segments-table-wrapper {
+    overflow-x: auto;
+}
+
+.segments-table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+}
+
+.segments-table th,
+.segments-table td {
+    padding: 17px 24px;
+    border-bottom: 1px solid #f0f0f5;
+    font-size: 14px;
+}
+
+.segments-table th {
+    background: #fafaff;
+    color: #777b8c;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.segments-table td {
+    color: #55596c;
+}
+
+.segments-table td strong {
+    color: #292a3d;
+}
+
+.segments-empty {
+    padding: 55px 20px;
+    text-align: center;
+}
+
+.segments-empty-icon {
+    width: 58px;
+    height: 58px;
+    margin: 0 auto 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f0efff;
+    color: #6254f4;
+    border-radius: 14px;
+    font-size: 32px;
+}
+
+.segments-empty h3 {
+    margin: 0 0 10px;
+    font-size: 18px;
+}
+
+.segments-empty p {
+    margin: 0 auto 22px;
+    max-width: 420px;
+    color: #777b8c;
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+.segment-modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: rgba(24, 25, 45, 0.45);
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.segment-modal {
+    background: white;
+    width: 100%;
+    max-width: 480px;
+    border-radius: 14px;
+    padding: 26px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+}
+
+.segment-modal-header {
+    display: flex;
+    justify-content: space-between;
+    gap: 15px;
+    margin-bottom: 25px;
+}
+
+.segment-modal-header h2 {
+    margin: 0 0 8px;
+    font-size: 21px;
+}
+
+.segment-modal-close {
+    border: none;
+    background: transparent;
+    font-size: 28px;
+    color: #777b8c;
+    cursor: pointer;
+    align-self: flex-start;
+}
+
+.segment-modal label {
+    display: block;
+    margin: 18px 0 8px;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.segment-modal input,
+.segment-modal textarea {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 12px;
+    border: 1px solid #dfe1eb;
+    border-radius: 8px;
+    font: inherit;
+    font-size: 14px;
+    outline: none;
+}
+
+.segment-modal input:focus,
+.segment-modal textarea:focus {
+    border-color: #6254f4;
+}
+
+.segment-modal textarea {
+    resize: vertical;
+}
+
+.segment-modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 25px;
+}
+
+.segment-cancel-btn {
+    background: white;
+    border: 1px solid #dfe1eb;
+    border-radius: 8px;
+    padding: 12px 18px;
+    cursor: pointer;
+}
+
+@media (max-width: 600px) {
+    .segments-header {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .segments-card-header,
+    .segments-table th,
+    .segments-table td {
+        padding-left: 15px;
+        padding-right: 15px;
+    }
+}
+</style>
+
+{% endblock %}

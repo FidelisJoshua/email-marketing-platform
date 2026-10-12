@@ -1,0 +1,190 @@
+{% extends "dashboard_base.html" %}
+
+{% block title %}Create New Segment - EmailFlow{% endblock %}
+
+{% block content %}
+
+<div class="create-segment-page">
+
+    <div class="create-segment-header">
+        <div>
+            <h1>Create new segment</h1>
+            <p>Give your segment a name and description.</p>
+        </div>
+
+        <a href="{{ url_for('contacts') }}" class="back-button">
+            ← Back to contacts
+        </a>
+    </div>
+
+    <div class="create-segment-card">
+
+        <form action="{{ url_for('create_segment') }}" method="POST">
+
+            <div class="form-group">
+                <label for="segment_name">Segment name</label>
+                <input
+                    type="text"
+                    id="segment_name"
+                    name="name"
+                    placeholder="e.g. Newsletter subscribers"
+                    maxlength="100"
+                    required
+                >
+            </div>
+
+            <div class="form-group">
+                <label for="segment_description">Description (optional)</label>
+                <textarea
+                    id="segment_description"
+                    name="description"
+                    placeholder="Describe the purpose of this segment"
+                    maxlength="255"
+                    rows="4"
+                ></textarea>
+            </div>
+
+            <div class="form-actions">
+                <a href="{{ url_for('contacts') }}" class="cancel-button">
+                    Cancel
+                </a>
+
+                <button type="submit" class="save-segment-button">
+                    Create segment
+                </button>
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+<style>
+.create-segment-page {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+.create-segment-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+    margin-bottom: 28px;
+}
+
+.create-segment-header h1 {
+    margin: 0 0 8px;
+    color: #1f2937;
+    font-size: 27px;
+}
+
+.create-segment-header p {
+    margin: 0;
+    color: #6b7280;
+    font-size: 14px;
+}
+
+.back-button {
+    color: #6254f4;
+    text-decoration: none;
+    font-size: 14px;
+    white-space: nowrap;
+}
+
+.create-segment-card {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    padding: 28px;
+    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.04);
+}
+
+.form-group {
+    margin-bottom: 22px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 9px;
+    color: #374151;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.form-group input,
+.form-group textarea {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 12px 14px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    background: #fff;
+    color: #1f2937;
+    font: inherit;
+    font-size: 14px;
+    outline: none;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+    border-color: #6254f4;
+    box-shadow: 0 0 0 3px rgba(98, 84, 244, 0.12);
+}
+
+.form-group textarea {
+    resize: vertical;
+}
+
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 12px;
+    margin-top: 28px;
+}
+
+.cancel-button,
+.save-segment-button {
+    padding: 11px 18px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.cancel-button {
+    color: #4b5563;
+    background: #f3f4f6;
+}
+
+.save-segment-button {
+    border: none;
+    background: #6254f4;
+    color: #fff;
+}
+
+.save-segment-button:hover {
+    background: #5042e8;
+}
+
+@media (max-width: 600px) {
+    .create-segment-page {
+        padding: 16px;
+    }
+
+    .create-segment-header {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .create-segment-card {
+        padding: 20px;
+    }
+}
+</style>
+
+{% endblock %}

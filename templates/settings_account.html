@@ -124,6 +124,175 @@
 
 
 <!-- =================================================
+     ADDRESS INFORMATION
+     ================================================= -->
+
+<section class="settings-card">
+
+    <div class="settings-card-header">
+
+        <div class="settings-card-icon green">
+            📍
+        </div>
+
+        <div>
+
+            <h2 class="settings-card-title">
+                Address Information
+            </h2>
+
+            <p class="settings-card-description">
+                Add your address information for account and
+                email communication purposes.
+            </p>
+
+        </div>
+
+    </div>
+
+
+    <div class="settings-card-body">
+
+        <form method="POST">
+
+            <input
+                type="hidden"
+                name="action"
+                value="update_address"
+            >
+
+
+            <div class="settings-form-grid">
+
+
+                <!-- ADDRESS -->
+
+                <div class="settings-form-group full">
+
+                    <label class="settings-label">
+                        Address
+                    </label>
+
+                    <input
+                        type="text"
+                        name="address"
+                        class="settings-input"
+                        value="{{ user.address or '' }}"
+                        placeholder="Street address"
+                    >
+
+                    <div class="settings-help">
+                        Enter your street or business address.
+                    </div>
+
+                </div>
+
+
+                <!-- CITY -->
+
+                <div class="settings-form-group">
+
+                    <label class="settings-label">
+                        City
+                    </label>
+
+                    <input
+                        type="text"
+                        name="city"
+                        class="settings-input"
+                        value="{{ user.city or '' }}"
+                        placeholder="City"
+                    >
+
+                </div>
+
+
+                <!-- STATE -->
+
+                <div class="settings-form-group">
+
+                    <label class="settings-label">
+                        State
+                    </label>
+
+                    <input
+                        type="text"
+                        name="state"
+                        class="settings-input"
+                        value="{{ user.state or '' }}"
+                        placeholder="State / Province"
+                    >
+
+                </div>
+
+
+                <!-- POSTAL CODE -->
+
+                <div class="settings-form-group">
+
+                    <label class="settings-label">
+                        Postal Code
+                    </label>
+
+                    <input
+                        type="text"
+                        name="postal_code"
+                        class="settings-input"
+                        value="{{ user.postal_code or '' }}"
+                        placeholder="Postal / ZIP code"
+                    >
+
+                </div>
+
+
+                <!-- COUNTRY -->
+
+                <div class="settings-form-group">
+
+                    <label class="settings-label">
+                        Country
+                    </label>
+
+                    <input
+                        type="text"
+                        name="country"
+                        class="settings-input"
+                        value="{{ user.country or '' }}"
+                        placeholder="Country"
+                    >
+
+                </div>
+
+
+            </div>
+
+
+            <div class="settings-save-bar" style="margin-top:24px;">
+
+                <div class="settings-save-note">
+                    These details can be used for your account and
+                    email communication information.
+                </div>
+
+                <button
+                    type="submit"
+                    class="settings-save-button"
+                >
+                    Save Address
+                </button>
+
+            </div>
+
+
+        </form>
+
+    </div>
+
+</section>
+
+
+
+<!-- =================================================
      CHANGE PASSWORD
      ================================================= -->
 

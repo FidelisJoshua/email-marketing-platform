@@ -7,210 +7,928 @@ Import Contacts - EmailFlow
 {% block content %}
 
 <div class="page-header">
-
     <div>
-
-        <div class="page-eyebrow">
-            AUDIENCE
-        </div>
+        <div class="page-eyebrow">AUDIENCE</div>
 
         <h1 class="page-title">
-            Import Contacts
+            {% if headers %}
+                Map CSV Columns
+            {% else %}
+                Import Contacts
+            {% endif %}
         </h1>
 
         <p class="page-subtitle">
-            Add multiple contacts to your audience using a CSV file.
+            {% if headers %}
+                Match your CSV headings to the correct contact fields.
+            {% else %}
+                Upload a CSV file to add contacts to your audience.
+            {% endif %}
         </p>
-
     </div>
-
 </div>
-
 
 <div class="import-grid">
 
-    <!-- UPLOAD CARD -->
-
     <div class="form-card">
 
-        <div class="form-card-header">
+        {% if headers %}
 
-            <div class="import-icon">
-                ↑
-            </div>
+            <!-- COLUMN MAPPING -->
 
-            <h2>
-                Upload CSV
-            </h2>
+            <div class="form-card-header">
+                <div class="import-icon">⇄</div>
 
-            <p>
-                Select a CSV file containing your contacts.
-            </p>
-
-        </div>
-
-
-        <form
-            method="POST"
-            action="{{ url_for('import_csv') }}"
-            enctype="multipart/form-data">
-
-            <div class="upload-area">
-
-                <div class="upload-icon">
-                    📄
-                </div>
-
-                <h3>
-                    Choose a CSV file
-                </h3>
+                <h2>Map your columns</h2>
 
                 <p>
-                    Upload your contact list to add multiple
-                    contacts at once.
+                    Choose the CSV column that matches each field.
+                    Email Address is required.
                 </p>
+            </div>
+
+            <form
+                method="POST"
+                action="{{ url_for('import_csv') }}"
+            >
 
                 <input
-                    type="file"
-                    name="csv_file"
-                    accept=".csv"
-                    required>
+                    type="hidden"
+                    name="action"
+                    value="import_mapped"
+                >
 
-            </div>
+                <input
+                    type="hidden"
+                    name="file_token"
+                    value="{{ file_token }}"
+                >
 
+                <div class="mapping-list">
 
-            <div class="csv-format">
+                    <!-- EMAIL -->
 
-                <strong>
-                    Expected columns
-                </strong>
+                    <div class="mapping-field">
+                        <label for="email_column">
+                            Email Address <span class="required">*</span>
+                        </label>
 
-                <p>
-                    Your CSV should contain:
-                </p>
+                        <select
+                            id="email_column"
+                            name="email_column"
+                            required
+                        >
+                            <option value="">Choose CSV column</option>
 
-                <div class="column-tags">
+                            {% for header in headers %}
+                                <option
+                                    value="{{ header }}"
+                                    {% if selected.email_column == header %}selected{% endif %}
+                                >
+                                    {{ header }}
+                                </option>
+                            {% endfor %}
+                        </select>
 
-                    <span>First name</span>
+                        <p>
+                            Each contact must have a valid email address.
+                        </p>
+                    </div>
 
-                    <span>Last name</span>
+                    <!-- FULL NAME -->
 
-                    <span>Email</span>
+                    <div class="mapping-field">
+                        <label for="full_name_column">
+                            Full Name
+                        </label>
+
+                        <select
+                            id="full_name_column"
+                            name="full_name_column"
+                        >
+                            <option value="">Do not use a full-name column</option>
+
+                            {% for header in headers %}
+                                <option
+                                    value="{{ header }}"
+                                    {% if selected.full_name_column == header %}selected{% endif %}
+                                >
+                                    {{ header }}
+                                </option>
+                            {% endfor %}
+                        </select>
+
+                        <p>
+                            Use this if your CSV has one column containing
+                            the contact's complete name.
+                        </p>
+                    </div>
+
+                    <!-- FIRST NAME -->
+
+                    <div class="mapping-field">
+                        <label for="first_name_column">
+                            First Name
+                        </label>
+
+                        <select
+                            id="first_name_column"
+                            name="first_name_column"
+                        >
+                            <option value="">Do not use a first-name column</option>
+
+                            {% for header in headers %}
+                                <option
+                                    value="{{ header }}"
+                                    {% if selected.first_name_column == header %}selected{% endif %}
+                                >
+                                    {{ header }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- LAST NAME -->
+
+                    <div class="mapping-field">
+                        <label for="last_name_column">
+                            Last Name
+                        </label>
+
+                        <select
+                            id="last_name_column"
+                            name="last_name_column"
+                        >
+                            <option value="">Do not use a last-name column</option>
+
+                            {% for header in headers %}
+                                <option
+                                    value="{{ header }}"
+                                    {% if selected.last_name_column == header %}selected{% endif %}
+                                >
+                                    {{ header }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
 
                 </div>
 
+                <div class="mapping-note">
+                    <strong>How names work</strong>
+
+                    <p>
+                        Map Full Name if your CSV has one name column.
+                        Otherwise, map First Name and Last Name.
+                        If no name is provided, EmailFlow will use the
+                        beginning of the email address as the contact name.
+                    </p>
+                </div>
+
+                <!-- ADD TO SEGMENT -->
+
+                <div class="segment-import-card">
+
+                    <div class="segment-import-heading">
+                        <div class="segment-import-icon">◎</div>
+
+                        <div>
+                            <h2>Add to segment</h2>
+
+                            <p>
+                                Organize these subscribers into a segment
+                                as part of the import.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="segment-mode-options">
+
+                        <label class="segment-mode-option">
+                            <input
+                                type="radio"
+                                name="segment_mode"
+                                value="existing"
+                                checked
+                            >
+
+                            <span class="segment-mode-content">
+                                <strong>Existing segment</strong>
+
+                                <span>
+                                    Add imported subscribers to a segment
+                                    you've already created.
+                                </span>
+                            </span>
+                        </label>
+
+                        <div
+                            class="segment-mode-content-area"
+                            id="existingSegmentArea"
+                        >
+                            <label for="import_segment_id">
+                                Choose a segment
+                            </label>
+
+                            <select
+                                id="import_segment_id"
+                                name="import_segment_id"
+                            >
+                                <option value="">
+                                    Choose an existing segment
+                                </option>
+
+                                {% for segment in segments|default([]) %}
+                                    <option value="{{ segment.id }}">
+                                        {{ segment.name }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+
+                            {% if not segments|default([]) %}
+                                <p class="segment-help">
+                                    You haven't created a segment yet.
+                                    Choose "Create a new segment" below,
+                                    or import without a segment.
+                                </p>
+                            {% endif %}
+                        </div>
+
+                        <label class="segment-mode-option">
+                            <input
+                                type="radio"
+                                name="segment_mode"
+                                value="new"
+                            >
+
+                            <span class="segment-mode-content">
+                                <strong>Create a new segment</strong>
+
+                                <span>
+                                    Create a segment and add the imported
+                                    subscribers to it.
+                                </span>
+                            </span>
+                        </label>
+
+                        <div
+                            class="segment-mode-content-area"
+                            id="newSegmentArea"
+                            hidden
+                        >
+                            <div class="mapping-field">
+                                <label for="new_segment_name">
+                                    Segment name
+                                </label>
+
+                                <input
+                                    type="text"
+                                    id="new_segment_name"
+                                    name="new_segment_name"
+                                    maxlength="100"
+                                    placeholder="e.g. October Newsletter"
+                                >
+                            </div>
+
+                            <div class="mapping-field">
+                                <label for="new_segment_description">
+                                    Description
+                                    <span class="optional-label">Optional</span>
+                                </label>
+
+                                <textarea
+                                    id="new_segment_description"
+                                    name="new_segment_description"
+                                    maxlength="255"
+                                    rows="3"
+                                    placeholder="What is this segment for?"
+                                ></textarea>
+                            </div>
+                        </div>
+
+                        <label class="segment-mode-option">
+                            <input
+                                type="radio"
+                                name="segment_mode"
+                                value="none"
+                            >
+
+                            <span class="segment-mode-content">
+                                <strong>Don't add to a segment</strong>
+
+                                <span>
+                                    Import subscribers into your audience
+                                    without assigning them to a segment.
+                                </span>
+                            </span>
+                        </label>
+
+                    </div>
+
+                    <div class="segment-import-note">
+                        <strong>Good to know</strong>
+
+                        <p>
+                            Only new contacts added by this import will
+                            be assigned to the selected segment.
+                            Existing contacts and duplicate rows will
+                            not be imported again.
+                        </p>
+                    </div>
+
+                </div>
+
+                <div class="form-actions">
+                    <a
+                        href="{{ url_for('contacts') }}"
+                        class="secondary-button"
+                    >
+                        Cancel
+                    </a>
+
+                    <button
+                        type="submit"
+                        class="primary-button"
+                    >
+                        Import Contacts
+                    </button>
+                </div>
+
+            </form>
+
+        {% else %}
+
+            <!-- CSV UPLOAD -->
+
+            <div class="form-card-header">
+                <div class="import-icon">↑</div>
+
+                <h2>Upload CSV</h2>
+
+                <p>
+                    Select a CSV file containing your contacts.
+                </p>
             </div>
 
+            <form
+                method="POST"
+                action="{{ url_for('import_csv') }}"
+                enctype="multipart/form-data"
+            >
 
-            <div class="form-actions">
+                <div class="upload-area">
+                    <div class="upload-icon">📄</div>
 
-                <a
-                    href="{{ url_for('contacts') }}"
-                    class="secondary-button">
+                    <h3>Choose a CSV file</h3>
 
-                    Cancel
+                    <p>
+                        We'll read your column headings and let you
+                        map them before importing.
+                    </p>
 
-                </a>
+                    <input
+                        type="file"
+                        name="csv_file"
+                        accept=".csv"
+                        required
+                    >
+                </div>
 
-                <button
-                    type="submit"
-                    class="primary-button">
+                <div class="csv-format">
+                    <strong>Flexible column names</strong>
 
-                    Import Contacts
+                    <p>
+                        Your file can use headings such as Email,
+                        Email Address, E-mail, Given Name, Surname,
+                        First Name, Last Name, or Full Name.
+                    </p>
 
-                </button>
+                    <p>
+                        You will choose the correct mapping on the
+                        next screen.
+                    </p>
+                </div>
 
-            </div>
+                <div class="form-actions">
+                    <a
+                        href="{{ url_for('contacts') }}"
+                        class="secondary-button"
+                    >
+                        Cancel
+                    </a>
 
-        </form>
+                    <button
+                        type="submit"
+                        class="primary-button"
+                    >
+                        Continue to Mapping
+                    </button>
+                </div>
+
+            </form>
+
+        {% endif %}
 
     </div>
-
 
     <!-- INFORMATION CARD -->
 
     <div class="import-info-card">
 
-        <div class="section-label">
-            HOW IT WORKS
-        </div>
+        <div class="section-label">HOW IT WORKS</div>
 
-        <h2>
-            Import your audience
-        </h2>
+        <h2>Import your audience</h2>
 
         <p>
-            Upload your existing contact list and EmailFlow
-            will add the contacts to your audience.
+            Match the columns in your file to EmailFlow's contact
+            fields before importing your contacts.
         </p>
 
-
         <div class="import-step">
-
-            <div class="step-number">
-                1
-            </div>
+            <div class="step-number">1</div>
 
             <div>
+                <strong>Upload your CSV</strong>
 
-                <strong>
-                    Upload your CSV
-                </strong>
-
-                <p>
-                    Select the CSV file from your computer.
-                </p>
-
+                <p>Select a CSV file from your computer.</p>
             </div>
-
         </div>
 
-
         <div class="import-step">
-
-            <div class="step-number">
-                2
-            </div>
+            <div class="step-number">2</div>
 
             <div>
-
-                <strong>
-                    We check your contacts
-                </strong>
+                <strong>Map your columns</strong>
 
                 <p>
-                    Existing contacts are skipped to prevent
-                    duplicates.
+                    Select the columns containing email addresses
+                    and contact names.
                 </p>
-
             </div>
-
         </div>
 
-
         <div class="import-step">
-
-            <div class="step-number">
-                3
-            </div>
+            <div class="step-number">3</div>
 
             <div>
-
-                <strong>
-                    Your audience grows
-                </strong>
+                <strong>Choose a segment</strong>
 
                 <p>
-                    New contacts are added to your EmailFlow
-                    audience.
+                    Add your new subscribers to an existing segment,
+                    create a new segment, or skip segmentation.
                 </p>
-
             </div>
+        </div>
 
+        <div class="import-step">
+            <div class="step-number">4</div>
+
+            <div>
+                <strong>Import your contacts</strong>
+
+                <p>
+                    Existing contacts and repeated email addresses
+                    in the file are skipped.
+                </p>
+            </div>
         </div>
 
     </div>
 
 </div>
+
+<style>
+    .import-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1.5fr) minmax(260px, 1fr);
+        gap: 24px;
+        align-items: start;
+    }
+
+    .mapping-list {
+        display: grid;
+        gap: 20px;
+        margin-top: 24px;
+    }
+
+    .mapping-field {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .mapping-field label {
+        font-weight: 600;
+        color: #25243a;
+    }
+
+    .mapping-field select,
+    .mapping-field input,
+    .mapping-field textarea {
+        width: 100%;
+        box-sizing: border-box;
+        padding: 10px 12px;
+        border: 1px solid #d9dce7;
+        border-radius: 8px;
+        background: #fff;
+        color: #25243a;
+        font: inherit;
+    }
+
+    .mapping-field select,
+    .mapping-field input {
+        min-height: 44px;
+    }
+
+    .mapping-field textarea {
+        resize: vertical;
+    }
+
+    .mapping-field select:focus,
+    .mapping-field input:focus,
+    .mapping-field textarea:focus {
+        outline: none;
+        border-color: #6254f4;
+        box-shadow: 0 0 0 3px rgba(98, 84, 244, 0.10);
+    }
+
+    .mapping-field p {
+        margin: 0;
+        color: #73758a;
+        font-size: 13px;
+    }
+
+    .required {
+        color: #dc2626;
+    }
+
+    .optional-label {
+        color: #73758a;
+        font-size: 12px;
+        font-weight: 400;
+    }
+
+    .mapping-note {
+        margin-top: 24px;
+        padding: 16px;
+        border-radius: 10px;
+        background: #f5f4ff;
+        color: #40378c;
+    }
+
+    .mapping-note p {
+        margin: 8px 0 0;
+        font-size: 14px;
+        line-height: 1.6;
+    }
+
+    /* SEGMENT IMPORT */
+
+    .segment-import-card {
+        margin-top: 26px;
+        padding: 22px;
+        border: 1px solid #e5e7f0;
+        border-radius: 12px;
+        background: #fff;
+    }
+
+    .segment-import-heading {
+        display: flex;
+        align-items: flex-start;
+        gap: 13px;
+        margin-bottom: 22px;
+    }
+
+    .segment-import-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        width: 42px;
+        height: 42px;
+        border-radius: 10px;
+        background: #f0eeff;
+        color: #6254f4;
+        font-size: 25px;
+    }
+
+    .segment-import-heading h2 {
+        margin: 0 0 6px;
+        color: #25243a;
+        font-size: 18px;
+        font-weight: 700;
+    }
+
+    .segment-import-heading p {
+        margin: 0;
+        color: #73758a;
+        font-size: 13px;
+        line-height: 1.6;
+    }
+
+    .segment-mode-options {
+        display: grid;
+        gap: 12px;
+    }
+
+    .segment-mode-option {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        padding: 15px;
+        border: 1px solid #e5e7f0;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: border-color 0.2s, background 0.2s;
+    }
+
+    .segment-mode-option:has(input:checked) {
+        border-color: #6254f4;
+        background: #f8f7ff;
+    }
+
+    .segment-mode-option input {
+        flex-shrink: 0;
+        width: 17px;
+        height: 17px;
+        margin: 3px 0 0;
+        accent-color: #6254f4;
+        cursor: pointer;
+    }
+
+    .segment-mode-content {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+    }
+
+    .segment-mode-content strong {
+        color: #25243a;
+        font-size: 14px;
+    }
+
+    .segment-mode-content > span {
+        color: #73758a;
+        font-size: 13px;
+        font-weight: 400;
+        line-height: 1.5;
+    }
+
+    .segment-mode-content-area {
+        display: grid;
+        gap: 16px;
+        margin: -2px 0 5px 29px;
+        padding: 16px;
+        border-left: 3px solid #e4e0ff;
+        border-radius: 0 8px 8px 0;
+        background: #fafaff;
+    }
+
+    .segment-mode-content-area[hidden] {
+        display: none !important;
+    }
+
+    .segment-help {
+        margin: 0;
+        color: #73758a;
+        font-size: 12px;
+        line-height: 1.5;
+    }
+
+    .segment-import-note {
+        margin-top: 20px;
+        padding: 14px;
+        border-radius: 9px;
+        background: #f7f8fc;
+    }
+
+    .segment-import-note strong {
+        color: #41435a;
+        font-size: 13px;
+    }
+
+    .segment-import-note p {
+        margin: 6px 0 0;
+        color: #73758a;
+        font-size: 12px;
+        line-height: 1.6;
+    }
+
+
+/* Modern Existing Segment Dropdown */
+#import_segment_id {
+    width: 100%;
+    min-height: 48px;
+    padding: 12px 44px 12px 15px;
+
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 500;
+    color: #252344;
+
+    background-color: #ffffff;
+    border: 1px solid #dedbff;
+    border-radius: 10px;
+
+    outline: none;
+    cursor: pointer;
+
+    appearance: none;
+    -webkit-appearance: none;
+
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%236254f4' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 15px center;
+    background-size: 18px;
+
+    transition: border-color 0.2s ease,
+                box-shadow 0.2s ease,
+                background-color 0.2s ease;
+}
+
+#import_segment_id:hover {
+    border-color: #aaa2ff;
+    background-color: #fdfcff;
+}
+
+#import_segment_id:focus {
+    border-color: #6254f4;
+    box-shadow: 0 0 0 4px rgba(98, 84, 244, 0.12);
+}
+
+#import_segment_id option {
+    padding: 12px;
+    color: #252344;
+    background-color: #ffffff;
+}
+
+
+    .form-actions {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-top: 24px;
+    }
+
+    .form-actions a,
+    .form-actions button {
+        text-align: center;
+    }
+
+    .upload-area input[type="file"] {
+        display: block;
+        width: 100%;
+        max-width: 100%;
+        margin-top: 18px;
+    }
+
+    @media (max-width: 800px) {
+        .import-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @media (max-width: 500px) {
+        .form-actions {
+            flex-direction: column-reverse;
+            align-items: stretch;
+        }
+
+        .form-actions a,
+        .form-actions button {
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .segment-import-card {
+            padding: 16px;
+        }
+
+        .segment-mode-content-area {
+            margin-left: 10px;
+        }
+    }
+</style>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+    const segmentRadios = document.querySelectorAll(
+        'input[name="segment_mode"]'
+    );
+
+    const existingArea = document.getElementById(
+        "existingSegmentArea"
+    );
+
+    const newArea = document.getElementById(
+        "newSegmentArea"
+    );
+
+    const existingSelect = document.getElementById(
+        "import_segment_id"
+    );
+
+    const newNameInput = document.getElementById(
+        "new_segment_name"
+    );
+
+    function updateSegmentOptions() {
+
+        const selectedRadio = document.querySelector(
+            'input[name="segment_mode"]:checked'
+        );
+
+        if (!selectedRadio) {
+            return;
+        }
+
+        const mode = selectedRadio.value;
+
+        existingArea.hidden = mode !== "existing";
+        newArea.hidden = mode !== "new";
+
+        existingSelect.required = mode === "existing";
+        newNameInput.required = mode === "new";
+
+        if (mode !== "existing") {
+            existingSelect.setCustomValidity("");
+        }
+
+        if (mode !== "new") {
+            newNameInput.setCustomValidity("");
+        }
+    }
+
+    segmentRadios.forEach(function (radio) {
+        radio.addEventListener(
+            "change",
+            updateSegmentOptions
+        );
+    });
+
+    const importForm = document.querySelector(
+        'input[name="action"][value="import_mapped"]'
+    );
+
+    if (importForm) {
+
+        const form = importForm.closest("form");
+
+        form.addEventListener("submit", function (event) {
+
+            const selectedRadio = document.querySelector(
+                'input[name="segment_mode"]:checked'
+            );
+
+            if (!selectedRadio) {
+                return;
+            }
+
+            if (
+                selectedRadio.value === "existing"
+                && !existingSelect.value
+            ) {
+                event.preventDefault();
+
+                existingSelect.setCustomValidity(
+                    "Please choose an existing segment, or select another option."
+                );
+
+                existingSelect.reportValidity();
+
+                return;
+            }
+
+            if (
+                selectedRadio.value === "new"
+                && !newNameInput.value.trim()
+            ) {
+                event.preventDefault();
+
+                newNameInput.setCustomValidity(
+                    "Please enter a name for the new segment."
+                );
+
+                newNameInput.reportValidity();
+
+                return;
+            }
+        });
+
+        existingSelect.addEventListener("change", function () {
+            existingSelect.setCustomValidity("");
+        });
+
+        newNameInput.addEventListener("input", function () {
+            newNameInput.setCustomValidity("");
+        });
+    }
+
+    updateSegmentOptions();
+});
+</script>
 
 {% endblock %}

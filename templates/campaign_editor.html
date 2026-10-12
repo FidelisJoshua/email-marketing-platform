@@ -22,9 +22,11 @@ New Campaign - EmailFlow
         </a>
 
         <div class="editor-title">
+
             <h1>
                 New Campaign
             </h1>
+
         </div>
 
         <div class="editor-status-area">
@@ -44,8 +46,11 @@ New Campaign - EmailFlow
             </span>
 
             <div class="publish-status">
+
                 <span class="publish-dot"></span>
+
                 Publish
+
             </div>
 
         </div>
@@ -54,7 +59,7 @@ New Campaign - EmailFlow
 
 
     <!-- =====================================================
-         MAIN EDITOR LAYOUT
+         MAIN CAMPAIGN FORM
          ===================================================== -->
 
     <form
@@ -75,7 +80,9 @@ New Campaign - EmailFlow
                 <div class="editor-content-card">
 
 
-                    <!-- SUBJECT -->
+                    <!-- =================================================
+                         SUBJECT
+                         ================================================= -->
 
                     <div class="subject-section">
 
@@ -117,19 +124,24 @@ New Campaign - EmailFlow
                     </div>
 
 
-                    <!-- PREVIEW TEXT -->
+                    <!-- =================================================
+                         PREVIEW TEXT
+                         ================================================= -->
 
                     <button
                         type="button"
                         class="preview-text-button"
                         onclick="togglePreviewText()"
                     >
+
                         <span class="plus-icon">
                             +
                         </span>
 
                         Add preview text
+
                     </button>
+
 
                     <div
                         id="previewTextWrapper"
@@ -164,6 +176,7 @@ New Campaign - EmailFlow
 
                         <span class="toolbar-divider"></span>
 
+
                         <button
                             type="button"
                             onclick="document.execCommand('undo')"
@@ -181,6 +194,7 @@ New Campaign - EmailFlow
                         </button>
 
                         <span class="toolbar-divider"></span>
+
 
                         <button
                             type="button"
@@ -216,6 +230,7 @@ New Campaign - EmailFlow
 
                         <span class="toolbar-divider"></span>
 
+
                         <button
                             type="button"
                             onclick="formatText('justifyLeft')"
@@ -249,6 +264,7 @@ New Campaign - EmailFlow
                         </button>
 
                         <span class="toolbar-divider"></span>
+
 
                         <button
                             type="button"
@@ -291,6 +307,7 @@ New Campaign - EmailFlow
                         </button>
 
                         <div class="toolbar-spacer"></div>
+
 
                         <button
                             type="button"
@@ -338,7 +355,6 @@ New Campaign - EmailFlow
 
                             <p class="editor-placeholder">
                                 Add content...
-
                             </p>
 
                         {% endif %}
@@ -346,7 +362,9 @@ New Campaign - EmailFlow
                     </div>
 
 
-                    <!-- Hidden field actually submitted to Flask -->
+                    <!-- =================================================
+                         HIDDEN MESSAGE FIELD
+                         ================================================= -->
 
                     <textarea
                         id="message"
@@ -355,20 +373,19 @@ New Campaign - EmailFlow
                     ></textarea>
 
 
-                    <!-- EMAIL FOOTER -->
+                    <!-- =================================================
+                         EMAIL FOOTER
+                         ================================================= -->
 
                     <div class="email-footer">
 
                         <div class="footer-links">
 
-                            <a href="#">
+                            <a
+                                href="#"
+                                onclick="return false;"
+                            >
                                 Unsubscribe
-                            </a>
-
-                            <span>|</span>
-
-                            <a href="#">
-                                Update your profile
                             </a>
 
                             <span>|</span>
@@ -379,11 +396,8 @@ New Campaign - EmailFlow
 
                         </div>
 
-                        <div class="built-with">
-                            Built with <strong>EmailFlow</strong>
-                        </div>
-
                     </div>
+
 
                 </div>
 
@@ -397,7 +411,9 @@ New Campaign - EmailFlow
             <aside class="campaign-editor-sidebar">
 
 
-                <!-- EMAIL CARD -->
+                <!-- =================================================
+                     EMAIL CARD
+                     ================================================= -->
 
                 <div class="sidebar-card">
 
@@ -478,7 +494,7 @@ New Campaign - EmailFlow
                         </div>
 
 
-                        <!-- BROWSE -->
+                        <!-- BROWSE TEMPLATES -->
 
                         <a
                             href="{{ url_for('campaigns') }}"
@@ -503,7 +519,9 @@ New Campaign - EmailFlow
                 </div>
 
 
-                <!-- A/B TEST -->
+                <!-- =================================================
+                     A/B TEST
+                     ================================================= -->
 
                 <div class="sidebar-card ab-test-card">
 
@@ -670,6 +688,7 @@ function insertVariable() {
     );
 
 }
+
 
 /* ---------------------------------------------------------
    FONT SIZE
@@ -854,6 +873,23 @@ document
                     "● Unsaved changes";
 
             }
+
+        }
+    );
+
+
+/* ---------------------------------------------------------
+   ENSURE MESSAGE IS SUBMITTED
+--------------------------------------------------------- */
+
+document
+    .getElementById("campaignEditorForm")
+    .addEventListener(
+        "submit",
+        function () {
+
+            messageField.value =
+                messageEditor.innerHTML;
 
         }
     );
@@ -1259,12 +1295,16 @@ document
     color: #6b7280;
 
     font-size: 12px;
+
+    border-top: 1px solid #f0f1f3;
 }
 
 .footer-links {
     display: flex;
 
     flex-wrap: wrap;
+
+    align-items: center;
 
     gap: 5px;
 }
@@ -1273,18 +1313,8 @@ document
     color: #2563eb;
 
     text-decoration: underline;
-}
 
-.built-with {
-    margin-top: 28px;
-
-    font-size: 17px;
-
-    color: #111827;
-}
-
-.built-with strong {
-    font-size: 24px;
+    cursor: pointer;
 }
 
 
@@ -1497,7 +1527,9 @@ document
 }
 
 
-/* SWITCH */
+/* =========================================================
+   SWITCH
+   ========================================================= */
 
 .switch {
     position: relative;
@@ -1662,6 +1694,7 @@ document
     }
 
 }
+
 
 @media (max-width: 650px) {
 

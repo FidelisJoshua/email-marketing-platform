@@ -12,6 +12,7 @@ from flask_bcrypt import Bcrypt
 from sqlalchemy.exc import IntegrityError
 
 from extension import db
+import secrets
 from models import (
     User,
     Contact,
@@ -21,7 +22,9 @@ from models import (
     LandingPage,
     LandingPageTemplate,
     Template,
-    EmailSettings
+    EmailSettings,
+    Segment,
+    SegmentContact
 )
 from email_service import (
     test_smtp_connection,
@@ -51,6 +54,59 @@ def create_unsubscribe_token(contact_id):
     return serializer.dumps({
         "contact_id": contact_id
     })
+
+# =========================================================
+# CAMPAIGN FOOTER ADDRESS
+# =========================================================
+
+def format_campaign_footer_address(user):
+
+    address_parts = []
+
+    # Street address
+    if user.address and user.address.strip():
+        address_parts.append(
+            user.address.strip()
+        )
+
+    # City + state + postal code
+    location_parts = []
+
+    if user.city and user.city.strip():
+        location_parts.append(
+            user.city.strip()
+        )
+
+    if user.state and user.state.strip():
+        location_parts.append(
+            user.state.strip()
+        )
+
+    location = ", ".join(location_parts)
+
+    if user.postal_code and user.postal_code.strip():
+
+        if location:
+
+            location = (
+                f"{location} "
+                f"{user.postal_code.strip()}"
+            )
+
+        else:
+
+            location = user.postal_code.strip()
+
+    if location:
+        address_parts.append(location)
+
+    # Country
+    if user.country and user.country.strip():
+        address_parts.append(
+            user.country.strip()
+        )
+
+    return ", ".join(address_parts)
 
 
 # =========================================================
@@ -1006,34 +1062,21 @@ def dashboard():
 def contacts():
 
     if "user_id" not in session:
-
         return redirect(url_for("login"))
 
     user_id = session["user_id"]
 
-    # -----------------------------------------------------
-    # ADD CONTACT FROM CONTACTS PAGE
-    # -----------------------------------------------------
+    # =====================================================
+    # ADD A SINGLE SUBSCRIBER
+    # =====================================================
 
     if request.method == "POST":
 
-        name = request.form.get(
-            "name",
-            ""
-        ).strip()
-
-        email = request.form.get(
-            "email",
-            ""
-        ).strip().lower()
+        name = request.form.get("name", "").strip()
+        email = request.form.get("email", "").strip().lower()
 
         if not name or not email:
-
-            flash(
-                "Name and email are required.",
-                "warning"
-            )
-
+            flash("Name and email are required.", "warning")
             return redirect(url_for("contacts"))
 
         existing_contact = Contact.query.filter_by(
@@ -1042,12 +1085,10 @@ def contacts():
         ).first()
 
         if existing_contact:
-
             flash(
-                "This email already exists in your contacts.",
+                "This email already exists in your subscribers.",
                 "warning"
             )
-
             return redirect(url_for("contacts"))
 
         new_contact = Contact(
@@ -1057,41 +1098,262 @@ def contacts():
         )
 
         try:
-
             db.session.add(new_contact)
-
             db.session.commit()
 
             flash(
-                "Contact added successfully.",
+                "Subscriber added successfully.",
                 "success"
             )
 
         except IntegrityError:
-
             db.session.rollback()
 
             flash(
-                "This email already exists in your contacts.",
+                "This email already exists in your subscribers.",
                 "warning"
             )
 
         return redirect(url_for("contacts"))
 
-    # -----------------------------------------------------
-    # DISPLAY CONTACTS
-    # -----------------------------------------------------
+    # =====================================================
+    # PAGINATION SETTINGS
+    # =====================================================
 
-    contact_list = Contact.query.filter_by(
+    per_page = request.args.get("per_page", 10, type=int)
+
+    if per_page not in [10, 25, 50]:
+        per_page = 10
+
+    page = request.args.get("page", 1, type=int)
+    page = max(page, 1)
+
+    # =====================================================
+    # BASE SUBSCRIBER QUERY
+    # =====================================================
+
+    query = Contact.query.filter_by(
         created_by=user_id
-    ).order_by(
+    )
+
+    # =====================================================
+    # FILTER BY SEGMENT
+    # =====================================================
+
+    segment_id = request.args.get(
+        "segment_id",
+        type=int
+    )
+
+    selected_segment = None
+
+    if segment_id is not None:
+
+        selected_segment = Segment.query.filter_by(
+            id=segment_id,
+            created_by=user_id
+        ).first()
+
+        if selected_segment:
+
+            query = query.join(
+                SegmentContact,
+                SegmentContact.contact_id == Contact.id
+            ).filter(
+                SegmentContact.segment_id == selected_segment.id
+            )
+
+        else:
+            segment_id = None
+    # =====================================================
+    # SEARCH BY NAME OR EMAIL
+    # =====================================================
+
+    search = request.args.get("search", "").strip()
+
+    if search:
+        query = query.filter(
+            db.or_(
+                Contact.name.ilike(f"%{search}%"),
+                Contact.email.ilike(f"%{search}%")
+            )
+        )
+
+    # =====================================================
+    # STATUS FILTER
+    # Confirmed means successfully added to the audience,
+    # not email-address verification.
+    # =====================================================
+
+    status = request.args.get("status", "all").lower()
+
+    if status == "confirmed":
+        query = query.filter(
+            Contact.unsubscribed.is_(False)
+        )
+
+    elif status == "unsubscribed":
+        query = query.filter(
+            Contact.unsubscribed.is_(True)
+        )
+
+    elif status not in ["all", "confirmed", "unsubscribed"]:
+        status = "all"
+
+    # =====================================================
+    # TOTAL SUBSCRIBER COUNT
+    # =====================================================
+
+    total_filtered = query.count()
+
+    # =====================================================
+    # PAGINATED RESULTS
+    # =====================================================
+
+    pagination = query.order_by(
         Contact.id.desc()
+    ).paginate(
+        page=page,
+        per_page=per_page,
+        error_out=False
+    )
+
+    contacts_list = pagination.items
+
+    # =====================================================
+    # SUMMARY COUNTS
+    # =====================================================
+
+    total_subscribers = Contact.query.filter_by(
+        created_by=user_id
+    ).count()
+
+    today = datetime.now(timezone.utc).date()
+
+    new_today = Contact.query.filter(
+        Contact.created_by == user_id,
+        Contact.created_at >= datetime.combine(
+            today,
+            datetime.min.time(),
+            tzinfo=timezone.utc
+        )
+    ).count()
+
+    # =====================================================
+    # RENDER PAGE
+    # =====================================================
+
+
+    segment_list = Segment.query.filter_by(
+        created_by=session["user_id"]
+    ).order_by(
+        Segment.created_at.desc()
     ).all()
 
     return render_template(
         "contacts.html",
-        contacts=contact_list
+        contacts=contacts_list,
+        pagination=pagination,
+        per_page=per_page,
+        search=search,
+        status=status,
+        total_subscribers=total_subscribers,
+        total_filtered=total_filtered,
+        new_today=new_today,
+        segments=segment_list,
+        selected_segment = selected_segment
     )
+
+@app.route("/segments")
+def segments():
+
+    if "user_id" not in session:
+        return redirect(url_for("login"))
+
+    user_id = session["user_id"]
+
+    segment_list = Segment.query.filter_by(
+        created_by=user_id
+    ).order_by(
+        Segment.created_at.desc()
+    ).all()
+
+    return render_template(
+        "segments.html",
+        segments=segment_list
+    )
+
+@app.route("/segments/create", methods=["GET"])
+def create_segment_page():
+
+    if "user_id" not in session:
+        return redirect(url_for("login"))
+
+    return render_template("create_segment.html")
+
+@app.route("/segments/create", methods=["POST"])
+def create_segment():
+
+    if "user_id" not in session:
+        return redirect(url_for("login"))
+
+    user_id = session["user_id"]
+
+    name = request.form.get("name", "").strip()
+    description = request.form.get("description", "").strip()
+
+    # Validate segment name
+    if not name:
+        flash(
+            "Please enter a segment name.",
+            "warning"
+        )
+        return redirect(url_for("create_segment_page"))
+
+    if len(name) > 100:
+        flash(
+            "The segment name cannot exceed 100 characters.",
+            "warning"
+        )
+        return redirect(url_for("create_segment_page"))
+
+    # Validate description
+    if len(description) > 255:
+        flash(
+            "The description cannot exceed 255 characters.",
+            "warning"
+        )
+        return redirect(url_for("create_segment_page"))
+
+    # Prevent duplicate segment names for this user
+    existing_segment = Segment.query.filter(
+        Segment.created_by == user_id,
+        db.func.lower(Segment.name) == name.lower()
+    ).first()
+
+    if existing_segment:
+        flash(
+            "You already have a segment with that name.",
+            "warning"
+        )
+        return redirect(url_for("create_segment_page"))
+
+    # Create the segment
+    new_segment = Segment(
+        name=name,
+        description=description or None,
+        created_by=user_id
+    )
+
+    db.session.add(new_segment)
+    db.session.commit()
+
+    flash(
+        "Segment created successfully.",
+        "success"
+    )
+
+    return redirect(url_for("contacts"))
 
 
 # =========================================================
@@ -1189,375 +1451,719 @@ def add_contact():
 # IMPORT CSV
 # =========================================================
 
-@app.route("/import_csv", methods=["POST"])
+
+@app.route("/import_csv", methods=["GET", "POST"])
 def import_csv():
 
     if "user_id" not in session:
-
         return redirect(url_for("login"))
 
     user_id = session["user_id"]
 
-    # -----------------------------------------------------
-    # CHECK FILE
-    # -----------------------------------------------------
+    upload_folder = app.config["UPLOAD_FOLDER"]
 
-    if "csv_file" not in request.files:
+    os.makedirs(upload_folder, exist_ok=True)
 
-        flash(
-            "No CSV file was selected.",
-            "warning"
+    # =====================================================
+    # HELPER: READ CSV AND PREPARE MAPPING SCREEN
+    # =====================================================
+
+    def show_mapping(file_token, selected=None):
+
+        filepath = os.path.join(
+            upload_folder,
+            file_token + ".csv"
         )
 
-        return redirect(url_for("contacts"))
+        try:
+            df = pd.read_csv(
+                filepath,
+                dtype=str,
+                encoding="utf-8-sig"
+            )
 
-    file = request.files["csv_file"]
+        except Exception:
+            try:
+                os.remove(filepath)
+            except OSError:
+                pass
 
-    if file.filename == "":
+            flash(
+                "Could not read the CSV file. Please check its format.",
+                "danger"
+            )
 
-        flash(
-            "Please choose a CSV file.",
-            "warning"
+            return redirect(url_for("contacts"))
+
+        # Normalize column names for reliable matching.
+        df.columns = [
+            str(column).strip().lower()
+            for column in df.columns
+        ]
+
+        headers = list(df.columns)
+
+        if not headers:
+            try:
+                os.remove(filepath)
+            except OSError:
+                pass
+
+            flash(
+                "The CSV file does not contain column headings.",
+                "danger"
+            )
+
+            return redirect(url_for("contacts"))
+
+        # Suggest common column names automatically.
+        if selected is None:
+
+            selected = {
+                "email_column": "",
+                "full_name_column": "",
+                "first_name_column": "",
+                "last_name_column": ""
+            }
+
+            email_options = [
+                "email",
+                "email address",
+                "email_address",
+                "e-mail",
+                "e-mail address"
+            ]
+
+            first_options = [
+                "first name",
+                "firstname",
+                "first_name",
+                "given name",
+                "given_name"
+            ]
+
+            last_options = [
+                "last name",
+                "lastname",
+                "last_name",
+                "surname",
+                "family name"
+            ]
+
+            full_name_options = [
+                "full name",
+                "full_name",
+                "name"
+            ]
+
+            selected["email_column"] = next(
+                (
+                    column for column in email_options
+                    if column in headers
+                ),
+                ""
+            )
+
+            selected["first_name_column"] = next(
+                (
+                    column for column in first_options
+                    if column in headers
+                ),
+                ""
+            )
+
+            selected["last_name_column"] = next(
+                (
+                    column for column in last_options
+                    if column in headers
+                ),
+                ""
+            )
+
+            selected["full_name_column"] = next(
+                (
+                    column for column in full_name_options
+                    if column in headers
+                ),
+                ""
+            )
+
+            # Prefer separate first and last names when
+            # both columns are available.
+            if (
+                selected["first_name_column"]
+                and selected["last_name_column"]
+            ):
+                selected["full_name_column"] = ""
+
+        segments = Segment.query.filter_by(
+            created_by=user_id
+        ).order_by(
+            Segment.created_at.desc()
+        ).all()
+
+        return render_template(
+            "import_csv.html",
+            headers=headers,
+            file_token=file_token,
+            selected=selected,
+            segments=segments
         )
 
-        return redirect(url_for("contacts"))
+    # =====================================================
+    # GET: SHOW UPLOAD PAGE
+    # =====================================================
 
-    if not file.filename.lower().endswith(".csv"):
+    if request.method == "GET":
+        segments = Segment.query.filter_by(
+            created_by=user_id
+        ).order_by(
+            Segment.created_at.desc()
+        ).all()
 
-        flash(
-            "Please upload a CSV file.",
-            "warning"
+        return render_template(
+            "import_csv.html",
+            headers=None,
+            segments=segments
         )
 
+    # =====================================================
+    # STEP 1: PROCESS UPLOADED FILE
+    # =====================================================
+
+    if request.form.get("action") != "import_mapped":
+
+        if "csv_file" not in request.files:
+            flash(
+                "No CSV file was selected.",
+                "warning"
+            )
+            return redirect(url_for("contacts"))
+
+        file = request.files["csv_file"]
+
+        if not file.filename:
+            flash(
+                "Please choose a CSV file.",
+                "warning"
+            )
+            return redirect(url_for("contacts"))
+
+        if not file.filename.lower().endswith(".csv"):
+            flash(
+                "Please upload a CSV file.",
+                "warning"
+            )
+            return redirect(url_for("contacts"))
+
+        # Generate a unique filename instead of using
+        # the uploaded file's original name.
+        file_token = secrets.token_urlsafe(24)
+
+        filepath = os.path.join(
+            upload_folder,
+            file_token + ".csv"
+        )
+
+        try:
+            file.save(filepath)
+
+        except Exception:
+            app.logger.exception("CSV upload failed.")
+
+            flash(
+                "The CSV file could not be uploaded.",
+                "danger"
+            )
+            return redirect(url_for("contacts"))
+
+        return show_mapping(file_token)
+
+    # =====================================================
+    # STEP 2: VALIDATE MAPPING SUBMISSION
+    # =====================================================
+
+    file_token = request.form.get(
+        "file_token",
+        ""
+    ).strip()
+
+    # Only accept tokens generated by this application.
+    if (
+        not file_token
+        or len(file_token) > 100
+        or not all(
+            character.isalnum() or character in "-_"
+            for character in file_token
+        )
+    ):
+        flash(
+            "The uploaded file could not be identified. Please upload it again.",
+            "warning"
+        )
         return redirect(url_for("contacts"))
-
-    # -----------------------------------------------------
-    # CREATE UPLOAD FOLDER
-    # -----------------------------------------------------
-
-    os.makedirs(
-        app.config["UPLOAD_FOLDER"],
-        exist_ok=True
-    )
-
-    # -----------------------------------------------------
-    # SAVE FILE
-    # -----------------------------------------------------
 
     filepath = os.path.join(
-        app.config["UPLOAD_FOLDER"],
-        file.filename
+        upload_folder,
+        file_token + ".csv"
     )
 
-    file.save(filepath)
+    if not os.path.isfile(filepath):
+        flash(
+            "Your uploaded file has expired or is missing. Please upload it again.",
+            "warning"
+        )
+        return redirect(url_for("contacts"))
+
+    selected = {
+        "email_column": request.form.get(
+            "email_column", ""
+        ),
+        "full_name_column": request.form.get(
+            "full_name_column", ""
+        ),
+        "first_name_column": request.form.get(
+            "first_name_column", ""
+        ),
+        "last_name_column": request.form.get(
+            "last_name_column", ""
+        )
+    }
+
+    try:
+        df = pd.read_csv(
+            filepath,
+            dtype=str,
+            encoding="utf-8-sig"
+        )
+
+        df.columns = [
+            str(column).strip().lower()
+            for column in df.columns
+        ]
+
+    except Exception:
+        try:
+            os.remove(filepath)
+        except OSError:
+            pass
+
+        flash(
+            "Could not read the uploaded CSV file.",
+            "danger"
+        )
+        return redirect(url_for("contacts"))
+
+    headers = list(df.columns)
+
+    # Validate that every selected column actually exists.
+    for field, column in selected.items():
+
+        if column and column not in headers:
+            flash(
+                "One of your selected columns is invalid. Please map the columns again.",
+                "warning"
+            )
+
+            return show_mapping(
+                file_token,
+                selected
+            )
+
+    email_column = selected["email_column"]
+    full_name_column = selected["full_name_column"]
+    first_name_column = selected["first_name_column"]
+    last_name_column = selected["last_name_column"]
+
+    if not email_column:
+        flash(
+            "Please map the Email Address field before importing.",
+            "warning"
+        )
+
+        return show_mapping(
+            file_token,
+            selected
+        )
+
+    if (
+        email_column in [
+            full_name_column,
+            first_name_column,
+            last_name_column
+        ]
+    ):
+        flash(
+            "The email column cannot also be used as a name column.",
+            "warning"
+        )
+
+        return show_mapping(
+            file_token,
+            selected
+        )
+
+    # =====================================================
+    # STEP 3: VALIDATE SEGMENT SELECTION
+    # =====================================================
+
+    segment_mode = request.form.get(
+        "segment_mode",
+        "none"
+    ).strip()
+
+    target_segment = None
+    new_segment_name = ""
+    new_segment_description = ""
+
+    if segment_mode not in [
+        "existing",
+        "new",
+        "none"
+    ]:
+        flash(
+            "Please choose a valid segment option.",
+            "warning"
+        )
+
+        return show_mapping(
+            file_token,
+            selected
+        )
 
     # -----------------------------------------------------
-    # READ CSV
+    # EXISTING SEGMENT
     # -----------------------------------------------------
+
+    if segment_mode == "existing":
+
+        segment_id = request.form.get(
+            "import_segment_id",
+            type=int
+        )
+
+        if not segment_id:
+            flash(
+                "Please choose an existing segment or select another option.",
+                "warning"
+            )
+
+            return show_mapping(
+                file_token,
+                selected
+            )
+
+        target_segment = Segment.query.filter_by(
+            id=segment_id,
+            created_by=user_id
+        ).first()
+
+        if not target_segment:
+            flash(
+                "The selected segment could not be found. Please choose another.",
+                "warning"
+            )
+
+            return show_mapping(
+                file_token,
+                selected
+            )
+
+    # -----------------------------------------------------
+    # NEW SEGMENT
+    # -----------------------------------------------------
+
+    elif segment_mode == "new":
+
+        new_segment_name = request.form.get(
+            "new_segment_name",
+            ""
+        ).strip()
+
+        new_segment_description = request.form.get(
+            "new_segment_description",
+            ""
+        ).strip()
+
+        if not new_segment_name:
+            flash(
+                "Please enter a name for the new segment.",
+                "warning"
+            )
+
+            return show_mapping(
+                file_token,
+                selected
+            )
+
+        if len(new_segment_name) > 100:
+            flash(
+                "The segment name cannot exceed 100 characters.",
+                "warning"
+            )
+
+            return show_mapping(
+                file_token,
+                selected
+            )
+
+        if len(new_segment_description) > 255:
+            flash(
+                "The segment description cannot exceed 255 characters.",
+                "warning"
+            )
+
+            return show_mapping(
+                file_token,
+                selected
+            )
+
+        duplicate_segment = Segment.query.filter(
+            Segment.created_by == user_id,
+            db.func.lower(Segment.name)
+            == new_segment_name.lower()
+        ).first()
+
+        if duplicate_segment:
+            flash(
+                "A segment with that name already exists. "
+                "Please choose it from Existing segment or use another name.",
+                "warning"
+            )
+
+            return show_mapping(
+                file_token,
+                selected
+            )
+
+    # =====================================================
+    # STEP 4: IMPORT CONTACTS
+    # =====================================================
+
+    imported = 0
+    duplicates = 0
+    invalid = 0
+    blank_rows = 0
+
+    imported_contacts = []
 
     try:
 
-        df = pd.read_csv(
-            filepath,
-            dtype=str
+        # Track email addresses within the CSV so repeated
+        # rows are not imported twice.
+        seen_emails = set()
+
+        for _, row in df.iterrows():
+
+            raw_email = row.get(
+                email_column,
+                ""
+            )
+
+            email = (
+                ""
+                if pd.isna(raw_email)
+                else str(raw_email).strip().lower()
+            )
+
+            if not email:
+                blank_rows += 1
+                continue
+
+            if (
+                    "@" not in email
+                    or "." not in email.rsplit("@", 1)[-1]
+                    or any(
+                character.isspace()
+                for character in email
+            )
+            ):
+                invalid += 1
+                continue
+
+            if email in seen_emails:
+                duplicates += 1
+                continue
+
+            seen_emails.add(email)
+
+            existing_contact = Contact.query.filter_by(
+                email=email,
+                created_by=user_id
+            ).first()
+
+            if existing_contact:
+                duplicates += 1
+                continue
+
+            # Build the contact name from mapped columns.
+            name_parts = []
+
+            if full_name_column:
+
+                value = row.get(
+                    full_name_column,
+                    ""
+                )
+
+                if not pd.isna(value):
+
+                    full_name = str(value).strip()
+
+                    if full_name:
+                        name_parts.append(full_name)
+
+            else:
+
+                for column in [
+                    first_name_column,
+                    last_name_column
+                ]:
+
+                    if not column:
+                        continue
+
+                    value = row.get(
+                        column,
+                        ""
+                    )
+
+                    if not pd.isna(value):
+
+                        part = str(value).strip()
+
+                        if part:
+                            name_parts.append(part)
+
+            name = " ".join(
+                name_parts
+            ).strip()
+
+            if not name:
+                name = email.split("@")[0]
+
+            contact = Contact(
+                name=name,
+                email=email,
+                created_by=user_id
+            )
+
+            db.session.add(contact)
+
+            imported_contacts.append(contact)
+            imported += 1
+
+        # -------------------------------------------------
+        # CREATE THE NEW SEGMENT IF NEEDED
+        # -------------------------------------------------
+
+        # Do not create an empty segment if no new contacts
+        # were imported.
+        if imported_contacts and segment_mode == "new":
+            target_segment = Segment(
+                name=new_segment_name,
+                description=(
+                        new_segment_description or None
+                ),
+                created_by=user_id
+            )
+
+            db.session.add(target_segment)
+
+        # -------------------------------------------------
+        # ASSIGN NEW CONTACTS TO THE SELECTED SEGMENT
+        # -------------------------------------------------
+
+        if (
+                imported_contacts
+                and segment_mode in ["existing", "new"]
+        ):
+
+            # Ensure new contacts and a newly created segment
+            # have database IDs before creating memberships.
+            db.session.flush()
+
+            for contact in imported_contacts:
+                membership = SegmentContact(
+                    segment_id=target_segment.id,
+                    contact_id=contact.id
+                )
+
+                db.session.add(membership)
+
+        # Save contacts, any new segment, and memberships
+        # together in one database transaction.
+        db.session.commit()
+
+    except Exception:
+
+        db.session.rollback()
+
+        app.logger.exception(
+            "An error occurred while importing contacts."
         )
 
-    except Exception as e:
-
         flash(
-            f"Could not read the CSV file: {e}",
+            "An error occurred while importing contacts. "
+            "No contacts from this import were saved.",
             "danger"
         )
 
-        return redirect(url_for("contacts"))
-
-    # -----------------------------------------------------
-    # CLEAN COLUMN NAMES
-    # -----------------------------------------------------
-
-    df.columns = (
-        df.columns
-        .astype(str)
-        .str.strip()
-        .str.lower()
-    )
-
-    # -----------------------------------------------------
-    # FIND EMAIL COLUMN
-    # -----------------------------------------------------
-
-    email_column = None
-
-    possible_email_columns = [
-        "email",
-        "email address",
-        "email_address",
-        "e-mail",
-        "e-mail address"
-    ]
-
-    for column in possible_email_columns:
-
-        if column in df.columns:
-
-            email_column = column
-
-            break
-
-    if email_column is None:
-
-        flash(
-            "No email column was found. "
-            "Your CSV must contain an Email column.",
-            "danger"
+        return redirect(
+            url_for("contacts")
         )
+
+    finally:
 
         try:
             os.remove(filepath)
         except OSError:
             pass
 
-        return redirect(url_for("contacts"))
+    # =====================================================
+    # STEP 5: SHOW IMPORT SUMMARY
+    # =====================================================
 
-    # -----------------------------------------------------
-    # FIND NAME COLUMNS
-    # -----------------------------------------------------
+    summary = (
+        f"Import completed! "
+        f"Imported: {imported} | "
+        f"Duplicates: {duplicates} | "
+        f"Invalid: {invalid} | "
+        f"Blank: {blank_rows}"
+    )
 
-    first_name_column = None
+    if imported and segment_mode in [
+        "existing",
+        "new"
+    ]:
 
-    last_name_column = None
-
-    name_column = None
-
-    possible_first_names = [
-        "first name",
-        "firstname",
-        "first_name"
-    ]
-
-    possible_last_names = [
-        "last name",
-        "lastname",
-        "last_name"
-    ]
-
-    possible_name_columns = [
-        "name",
-        "full name",
-        "full_name"
-    ]
-
-    for column in possible_first_names:
-
-        if column in df.columns:
-
-            first_name_column = column
-
-            break
-
-    for column in possible_last_names:
-
-        if column in df.columns:
-
-            last_name_column = column
-
-            break
-
-    for column in possible_name_columns:
-
-        if column in df.columns:
-
-            name_column = column
-
-            break
-
-    # -----------------------------------------------------
-    # COUNTERS
-    # -----------------------------------------------------
-
-    imported = 0
-
-    duplicates = 0
-
-    invalid = 0
-
-    blank_rows = 0
-
-    # -----------------------------------------------------
-    # PROCESS CSV
-    # -----------------------------------------------------
-
-    for _, row in df.iterrows():
-
-        raw_email = row.get(
-            email_column,
-            ""
+        summary += (
+            f" | Added to segment: "
+            f"{target_segment.name}"
         )
 
-        if pd.isna(raw_email):
+    elif (
+            imported == 0
+            and segment_mode == "new"
+    ):
 
-            email = ""
-
-        else:
-
-            email = str(
-                raw_email
-            ).strip().lower()
-
-        # -------------------------------------------------
-        # BLANK EMAIL
-        # -------------------------------------------------
-
-        if not email:
-
-            blank_rows += 1
-
-            continue
-
-        # -------------------------------------------------
-        # BASIC EMAIL VALIDATION
-        # -------------------------------------------------
-
-        if (
-            "@" not in email
-            or "." not in email.rsplit("@", 1)[-1]
-        ):
-
-            invalid += 1
-
-            continue
-
-        # -------------------------------------------------
-        # GET NAME
-        # -------------------------------------------------
-
-        name = ""
-
-        # FULL NAME
-
-        if name_column:
-
-            value = row.get(
-                name_column,
-                ""
-            )
-
-            if not pd.isna(value):
-
-                name = str(
-                    value
-                ).strip()
-
-        # FIRST + LAST NAME
-
-        else:
-
-            first_name = ""
-
-            last_name = ""
-
-            if first_name_column:
-
-                value = row.get(
-                    first_name_column,
-                    ""
-                )
-
-                if not pd.isna(value):
-
-                    first_name = str(
-                        value
-                    ).strip()
-
-            if last_name_column:
-
-                value = row.get(
-                    last_name_column,
-                    ""
-                )
-
-                if not pd.isna(value):
-
-                    last_name = str(
-                        value
-                    ).strip()
-
-            name = (
-                f"{first_name} {last_name}"
-                .strip()
-            )
-
-        # -------------------------------------------------
-        # DEFAULT NAME
-        # -------------------------------------------------
-
-        if not name:
-
-            name = email.split("@")[0]
-
-        # -------------------------------------------------
-        # CHECK DUPLICATE
-        # -------------------------------------------------
-
-        existing_contact = Contact.query.filter_by(
-            email=email,
-            created_by=user_id
-        ).first()
-
-        if existing_contact:
-
-            duplicates += 1
-
-            continue
-
-        # -------------------------------------------------
-        # CREATE CONTACT
-        # -------------------------------------------------
-
-        contact = Contact(
-            name=name,
-            email=email,
-            created_by=user_id
+        summary += (
+            " | No new contacts were imported, "
+            "so the new segment was not created."
         )
 
-        db.session.add(contact)
+    flash(
+        summary,
+        "success"
+    )
 
-        imported += 1
+    return redirect(
+        url_for("contacts")
+    )
 
-    # -----------------------------------------------------
-    # COMMIT
-    # -----------------------------------------------------
-
-    try:
-
-        db.session.commit()
-
-    except Exception as e:
-
-        db.session.rollback()
-
-        flash(
-            f"An error occurred while importing contacts: {e}",
-            "danger"
-        )
-
-        return redirect(url_for("contacts"))
-
-    # -----------------------------------------------------
-    # DELETE TEMP FILE
-    # -----------------------------------------------------
-
-    try:
-
-        os.remove(filepath)
-
-    except OSError:
-
-        pass
-
-    # -----------------------------------------------------
-    # SUMMARY
-    # -----------------------------------------------------
+    # =====================================================
+    # STEP 4: SHOW IMPORT SUMMARY
+    # =====================================================
 
     flash(
         f"Import completed! "
@@ -1568,9 +2174,7 @@ def import_csv():
         "success"
     )
 
-    return redirect(
-        url_for("contacts")
-    )
+    return redirect(url_for("contacts"))
 
 
 # =========================================================
@@ -1622,54 +2226,299 @@ def delete_contact(contact_id):
 def bulk_delete_contacts():
 
     if "user_id" not in session:
-
         return redirect(url_for("login"))
 
     user_id = session["user_id"]
 
-    contact_ids = request.form.getlist(
-        "contact_ids"
+    # Check whether the user selected every matching subscriber.
+    select_all_matching = (
+        request.form.get("select_all_matching") == "true"
     )
 
-    if not contact_ids:
+    if select_all_matching:
 
+        # Start with this user's contacts only.
+        query = Contact.query.filter_by(
+            created_by=user_id
+        )
+
+        # Apply the current search filter.
+        search = request.form.get("search", "").strip()
+
+        if search:
+            query = query.filter(
+                db.or_(
+                    Contact.name.ilike(f"%{search}%"),
+                    Contact.email.ilike(f"%{search}%")
+                )
+            )
+
+        # Apply the current status filter.
+        status = request.form.get(
+            "status", "all"
+        ).lower()
+
+        if status == "confirmed":
+            query = query.filter(
+                Contact.unsubscribed.is_(False)
+            )
+
+        elif status == "unsubscribed":
+            query = query.filter(
+                Contact.unsubscribed.is_(True)
+            )
+
+        contacts_to_delete = query.all()
+
+    else:
+
+        contact_ids = request.form.getlist(
+            "contact_ids"
+        )
+
+        if not contact_ids:
+            flash(
+                "No subscribers selected.",
+                "warning"
+            )
+            return redirect(url_for("contacts"))
+
+        # Only delete contacts owned by the logged-in user.
+        contacts_to_delete = Contact.query.filter(
+            Contact.id.in_(contact_ids),
+            Contact.created_by == user_id
+        ).all()
+
+    if not contacts_to_delete:
         flash(
-            "No contacts selected.",
+            "No matching subscribers were found.",
             "warning"
         )
-
-        return redirect(
-            url_for("contacts")
-        )
-
-    contacts_to_delete = Contact.query.filter(
-        Contact.id.in_(contact_ids),
-        Contact.created_by == user_id
-    ).all()
+        return redirect(url_for("contacts"))
 
     deleted = 0
 
     for contact in contacts_to_delete:
 
+        # Remove campaign-recipient records first.
         CampaignRecipient.query.filter_by(
             contact_id=contact.id
         ).delete()
 
         db.session.delete(contact)
-
         deleted += 1
 
     db.session.commit()
 
     flash(
-        f"{deleted} contact(s) deleted successfully.",
+        f"{deleted} subscriber(s) deleted successfully.",
         "success"
     )
 
-    return redirect(
-        url_for("contacts")
+    return redirect(url_for("contacts"))
+
+
+
+@app.route(
+    "/bulk_unsubscribe_contacts",
+    methods=["POST"]
+)
+def bulk_unsubscribe_contacts():
+
+    if "user_id" not in session:
+        return redirect(url_for("login"))
+
+    user_id = session["user_id"]
+
+    select_all_matching = (
+        request.form.get("select_all_matching") == "true"
     )
 
+    if select_all_matching:
+
+        query = Contact.query.filter_by(
+            created_by=user_id
+        )
+
+        search = request.form.get(
+            "search", ""
+        ).strip()
+
+        if search:
+            query = query.filter(
+                db.or_(
+                    Contact.name.ilike(f"%{search}%"),
+                    Contact.email.ilike(f"%{search}%")
+                )
+            )
+
+        status = request.form.get(
+            "status", "all"
+        ).lower()
+
+        if status == "confirmed":
+            query = query.filter(
+                Contact.unsubscribed.is_(False)
+            )
+
+        elif status == "unsubscribed":
+            query = query.filter(
+                Contact.unsubscribed.is_(True)
+            )
+
+        contacts_to_update = query.all()
+
+    else:
+
+        contact_ids = request.form.getlist(
+            "contact_ids"
+        )
+
+        if not contact_ids:
+            flash(
+                "No subscribers selected.",
+                "warning"
+            )
+            return redirect(url_for("contacts"))
+
+        contacts_to_update = Contact.query.filter(
+            Contact.id.in_(contact_ids),
+            Contact.created_by == user_id
+        ).all()
+
+    unsubscribed_count = 0
+
+    for contact in contacts_to_update:
+
+        if not contact.unsubscribed:
+
+            contact.unsubscribed = True
+            contact.unsubscribed_at = datetime.now(
+                timezone.utc
+            )
+
+            unsubscribed_count += 1
+
+    db.session.commit()
+
+    if unsubscribed_count > 0:
+        flash(
+            f"{unsubscribed_count} subscriber(s) unsubscribed successfully.",
+            "success"
+        )
+    else:
+        flash(
+            "No new subscribers were unsubscribed. They may already be unsubscribed.",
+            "warning"
+        )
+
+    return redirect(url_for("contacts"))
+
+@app.route("/bulk_add_contacts_to_segment", methods=["POST"])
+def bulk_add_contacts_to_segment():
+
+    if "user_id" not in session:
+        return redirect(url_for("login"))
+
+    user_id = session["user_id"]
+
+    segment_id = request.form.get(
+        "segment_id",
+        type=int
+    )
+
+    contact_ids = request.form.getlist("contact_ids")
+
+    if not segment_id:
+        flash(
+            "Please select a segment.",
+            "warning"
+        )
+        return redirect(url_for("contacts"))
+
+    # Verify that the segment belongs to the logged-in user.
+    segment = Segment.query.filter_by(
+        id=segment_id,
+        created_by=user_id
+    ).first()
+
+    if not segment:
+        flash(
+            "The selected segment could not be found.",
+            "warning"
+        )
+        return redirect(url_for("contacts"))
+
+    if not contact_ids:
+        flash(
+            "Please select at least one subscriber.",
+            "warning"
+        )
+        return redirect(url_for("contacts"))
+
+    # Verify that every selected contact belongs to this user.
+    valid_contacts = Contact.query.filter(
+        Contact.created_by == user_id,
+        Contact.id.in_(contact_ids)
+    ).all()
+
+    if not valid_contacts:
+        flash(
+            "No valid subscribers were selected.",
+            "warning"
+        )
+        return redirect(url_for("contacts"))
+
+    # Find contacts already assigned to this segment.
+    existing_memberships = SegmentContact.query.filter(
+        SegmentContact.segment_id == segment.id,
+        SegmentContact.contact_id.in_(
+            [contact.id for contact in valid_contacts]
+        )
+    ).all()
+
+    existing_contact_ids = {
+        membership.contact_id
+        for membership in existing_memberships
+    }
+
+    added_count = 0
+
+    # Add only new memberships.
+    for contact in valid_contacts:
+
+        if contact.id in existing_contact_ids:
+            continue
+
+        membership = SegmentContact(
+            segment_id=segment.id,
+            contact_id=contact.id
+        )
+
+        db.session.add(membership)
+        added_count += 1
+
+    db.session.commit()
+
+    if added_count:
+        flash(
+            f"{added_count} subscriber(s) added to "
+            f"'{segment.name}' successfully.",
+            "success"
+        )
+    else:
+        flash(
+            "All selected subscribers are already in "
+            "this segment.",
+            "info"
+        )
+
+    return redirect(
+        url_for(
+            "contacts",
+            segment_id=segment.id
+        )
+    )
 
 # =========================================================
 # EDIT CONTACT
@@ -1811,19 +2660,6 @@ def campaigns():
 
 
     # -----------------------------------------------------
-    # GET AVAILABLE CAMPAIGN TEMPLATES
-    # -----------------------------------------------------
-
-    template_list = Template.query.filter(
-        (Template.is_system_template.is_(True)) |
-        (Template.created_by == user_id)
-    ).order_by(
-        Template.is_system_template.desc(),
-        Template.created_at.desc()
-    ).all()
-
-
-    # -----------------------------------------------------
     # GET EXISTING CAMPAIGNS
     # -----------------------------------------------------
 
@@ -1836,9 +2672,197 @@ def campaigns():
 
     return render_template(
         "campaigns.html",
-        templates=template_list,
         campaigns=campaign_list
     )
+
+@app.route("/campaigns/new")
+def new_campaign():
+
+    if "user_id" not in session:
+
+        return redirect(
+            url_for("login")
+        )
+
+    user_id = session["user_id"]
+
+
+    # -----------------------------------------------------
+    # GET AVAILABLE CAMPAIGN TEMPLATES
+    # -----------------------------------------------------
+
+    template_list = Template.query.filter(
+        (Template.is_system_template.is_(True)) |
+        (Template.created_by == user_id)
+    ).order_by(
+        Template.is_system_template.desc(),
+        Template.created_at.desc()
+    ).all()
+
+
+    return render_template(
+        "campaign_new.html",
+        templates=template_list
+    )
+
+
+# =========================================================
+# DUPLICATE / RESEND CAMPAIGN HELPER
+# =========================================================
+
+def create_campaign_copy(campaign_id, action):
+
+    if "user_id" not in session:
+        return redirect(url_for("login"))
+
+    user_id = session["user_id"]
+
+    original_campaign = Campaign.query.filter_by(
+        id=campaign_id,
+        created_by=user_id
+    ).first()
+
+    if not original_campaign:
+        flash("Campaign could not be found.", "warning")
+        return redirect(url_for("campaigns"))
+
+    # Create a fresh draft using the original content.
+    new_campaign = Campaign(
+        subject=original_campaign.subject,
+        message=original_campaign.message,
+        status="Draft",
+        sent_count=0,
+        failed_count=0,
+        scheduled_at=None,
+        created_by=user_id
+    )
+
+    db.session.add(new_campaign)
+    db.session.flush()
+
+    # Prepare recipients from this user's current contacts.
+    contacts = Contact.query.filter_by(
+        created_by=user_id
+    ).all()
+
+    for contact in contacts:
+
+        recipient = CampaignRecipient(
+            campaign_id=new_campaign.id,
+            contact_id=contact.id,
+            status="Pending"
+        )
+
+        db.session.add(recipient)
+
+    try:
+        db.session.commit()
+
+    except Exception:
+        db.session.rollback()
+        app.logger.exception("Could not copy campaign.")
+        flash(
+            "The campaign could not be copied. Please try again.",
+            "danger"
+        )
+        return redirect(url_for("campaigns"))
+
+    if action == "resend":
+        flash(
+            "A new draft has been prepared for resending. Review it before sending.",
+            "success"
+        )
+    else:
+        flash(
+            "Campaign duplicated successfully. Your new draft is ready.",
+            "success"
+        )
+
+    return redirect(
+        url_for(
+            "preview_campaign",
+            campaign_id=new_campaign.id
+        )
+    )
+
+
+# =========================================================
+# DUPLICATE CAMPAIGN
+# =========================================================
+
+@app.route(
+    "/campaign/<int:campaign_id>/duplicate",
+    methods=["POST"]
+)
+def duplicate_campaign(campaign_id):
+
+    return create_campaign_copy(
+        campaign_id,
+        "duplicate"
+    )
+
+
+# =========================================================
+# RESEND CAMPAIGN
+# =========================================================
+
+@app.route(
+    "/campaign/<int:campaign_id>/resend",
+    methods=["POST"]
+)
+def resend_campaign(campaign_id):
+
+    return create_campaign_copy(
+        campaign_id,
+        "resend"
+    )
+
+
+# =========================================================
+# DELETE CAMPAIGN
+# =========================================================
+
+@app.route(
+    "/campaign/<int:campaign_id>/delete",
+    methods=["POST"]
+)
+def delete_campaign(campaign_id):
+
+    if "user_id" not in session:
+        return redirect(url_for("login"))
+
+    user_id = session["user_id"]
+
+    campaign = Campaign.query.filter_by(
+        id=campaign_id,
+        created_by=user_id
+    ).first()
+
+    if not campaign:
+        flash("Campaign could not be found.", "warning")
+        return redirect(url_for("campaigns"))
+
+    try:
+        # Delete associated recipient records first.
+        CampaignRecipient.query.filter_by(
+            campaign_id=campaign.id
+        ).delete(synchronize_session=False)
+
+        db.session.delete(campaign)
+        db.session.commit()
+
+    except Exception:
+        db.session.rollback()
+        app.logger.exception("Could not delete campaign.")
+        flash(
+            "The campaign could not be deleted. Please try again.",
+            "danger"
+        )
+        return redirect(url_for("campaigns"))
+
+    flash("Campaign deleted successfully.", "success")
+
+    return redirect(url_for("campaigns"))
 
 
 # =========================================================
@@ -2391,6 +3415,28 @@ def send_campaign(campaign_id):
 
 
     # =====================================================
+    # GET USER
+    # =====================================================
+
+    user = db.session.get(
+        User,
+        user_id
+    )
+
+
+    if not user:
+
+        flash(
+            "User account could not be found.",
+            "danger"
+        )
+
+        return redirect(
+            url_for("campaigns")
+        )
+
+
+    # =====================================================
     # GET EMAIL SETTINGS
     # =====================================================
 
@@ -2541,6 +3587,17 @@ def send_campaign(campaign_id):
 
     failed = 0
 
+    skipped = 0
+
+
+    # =====================================================
+    # BUILD SENDER ADDRESS
+    # =====================================================
+
+    sender_address = format_campaign_footer_address(
+        user
+    )
+
 
     print("")
     print("=" * 60)
@@ -2590,14 +3647,112 @@ def send_campaign(campaign_id):
             continue
 
 
+        # =================================================
+        # SKIP UNSUBSCRIBED CONTACT
+        # =================================================
+
+        if contact.unsubscribed:
+
+            recipient.status = "Skipped"
+
+            db.session.commit()
+
+            skipped += 1
+
+            print(
+                f"🚫 Skipped unsubscribed contact: "
+                f"{contact.email}"
+            )
+
+            continue
+
+
+        # =================================================
+        # CREATE UNIQUE UNSUBSCRIBE LINK
+        # =================================================
+
+        token = create_unsubscribe_token(
+            contact.id
+        )
+
+
+        unsubscribe_url = url_for(
+            "unsubscribe",
+            token=token,
+            _external=True
+        )
+
+
+        # =================================================
+        # BUILD CAMPAIGN FOOTER
+        # =================================================
+
+        footer_address = sender_address
+
+        if footer_address:
+
+            footer_address_html = (
+                f'<span>{footer_address}</span>'
+            )
+
+        else:
+
+            footer_address_html = ""
+
+        if footer_address and unsubscribe_url:
+
+            footer_content = (
+                f'<a href="{unsubscribe_url}" '
+                f'style="color:#666666; '
+                f'text-decoration:underline;">'
+                f'Unsubscribe'
+                f'</a>'
+                f'&nbsp;&nbsp;|&nbsp;&nbsp;'
+                f'{footer_address_html}'
+            )
+
+        elif unsubscribe_url:
+
+            footer_content = (
+                f'<a href="{unsubscribe_url}" '
+                f'style="color:#666666; '
+                f'text-decoration:underline;">'
+                f'Unsubscribe'
+                f'</a>'
+            )
+
+        else:
+
+            footer_content = footer_address_html
+
+
+        campaign_body = (
+            f'{campaign.message}'
+            f'<hr style="'
+            f'border:0;'
+            f'border-top:1px solid #dddddd;'
+            f'margin:32px 0 16px 0;'
+            f'">'
+            f'<div style="'
+            f'font-family:Arial,Helvetica,sans-serif;'
+            f'font-size:12px;'
+            f'line-height:1.6;'
+            f'color:#666666;'
+            f'text-align:center;'
+            f'">'
+            f'{footer_content}'
+            f'</div>'
+        )
+
+
         attempts = 0
 
         success = False
 
 
-        # -------------------------------------------------
+        # =================================================
         # THREE ATTEMPTS
-        # -------------------------------------------------
+        # =================================================
 
         while attempts < 3:
 
@@ -2638,7 +3793,7 @@ def send_campaign(campaign_id):
 
                     subject=campaign.subject,
 
-                    body=campaign.message,
+                    body=campaign_body,
 
                     reply_to_email=email_settings.reply_to_email
                 )
@@ -2765,6 +3920,10 @@ def send_campaign(campaign_id):
     )
 
     print(
+        f"🚫 Skipped: {skipped}"
+    )
+
+    print(
         f"⏳ Remaining: {remaining}"
     )
 
@@ -2782,7 +3941,8 @@ def send_campaign(campaign_id):
         flash(
             f"Campaign completed! "
             f"Sent: {sent} | "
-            f"Failed: {failed}",
+            f"Failed: {failed} | "
+            f"Skipped: {skipped}",
             "success"
         )
 
@@ -2792,6 +3952,7 @@ def send_campaign(campaign_id):
             f"Campaign run completed! "
             f"Sent: {sent} | "
             f"Failed: {failed} | "
+            f"Skipped: {skipped} | "
             f"Remaining: {remaining}",
             "warning"
         )
@@ -4953,7 +6114,7 @@ def settings():
         return redirect(url_for("login"))
 
     return redirect(
-        url_for("account_settings")
+        url_for("settings_account")
     )
 
 
@@ -4961,252 +6122,7 @@ def settings():
 # ACCOUNT SETTINGS
 # =========================================================
 
-@app.route(
-    "/settings/account",
-    methods=["GET", "POST"]
-)
-def account_settings():
 
-    if "user_id" not in session:
-        return redirect(url_for("login"))
-
-    user = User.query.filter_by(
-        id=session["user_id"]
-    ).first_or_404()
-
-    if request.method == "POST":
-
-        action = request.form.get(
-            "action",
-            ""
-        ).strip()
-
-        # =================================================
-        # UPDATE ACCOUNT INFORMATION
-        # =================================================
-
-        if action == "update_account":
-
-            name = request.form.get(
-                "name",
-                ""
-            ).strip()
-
-            email = request.form.get(
-                "email",
-                ""
-            ).strip().lower()
-
-            # ---------------------------------------------
-            # VALIDATION
-            # ---------------------------------------------
-
-            if not name:
-
-                flash(
-                    "Please enter your name.",
-                    "warning"
-                )
-
-                return redirect(
-                    url_for("account_settings")
-                )
-
-            if not email:
-
-                flash(
-                    "Please enter your email address.",
-                    "warning"
-                )
-
-                return redirect(
-                    url_for("account_settings")
-                )
-
-            # ---------------------------------------------
-            # CHECK WHETHER EMAIL IS ALREADY USED
-            # ---------------------------------------------
-
-            existing_user = User.query.filter(
-                User.email == email,
-                User.id != user.id
-            ).first()
-
-            if existing_user:
-
-                flash(
-                    "That email address is already being used.",
-                    "warning"
-                )
-
-                return redirect(
-                    url_for("account_settings")
-                )
-
-            # ---------------------------------------------
-            # UPDATE USER
-            # ---------------------------------------------
-
-            user.name = name
-            user.email = email
-
-            try:
-
-                db.session.commit()
-
-                # Keep the session name updated
-                session["user_name"] = user.name
-
-                flash(
-                    "Account information updated successfully.",
-                    "success"
-                )
-
-            except IntegrityError:
-
-                db.session.rollback()
-
-                flash(
-                    "That email address is already being used.",
-                    "warning"
-                )
-
-            except Exception as e:
-
-                db.session.rollback()
-
-                flash(
-                    f"Could not update account: {e}",
-                    "danger"
-                )
-
-            return redirect(
-                url_for("account_settings")
-            )
-
-        # =================================================
-        # CHANGE PASSWORD
-        # =================================================
-
-        if action == "change_password":
-
-            current_password = request.form.get(
-                "current_password",
-                ""
-            )
-
-            new_password = request.form.get(
-                "new_password",
-                ""
-            )
-
-            confirm_password = request.form.get(
-                "confirm_password",
-                ""
-            )
-
-            # ---------------------------------------------
-            # VALIDATION
-            # ---------------------------------------------
-
-            if not current_password:
-
-                flash(
-                    "Please enter your current password.",
-                    "warning"
-                )
-
-                return redirect(
-                    url_for("account_settings")
-                )
-
-            if not new_password:
-
-                flash(
-                    "Please enter a new password.",
-                    "warning"
-                )
-
-                return redirect(
-                    url_for("account_settings")
-                )
-
-            if len(new_password) < 8:
-
-                flash(
-                    "Your new password must be at least 8 characters long.",
-                    "warning"
-                )
-
-                return redirect(
-                    url_for("account_settings")
-                )
-
-            if new_password != confirm_password:
-
-                flash(
-                    "The new passwords do not match.",
-                    "warning"
-                )
-
-                return redirect(
-                    url_for("account_settings")
-                )
-
-            # ---------------------------------------------
-            # CHECK CURRENT PASSWORD
-            # ---------------------------------------------
-
-            if not bcrypt.check_password_hash(
-                user.password,
-                current_password
-            ):
-
-                flash(
-                    "Your current password is incorrect.",
-                    "danger"
-                )
-
-                return redirect(
-                    url_for("account_settings")
-                )
-
-            # ---------------------------------------------
-            # HASH NEW PASSWORD
-            # ---------------------------------------------
-
-            user.password = (
-                bcrypt
-                .generate_password_hash(new_password)
-                .decode("utf-8")
-            )
-
-            try:
-
-                db.session.commit()
-
-                flash(
-                    "Password changed successfully.",
-                    "success"
-                )
-
-            except Exception as e:
-
-                db.session.rollback()
-
-                flash(
-                    f"Could not change password: {e}",
-                    "danger"
-                )
-
-            return redirect(
-                url_for("account_settings")
-            )
-
-    return render_template(
-        "settings_account.html",
-        user=user
-    )
 
 
 # =========================================================
@@ -5243,7 +6159,7 @@ def settings_security():
         return redirect(url_for("login"))
 
     return redirect(
-        url_for("account_settings")
+        url_for("settings_account")
     )
 
 @app.route("/settings/account", methods=["GET", "POST"])
@@ -5262,9 +6178,15 @@ def settings_account():
 
         action = request.form.get("action")
 
-        # ==========================
+        print("====================================")
+        print("SETTINGS ACCOUNT POST")
+        print("ACTION:", action)
+        print("FORM:", request.form.to_dict())
+        print("====================================")
+
+        # =================================================
         # UPDATE ACCOUNT
-        # ==========================
+        # =================================================
 
         if action == "update_account":
 
@@ -5339,9 +6261,14 @@ def settings_account():
                     "warning"
                 )
 
-            except Exception:
+            except Exception as e:
 
                 db.session.rollback()
+
+                print(
+                    "ACCOUNT UPDATE ERROR:",
+                    e
+                )
 
                 flash(
                     "Unable to update your account.",
@@ -5353,11 +6280,86 @@ def settings_account():
             )
 
 
-        # ==========================
-        # CHANGE PASSWORD
-        # ==========================
+        # =================================================
+        # UPDATE ADDRESS
+        # =================================================
 
-        if action == "change_password":
+        elif action == "update_address":
+
+            print("UPDATE ADDRESS ACTION RECEIVED")
+
+            address = request.form.get(
+                "address",
+                ""
+            ).strip()
+
+            city = request.form.get(
+                "city",
+                ""
+            ).strip()
+
+            state = request.form.get(
+                "state",
+                ""
+            ).strip()
+
+            postal_code = request.form.get(
+                "postal_code",
+                ""
+            ).strip()
+
+            country = request.form.get(
+                "country",
+                ""
+            ).strip()
+
+            print("ADDRESS:", address)
+            print("CITY:", city)
+            print("STATE:", state)
+            print("POSTAL CODE:", postal_code)
+            print("COUNTRY:", country)
+
+            user.address = address or None
+            user.city = city or None
+            user.state = state or None
+            user.postal_code = postal_code or None
+            user.country = country or None
+
+            try:
+
+                db.session.commit()
+
+                print("ADDRESS SAVED SUCCESSFULLY")
+
+                flash(
+                    "Address information updated successfully.",
+                    "success"
+                )
+
+            except Exception as e:
+
+                db.session.rollback()
+
+                print(
+                    "ADDRESS SAVE ERROR:",
+                    e
+                )
+
+                flash(
+                    "Unable to update your address information.",
+                    "danger"
+                )
+
+            return redirect(
+                url_for("settings_account")
+            )
+
+
+        # =================================================
+        # CHANGE PASSWORD
+        # =================================================
+
+        elif action == "change_password":
 
             current_password = request.form.get(
                 "current_password",
@@ -5445,9 +6447,14 @@ def settings_account():
                     "success"
                 )
 
-            except Exception:
+            except Exception as e:
 
                 db.session.rollback()
+
+                print(
+                    "PASSWORD CHANGE ERROR:",
+                    e
+                )
 
                 flash(
                     "Unable to change your password.",
@@ -5463,6 +6470,8 @@ def settings_account():
         "settings_account.html",
         user=user
     )
+
+
 
 # =========================================================
 # SETTINGS - EMAIL & SENDING
@@ -5987,6 +6996,39 @@ with app.app_context():
 
             connection.commit()
 
+    # =====================================================
+    # USER ACCOUNT ADDRESS MIGRATION
+    # =====================================================
+
+    if "users" in inspector.get_table_names():
+
+        existing_user_columns = {
+            column["name"]
+            for column in inspector.get_columns("users")
+        }
+
+        user_address_columns = {
+            "address": "VARCHAR(255)",
+            "city": "VARCHAR(100)",
+            "state": "VARCHAR(100)",
+            "postal_code": "VARCHAR(30)",
+            "country": "VARCHAR(100)",
+        }
+
+        with db.engine.connect() as connection:
+
+            for column_name, column_type in user_address_columns.items():
+
+                if column_name not in existing_user_columns:
+                    connection.execute(
+                        text(
+                            f"ALTER TABLE users "
+                            f"ADD COLUMN {column_name} {column_type}"
+                        )
+                    )
+
+            connection.commit()
+
 
     # =====================================================
     # LANDING PAGE TABLE MIGRATION
@@ -6064,6 +7106,29 @@ with app.app_context():
 
 
     # =====================================================
+    # CONTACT CREATED_AT MIGRATION
+    # =====================================================
+
+    inspector = inspect(db.engine)
+
+    if "contacts" in inspector.get_table_names():
+
+        contact_columns = {
+            column["name"]
+            for column in inspector.get_columns("contacts")
+        }
+
+        if "created_at" not in contact_columns:
+            with db.engine.begin() as connection:
+                connection.execute(
+                    text(
+                        "ALTER TABLE contacts "
+                        "ADD COLUMN created_at DATETIME"
+                    )
+                )
+
+
+    # =====================================================
     # CONTACT UNSUBSCRIBE TABLE MIGRATION
     # =====================================================
 
@@ -6077,6 +7142,7 @@ with app.app_context():
         contact_columns = {
             "unsubscribed": "BOOLEAN DEFAULT 0 NOT NULL",
             "unsubscribed_at": "DATETIME",
+            "unsubscribe_token": "VARCHAR(128)",
         }
 
         with db.engine.connect() as connection:
@@ -6084,7 +7150,6 @@ with app.app_context():
             for column_name, column_type in contact_columns.items():
 
                 if column_name not in existing_contact_columns:
-
                     connection.execute(
                         text(
                             f"ALTER TABLE contacts "
@@ -6094,6 +7159,19 @@ with app.app_context():
 
             connection.commit()
 
+        # -------------------------------------------------
+        # Generate unsubscribe tokens for existing contacts
+        # -------------------------------------------------
+
+        contacts_without_tokens = Contact.query.filter(
+            Contact.unsubscribe_token.is_(None)
+        ).all()
+
+        for contact in contacts_without_tokens:
+            contact.unsubscribe_token = secrets.token_urlsafe(32)
+
+        if contacts_without_tokens:
+            db.session.commit()
     # =====================================================
     # SEED LANDING PAGE STARTING TEMPLATES
     # =====================================================
@@ -6185,24 +7263,24 @@ with app.app_context():
                     )
                 )
 
-            # Add scheduled_at column to campaigns table
-            if "campaigns" in inspector.get_table_names():
+        # Add scheduled_at column to campaigns table
+    if "campaigns" in inspector.get_table_names():
 
-                campaign_columns = {
-                    column["name"]
-                    for column in inspector.get_columns("campaigns")
-                }
+        campaign_columns = {
+            column["name"]
+            for column in inspector.get_columns("campaigns")
+        }
 
-                if "scheduled_at" not in campaign_columns:
-                    with db.engine.connect() as connection:
-                        connection.execute(
-                            text(
-                                "ALTER TABLE campaigns "
-                                "ADD COLUMN scheduled_at DATETIME"
-                            )
-                        )
+        if "scheduled_at" not in campaign_columns:
+            with db.engine.connect() as connection:
+                connection.execute(
+                    text(
+                        "ALTER TABLE campaigns "
+                        "ADD COLUMN scheduled_at DATETIME"
+                    )
+                )
 
-                        connection.commit()
+                connection.commit()
 
         db.session.commit()
 
