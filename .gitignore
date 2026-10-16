@@ -11,3 +11,10 @@ venv/
 
 # Environment variables
 .env
+
+# Local databases
+instance/
+*.db
+
+# Uploaded files
+uploads/

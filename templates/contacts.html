@@ -228,13 +228,19 @@
 
             <div class="subscriber-search">
                 <span>⌕</span>
+
                 <input
                     type="search"
                     name="search"
                     value="{{ search }}"
                     placeholder="Search subscribers..."
                     aria-label="Search subscribers by name or email"
+                    autocomplete="off"
                 >
+
+                <button type="submit" class="filter-apply-button">
+                    Search
+                </button>
             </div>
 
 

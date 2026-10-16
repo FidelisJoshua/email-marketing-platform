@@ -747,28 +747,16 @@ Campaign Preview - EmailFlow
 
         {% if campaign.status == "Draft" %}
 
-            <form
-                method="POST"
-                action="{{ url_for(
-                    'send_campaign',
-                    campaign_id=campaign.id
-                ) }}"
-                style="margin:0;"
-                onsubmit="
-                    return confirm(
-                        'Are you sure you want to send this campaign?'
-                    );
-                "
-            >
-
-                <button
-                    type="submit"
-                    class="btn-primary-custom"
-                >
-                    📧 Send Campaign
-                </button>
-
-            </form>
+        <a
+            href="{{ url_for(
+                'campaign_recipients',
+                campaign_id=campaign.id
+            ) }}"
+            class="btn-primary-custom"
+            style="display: inline-block; text-decoration: none;"
+        >
+            📧 Send Campaign
+        </a>
 
         {% elif campaign.status == "Scheduled" %}
 

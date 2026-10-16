@@ -36,15 +36,23 @@ from email_service import (
 
 app = Flask(__name__)
 
-app.secret_key = "my_super_secret_key"
+app.secret_key = os.environ.get(
+    "SECRET_KEY",
+    "my_super_secret_key"
+)
 
 UPLOAD_FOLDER = "uploads"
 
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 
-app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///database.db"
+
+app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get(
+    "DATABASE_URL",
+    "sqlite:///database.db"
+)
 
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+
 def create_unsubscribe_token(contact_id):
     serializer = URLSafeSerializer(
         app.secret_key,
@@ -3054,6 +3062,310 @@ def preview_campaign(campaign_id):
         user=user
     )
 
+@app.route(
+    "/campaign/<int:campaign_id>/recipients",
+    methods=["GET"]
+)
+def campaign_recipients(campaign_id):
+
+    if "user_id" not in session:
+        return redirect(url_for("login"))
+
+    user_id = session["user_id"]
+
+    campaign = Campaign.query.filter_by(
+        id=campaign_id,
+        created_by=user_id
+    ).first_or_404()
+
+    # Only show segments belonging to this user.
+    segments = Segment.query.filter_by(
+        created_by=user_id
+    ).order_by(
+        Segment.name.asc()
+    ).all()
+
+    return render_template(
+        "campaign_recipients.html",
+        campaign=campaign,
+        segments=segments
+    )
+
+
+@app.route(
+    "/campaign/<int:campaign_id>/recipients/confirm",
+    methods=["POST"]
+)
+def confirm_campaign_recipients(campaign_id):
+
+    if "user_id" not in session:
+        return redirect(url_for("login"))
+
+    user_id = session["user_id"]
+
+    campaign = Campaign.query.filter_by(
+        id=campaign_id,
+        created_by=user_id
+    ).first_or_404()
+
+    # Only allow recipient selection for draft campaigns.
+    if campaign.status != "Draft":
+        flash(
+            "Only draft campaigns can be sent this way.",
+            "warning"
+        )
+        return redirect(
+            url_for(
+                "preview_campaign",
+                campaign_id=campaign.id
+            )
+        )
+
+    recipient_type = request.form.get(
+        "recipient_type",
+        "all"
+    )
+
+    # Save the selected audience for the final confirmation.
+    session[
+        f"campaign_{campaign.id}_recipient_type"
+    ] = recipient_type
+
+    session[
+        f"campaign_{campaign.id}_segment_ids"
+    ] = (
+        request.form.getlist("segment_ids")
+        if recipient_type == "segments"
+        else []
+    )
+
+    # STEP 1: Get the selected audience.
+    if recipient_type == "all":
+
+        contacts = Contact.query.filter_by(
+            created_by=user_id
+        ).all()
+
+    elif recipient_type == "segments":
+
+        raw_segment_ids = request.form.getlist(
+            "segment_ids"
+        )
+
+        try:
+            segment_ids = list({
+                int(segment_id)
+                for segment_id in raw_segment_ids
+            })
+        except (TypeError, ValueError):
+
+            flash(
+                "Please select valid segments.",
+                "warning"
+            )
+            return redirect(
+                url_for(
+                    "campaign_recipients",
+                    campaign_id=campaign.id
+                )
+            )
+
+        if not segment_ids:
+            flash(
+                "Please select at least one segment.",
+                "warning"
+            )
+            return redirect(
+                url_for(
+                    "campaign_recipients",
+                    campaign_id=campaign.id
+                )
+            )
+
+        # Verify every selected segment belongs to this user.
+        valid_segments = Segment.query.filter(
+            Segment.id.in_(segment_ids),
+            Segment.created_by == user_id
+        ).all()
+
+        if len(valid_segments) != len(segment_ids):
+            flash(
+                "One or more selected segments are invalid.",
+                "warning"
+            )
+            return redirect(
+                url_for(
+                    "campaign_recipients",
+                    campaign_id=campaign.id
+                )
+            )
+
+        # Retrieve current segment members.
+        # DISTINCT prevents duplicate contacts across segments.
+        contacts = Contact.query.join(
+            SegmentContact,
+            SegmentContact.contact_id == Contact.id
+        ).filter(
+            Contact.created_by == user_id,
+            SegmentContact.segment_id.in_(segment_ids)
+        ).distinct().all()
+
+    else:
+        flash(
+            "Please select a valid recipient option.",
+            "warning"
+        )
+        return redirect(
+            url_for(
+                "campaign_recipients",
+                campaign_id=campaign.id
+            )
+        )
+
+    if not contacts:
+        flash(
+            "There are no contacts in the selected audience.",
+            "warning"
+        )
+        return redirect(
+            url_for(
+                "campaign_recipients",
+                campaign_id=campaign.id
+            )
+        )
+
+    # STEP 2: Build the final recipient list.
+    # Preserve previously sent recipients to prevent resending.
+    selected_contact_ids = {
+        contact.id for contact in contacts
+    }
+
+    existing_recipients = CampaignRecipient.query.filter_by(
+        campaign_id=campaign.id
+    ).all()
+
+    existing_by_contact = {
+        recipient.contact_id: recipient
+        for recipient in existing_recipients
+    }
+
+    for recipient in existing_recipients:
+
+        if recipient.status == "Sent":
+            continue
+
+        if recipient.contact_id not in selected_contact_ids:
+            db.session.delete(recipient)
+
+    for contact in contacts:
+
+        recipient = existing_by_contact.get(
+            contact.id
+        )
+
+        if recipient is None:
+
+            recipient = CampaignRecipient(
+                campaign_id=campaign.id,
+                contact_id=contact.id,
+                status="Pending"
+            )
+
+            db.session.add(recipient)
+
+        elif recipient.status != "Sent":
+
+            recipient.status = "Pending"
+
+    db.session.commit()
+
+    return redirect(
+        url_for(
+            "review_campaign_recipients",
+            campaign_id=campaign.id
+        )
+    )
+
+@app.route(
+    "/campaign/<int:campaign_id>/recipients/review",
+    methods=["GET"]
+)
+def review_campaign_recipients(campaign_id):
+
+    if "user_id" not in session:
+        return redirect(url_for("login"))
+
+    user_id = session["user_id"]
+
+    campaign = Campaign.query.filter_by(
+        id=campaign_id,
+        created_by=user_id
+    ).first_or_404()
+
+
+    recipient_type = session.get(
+        f"campaign_{campaign.id}_recipient_type"
+    )
+
+    recipient_contacts = []
+
+    if recipient_type == "all":
+
+        recipient_contacts = Contact.query.filter_by(
+            created_by=user_id,
+            unsubscribed=False
+        ).order_by(
+            Contact.id.asc()
+        ).all()
+
+    elif recipient_type == "segments":
+
+        selected_segment_ids = session.get(
+            f"campaign_{campaign.id}_segment_ids",
+            []
+        )
+
+        try:
+            selected_segment_ids = list({
+                int(segment_id)
+                for segment_id in selected_segment_ids
+            })
+        except (TypeError, ValueError):
+            selected_segment_ids = []
+
+        if selected_segment_ids:
+
+            owned_segment_ids = [
+                segment.id
+                for segment in Segment.query.filter(
+                    Segment.id.in_(selected_segment_ids),
+                    Segment.created_by == user_id
+                ).all()
+            ]
+
+            if owned_segment_ids:
+
+                recipient_contacts = Contact.query.join(
+                    SegmentContact,
+                    SegmentContact.contact_id == Contact.id
+                ).filter(
+                    Contact.created_by == user_id,
+                    Contact.unsubscribed.is_(False),
+                    SegmentContact.segment_id.in_(owned_segment_ids)
+                ).distinct().order_by(
+                    Contact.id.asc()
+                ).all()
+
+
+    recipient_count = len(recipient_contacts)
+
+    return render_template(
+        "review_campaign_recipients.html",
+        campaign=campaign,
+        recipient_contacts=recipient_contacts,
+        recipient_count=recipient_count
+    )
+
 # =========================================================
 # SEND TEST EMAIL
 # =========================================================
@@ -3415,6 +3727,49 @@ def send_campaign(campaign_id):
 
 
     # =====================================================
+    # REQUIRE RECIPIENT SELECTION BEFORE MANUAL SENDING
+    # =====================================================
+
+    recipient_type = session.get(
+        f"campaign_{campaign.id}_recipient_type"
+    )
+
+    if recipient_type not in ("all", "segments"):
+
+        flash(
+            "Please choose and review your campaign recipients first.",
+            "warning"
+        )
+
+        return redirect(
+            url_for(
+                "campaign_recipients",
+                campaign_id=campaign.id
+            )
+        )
+
+
+    # =====================================================
+    # PREVENT RESENDING COMPLETED CAMPAIGNS
+    # =====================================================
+
+    if campaign.status == "Sent":
+
+        flash(
+            "This campaign has already been sent.",
+            "warning"
+        )
+
+        return redirect(
+            url_for(
+                "preview_campaign",
+                campaign_id=campaign.id
+            )
+        )
+
+
+
+    # =====================================================
     # GET USER
     # =====================================================
 
@@ -3554,6 +3909,116 @@ def send_campaign(campaign_id):
         )
 
 
+
+    # =====================================================
+    # REFRESH RECIPIENTS FROM THE SELECTED AUDIENCE
+    # =====================================================
+
+    recipient_type = session.get(
+        f"campaign_{campaign.id}_recipient_type"
+    )
+
+    if recipient_type in ("all", "segments"):
+
+        # Resolve the latest eligible audience.
+        if recipient_type == "all":
+
+            contacts = Contact.query.filter_by(
+                created_by=user_id,
+                unsubscribed=False
+            ).all()
+
+        else:
+
+            selected_segment_ids = session.get(
+                f"campaign_{campaign.id}_segment_ids",
+                []
+            )
+
+            try:
+                selected_segment_ids = list({
+                    int(segment_id)
+                    for segment_id in selected_segment_ids
+                })
+            except (TypeError, ValueError):
+                selected_segment_ids = []
+
+            owned_segment_ids = [
+                segment.id
+                for segment in Segment.query.filter(
+                    Segment.id.in_(selected_segment_ids),
+                    Segment.created_by == user_id
+                ).all()
+            ] if selected_segment_ids else []
+
+            if not owned_segment_ids:
+                campaign.status = "Draft"
+                db.session.commit()
+
+                flash(
+                    "Please select at least one valid segment.",
+                    "warning"
+                )
+
+                return redirect(
+                    url_for(
+                        "campaign_recipients",
+                        campaign_id=campaign.id
+                    )
+                )
+
+            contacts = Contact.query.join(
+                SegmentContact,
+                SegmentContact.contact_id == Contact.id
+            ).filter(
+                Contact.created_by == user_id,
+                Contact.unsubscribed.is_(False),
+                SegmentContact.segment_id.in_(owned_segment_ids)
+            ).distinct().all()
+
+        selected_ids = {
+            contact.id for contact in contacts
+        }
+
+        existing_recipients = CampaignRecipient.query.filter_by(
+            campaign_id=campaign.id
+        ).all()
+
+        existing_by_contact = {
+            recipient.contact_id: recipient
+            for recipient in existing_recipients
+        }
+
+        # Remove outdated pending recipients.
+        for recipient in existing_recipients:
+            if (
+                recipient.status == "Pending"
+                and recipient.contact_id not in selected_ids
+            ):
+                db.session.delete(recipient)
+
+        # Add new contacts and preserve successfully sent records.
+        for contact in contacts:
+
+            existing = existing_by_contact.get(contact.id)
+
+            if existing and existing.status == "Sent":
+                continue
+
+            if existing:
+                existing.status = "Pending"
+                existing.sent_at = None
+            else:
+                db.session.add(
+                    CampaignRecipient(
+                        campaign_id=campaign.id,
+                        contact_id=contact.id,
+                        status="Pending"
+                    )
+                )
+
+        db.session.commit()
+
     # =====================================================
     # GET PENDING RECIPIENTS
     # =====================================================
@@ -3563,11 +4028,9 @@ def send_campaign(campaign_id):
         status="Pending"
     ).all()
 
-
     if not recipients:
 
         campaign.status = "Sent"
-
         db.session.commit()
 
         flash(
@@ -3582,15 +4045,12 @@ def send_campaign(campaign_id):
             )
         )
 
-
     sent = 0
-
     failed = 0
-
     skipped = 0
 
 
-    # =====================================================
+    #=====================================================
     # BUILD SENDER ADDRESS
     # =====================================================
 
@@ -7371,17 +7831,21 @@ def test_unsubscribe(contact_id):
         )
     )
 
-scheduler = BackgroundScheduler()
 
-scheduler.add_job(
-    process_scheduled_campaigns,
-    "interval",
-    minutes=1,
-    id="emailflow_scheduled_campaigns",
-    replace_existing=True
-)
+if os.environ.get("RUN_SCHEDULER", "false").lower() == "true":
 
-scheduler.start()
+    scheduler = BackgroundScheduler()
+
+    scheduler.add_job(
+        process_scheduled_campaigns,
+        "interval",
+        minutes=1,
+        id="emailflow_scheduled_campaigns",
+        replace_existing=True
+    )
+
+    scheduler.start()
+
 
 if __name__ == "__main__":
     app.run(debug=True)

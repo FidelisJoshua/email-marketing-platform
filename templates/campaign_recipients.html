@@ -1,0 +1,460 @@
+{% extends "dashboard_base.html" %}
+
+{% block title %}
+Choose Campaign Recipients - EmailFlow
+{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+    <div>
+        <div class="page-eyebrow">CAMPAIGN</div>
+
+        <h1 class="page-title">
+            Choose Recipients
+        </h1>
+
+        <p class="page-subtitle">
+            Choose who should receive this campaign.
+        </p>
+    </div>
+
+    <a
+        href="{{ url_for('preview_campaign', campaign_id=campaign.id) }}"
+        class="btn-secondary-custom"
+    >
+        ← Back to Campaign
+    </a>
+</div>
+
+<div class="form-card">
+
+    <div style="margin-bottom:24px;">
+        <div class="form-label-custom">
+            Campaign
+        </div>
+
+        <h3 style="margin:0;">
+            {{ campaign.subject }}
+        </h3>
+    </div>
+
+    <form
+        method="POST"
+        action="{{ url_for('confirm_campaign_recipients', campaign_id=campaign.id) }}"
+        id="recipientForm"
+    >
+
+        <!-- ALL CONTACTS -->
+
+        <label
+            class="recipient-option"
+            for="all_contacts"
+        >
+            <input
+                type="radio"
+                id="all_contacts"
+                name="recipient_type"
+                value="all"
+                checked
+            >
+
+            <div class="recipient-option-content">
+                <div class="recipient-option-title">
+                    All contacts
+                </div>
+
+                <div class="recipient-option-description">
+                    Send this campaign to all eligible contacts
+                    in your audience.
+                </div>
+            </div>
+        </label>
+
+
+        <!-- SELECT SEGMENTS -->
+
+        <label
+            class="recipient-option"
+            for="selected_segments"
+        >
+            <input
+                type="radio"
+                id="selected_segments"
+                name="recipient_type"
+                value="segments"
+            >
+
+            <div class="recipient-option-content">
+                <div class="recipient-option-title">
+                    Choose segments
+                </div>
+
+                <div class="recipient-option-description">
+                    Send this campaign to contacts belonging
+                    to one or more selected segments.
+                </div>
+            </div>
+        </label>
+
+
+        <!-- SEGMENT LIST -->
+
+        <div
+            id="segmentSelection"
+            style="display:none; margin-top:18px;"
+        >
+
+            <div
+                style="
+                    display:flex;
+                    align-items:center;
+                    justify-content:space-between;
+                    gap:12px;
+                    margin-bottom:12px;
+                    flex-wrap:wrap;
+                "
+            >
+                <h4 style="margin:0;">
+                    Your segments
+                </h4>
+
+                <button
+                    type="button"
+                    id="toggleAllSegments"
+                    class="btn-secondary-custom"
+                >
+                    Select all
+                </button>
+            </div>
+
+            {% if segments %}
+
+                <div class="segment-list">
+
+                    {% for segment in segments %}
+
+                        <label
+                            class="segment-option"
+                            for="segment_{{ segment.id }}"
+                        >
+                            <input
+                                type="checkbox"
+                                id="segment_{{ segment.id }}"
+                                name="segment_ids"
+                                value="{{ segment.id }}"
+                                class="segment-checkbox"
+                            >
+
+                            <span class="segment-option-content">
+                                <span class="segment-name">
+                                    {{ segment.name }}
+                                </span>
+
+                                <span class="segment-description">
+                                    {{ segment.description or 'No description' }}
+                                </span>
+                            </span>
+                        </label>
+
+                    {% endfor %}
+
+                </div>
+
+            {% else %}
+
+                <div class="no-segments">
+                    You haven't created any segments yet.
+                    Create a segment from your Contacts page
+                    to use this option.
+                </div>
+
+            {% endif %}
+
+            <p
+                id="segmentError"
+                style="
+                    display:none;
+                    margin-top:12px;
+                    color:#b91c1c;
+                    font-size:13px;
+                "
+            >
+                Please select at least one segment.
+            </p>
+
+        </div>
+
+
+        <!-- ACTIONS -->
+
+        <div
+            style="
+                display:flex;
+                gap:10px;
+                flex-wrap:wrap;
+                margin-top:28px;
+                padding-top:20px;
+                border-top:1px solid #e5e7eb;
+            "
+        >
+
+            <a
+                href="{{ url_for('preview_campaign', campaign_id=campaign.id) }}"
+                class="btn-secondary-custom"
+            >
+                Cancel
+            </a>
+
+            <button
+                type="submit"
+                class="btn-primary-custom"
+            >
+                Continue to Send →
+            </button>
+
+        </div>
+
+    </form>
+
+</div>
+
+
+<style>
+.recipient-option {
+    display:flex;
+    align-items:flex-start;
+    gap:14px;
+    padding:20px;
+    margin-bottom:14px;
+    border:1px solid #e5e7eb;
+    border-radius:12px;
+    background:#ffffff;
+    cursor:pointer;
+    transition:border-color .2s, background .2s;
+}
+
+.recipient-option:has(input:checked) {
+    border-color:#6254f4;
+    background:#f8f7ff;
+}
+
+.recipient-option input,
+.segment-option input {
+    width:17px;
+    height:17px;
+    margin-top:3px;
+    accent-color:#6254f4;
+    flex-shrink:0;
+}
+
+.recipient-option-content,
+.segment-option-content {
+    display:flex;
+    flex-direction:column;
+    gap:5px;
+}
+
+.recipient-option-title {
+    color:#111827;
+    font-size:15px;
+    font-weight:700;
+}
+
+.recipient-option-description {
+    color:#6b7280;
+    font-size:13px;
+    line-height:1.6;
+}
+
+.segment-list {
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+}
+
+.segment-option {
+    display:flex;
+    align-items:flex-start;
+    gap:12px;
+    padding:15px;
+    border:1px solid #e5e7eb;
+    border-radius:10px;
+    background:#ffffff;
+    cursor:pointer;
+}
+
+.segment-option:has(input:checked) {
+    border-color:#6254f4;
+    background:#f8f7ff;
+}
+
+.segment-name {
+    color:#111827;
+    font-size:14px;
+    font-weight:600;
+}
+
+.segment-description {
+    color:#6b7280;
+    font-size:12px;
+    line-height:1.5;
+}
+
+.no-segments {
+    padding:18px;
+    border:1px dashed #d1d5db;
+    border-radius:10px;
+    color:#6b7280;
+    font-size:13px;
+    line-height:1.6;
+}
+
+@media (max-width:600px) {
+    .recipient-option {
+        padding:15px;
+    }
+}
+</style>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+    const allContacts = document.getElementById(
+        "all_contacts"
+    );
+
+    const selectedSegments = document.getElementById(
+        "selected_segments"
+    );
+
+    const segmentSelection = document.getElementById(
+        "segmentSelection"
+    );
+
+    const segmentCheckboxes = Array.from(
+        document.querySelectorAll(".segment-checkbox")
+    );
+
+    const toggleAllSegments = document.getElementById(
+        "toggleAllSegments"
+    );
+
+    const recipientForm = document.getElementById(
+        "recipientForm"
+    );
+
+    const segmentError = document.getElementById(
+        "segmentError"
+    );
+
+
+    function updateRecipientOptions() {
+
+        const useSegments = selectedSegments.checked;
+
+        segmentSelection.style.display = useSegments
+            ? "block"
+            : "none";
+
+        segmentCheckboxes.forEach(function (checkbox) {
+            checkbox.disabled = !useSegments;
+        });
+
+        segmentError.style.display = "none";
+    }
+
+
+    function updateSelectAllButton() {
+
+        const allSelected =
+            segmentCheckboxes.length > 0 &&
+            segmentCheckboxes.every(
+                checkbox => checkbox.checked
+            );
+
+        toggleAllSegments.textContent = allSelected
+            ? "Clear selection"
+            : "Select all";
+    }
+
+
+    allContacts.addEventListener(
+        "change",
+        updateRecipientOptions
+    );
+
+    selectedSegments.addEventListener(
+        "change",
+        updateRecipientOptions
+    );
+
+
+    segmentCheckboxes.forEach(function (checkbox) {
+
+        checkbox.addEventListener("change", function () {
+            updateSelectAllButton();
+            segmentError.style.display = "none";
+        });
+
+    });
+
+
+    toggleAllSegments.addEventListener(
+        "click",
+        function () {
+
+            const allSelected =
+                segmentCheckboxes.length > 0 &&
+                segmentCheckboxes.every(
+                    checkbox => checkbox.checked
+                );
+
+            segmentCheckboxes.forEach(function (checkbox) {
+                checkbox.checked = !allSelected;
+            });
+
+            updateSelectAllButton();
+            segmentError.style.display = "none";
+        }
+    );
+
+
+    recipientForm.addEventListener(
+        "submit",
+        function (event) {
+
+            if (
+                selectedSegments.checked &&
+                !segmentCheckboxes.some(
+                    checkbox => checkbox.checked
+                )
+            ) {
+
+                event.preventDefault();
+
+                segmentError.style.display = "block";
+
+                return;
+            }
+
+            if (
+                !confirm(
+                    "Continue with the selected campaign recipients?"
+                )
+            ) {
+                event.preventDefault();
+            }
+
+        }
+    );
+
+
+    updateRecipientOptions();
+    updateSelectAllButton();
+
+});
+</script>
+
+{% endblock %}

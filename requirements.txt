@@ -3,3 +3,6 @@ Flask-Bcrypt
 Flask-SQLAlchemy
 pandas
 gunicorn
+APScheduler
+
+psycopg2-binary

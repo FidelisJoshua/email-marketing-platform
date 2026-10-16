@@ -1,0 +1,146 @@
+{% extends "dashboard_base.html" %}
+
+{% block title %}Review Recipients - EmailFlow{% endblock %}
+
+{% block content %}
+
+<div class="subscribers-page">
+
+    <div style="margin-bottom: 24px;">
+        <h1 style="margin-bottom: 8px;">Review Recipients</h1>
+
+        <p style="color: #6b7280;">
+            Check your audience before sending this campaign.
+        </p>
+
+        <h3 style="margin-top: 20px;">
+            {{ campaign.subject }}
+        </h3>
+    </div>
+
+    <div style="
+        background: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        padding: 24px;
+        margin-bottom: 24px;
+    ">
+
+        <h2 style="margin-top: 0;">
+            {{ recipient_count }} recipients
+        </h2>
+
+        <p style="color: #6b7280;">
+            Unsubscribed contacts are excluded from this list.
+            Review the addresses below before proceeding.
+        </p>
+
+        {% if recipient_contacts %}
+
+            <div style="
+                max-height: 350px;
+                overflow-y: auto;
+                border: 1px solid #e5e7eb;
+                border-radius: 8px;
+            ">
+
+                <table style="
+                    width: 100%;
+                    border-collapse: collapse;
+                ">
+
+                    <thead>
+                        <tr style="
+                            background: #f9fafb;
+                            text-align: left;
+                        ">
+                            <th style="padding: 12px;">Name</th>
+                            <th style="padding: 12px;">Email</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        {% for contact in recipient_contacts %}
+                            <tr style="border-top: 1px solid #e5e7eb;">
+                                <td style="padding: 12px;">
+                                    {{ contact.name or "—" }}
+                                </td>
+
+                                <td style="padding: 12px;">
+                                    {{ contact.email }}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        {% else %}
+
+            <p style="color: #dc2626;">
+                There are no eligible recipients to send this campaign to.
+                Please go back and choose another audience.
+            </p>
+
+        {% endif %}
+
+    </div>
+
+    <div style="
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+    ">
+
+        <a
+            href="{{ url_for(
+                'campaign_recipients',
+                campaign_id=campaign.id
+            ) }}"
+            class="btn-secondary-custom"
+            style="
+                display: inline-block;
+                text-decoration: none;
+                padding: 12px 18px;
+            "
+        >
+            ← Change Recipients
+        </a>
+
+        {% if recipient_count > 0 %}
+
+            <form
+                method="POST"
+                action="{{ url_for(
+                    'send_campaign',
+                    campaign_id=campaign.id
+                ) }}"
+                onsubmit="return confirm(
+                    'Send this campaign to {{ recipient_count }} eligible recipients?'
+                );"
+                style="margin: 0;"
+            >
+
+                <button
+                    type="submit"
+                    class="btn-primary-custom"
+                    style="
+                        padding: 12px 18px;
+                        border: none;
+                        cursor: pointer;
+                    "
+                >
+                    Confirm & Send Campaign
+                </button>
+
+            </form>
+
+        {% endif %}
+
+    </div>
+
+</div>
+
+{% endblock %}

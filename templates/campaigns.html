@@ -42,32 +42,15 @@ Campaigns - EmailFlow
         <table class="campaign-table">
 
             <thead>
-
                 <tr>
-
-                    <th>
-                        Subject
-                    </th>
-
-                    <th>
-                        Date
-                    </th>
-
-                    <th>
-                        Recipients
-                    </th>
-
-                    <th>
-                        Unsubscribed
-                    </th>
-
-                    <th class="actions-column">
-                    </th>
-
+                    <th>Subject</th>
+                    <th>Status</th>
+                    <th>Date</th>
+                    <th>Recipients</th>
+                    <th>Unsubscribed</th>
+                    <th class="actions-column"></th>
                 </tr>
-
             </thead>
-
 
             <tbody>
 
@@ -75,21 +58,27 @@ Campaigns - EmailFlow
 
                 <tr>
 
-                    <!-- SUBJECT -->
+                <!-- SUBJECT -->
 
-                    <td>
+                <td>
+                    <a
+                        href="{{ url_for(
+                            'preview_campaign',
+                            campaign_id=campaign.id
+                        ) }}"
+                        class="campaign-subject"
+                    >
+                        {{ campaign.subject }}
+                    </a>
+                </td>
 
-                        <a
-                            href="{{ url_for(
-                                'preview_campaign',
-                                campaign_id=campaign.id
-                            ) }}"
-                            class="campaign-subject"
-                        >
-                            {{ campaign.subject }}
-                        </a>
+                <!-- STATUS -->
 
-                    </td>
+                <td>
+                    <span class="campaign-status status-{{ (campaign.status or 'Draft')|lower }}">
+                        {{ campaign.status or 'Draft' }}
+                    </span>
+                </td>
 
 
                     <!-- DATE -->
@@ -118,23 +107,10 @@ Campaigns - EmailFlow
                     <!-- RECIPIENTS -->
 
                     <td>
-
                         <span class="campaign-number">
-
-                            {% if campaign.sent_count %}
-
-                                {{ campaign.sent_count }}
-
-                            {% else %}
-
-                                0
-
-                            {% endif %}
-
+                            {{ campaign.sent_count or 0 }}
                         </span>
-
                     </td>
-
 
                     <!-- UNSUBSCRIBED -->
 
@@ -459,6 +435,55 @@ Campaigns - EmailFlow
     .campaign-table tbody tr:hover {
         background: #fafbfc;
     }
+
+
+/* =========================================================
+   CAMPAIGN STATUS BADGES
+   ========================================================= */
+
+.campaign-status {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 27px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1;
+    white-space: nowrap;
+}
+
+/* Draft */
+.status-draft {
+    background: #f3f4f6;
+    color: #4b5563;
+}
+
+/* Scheduled */
+.status-scheduled {
+    background: #ede9fe;
+    color: #6254f4;
+}
+
+/* Sending */
+.status-sending {
+    background: #dbeafe;
+    color: #1d4ed8;
+}
+
+/* Sent */
+.status-sent {
+    background: #dcfce7;
+    color: #15803d;
+}
+
+/* Failed */
+.status-failed {
+    background: #fee2e2;
+    color: #b91c1c;
+}
+
 
     /* =========================================================
        SUBJECT
